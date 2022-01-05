@@ -1,0 +1,49 @@
+CREATE TABLE UM_F_ACAD_PROG
+(
+  INSTITUTION_CD              VARCHAR2(5 BYTE),
+  ACAD_CAR_CD                 VARCHAR2(5 BYTE),
+  TERM_CD                     VARCHAR2(4 BYTE),
+  PERSON_ID                   VARCHAR2(11 BYTE),
+  STDNT_CAR_NUM               INTEGER,
+  SRC_SYS_ID                  VARCHAR2(5 BYTE),
+  INSTITUTION_SID             INTEGER,
+  ACAD_CAR_SID                INTEGER,
+  TERM_SID                    INTEGER,
+  PERSON_SID                  INTEGER,
+  ACAD_PROG_CD                VARCHAR2(5 BYTE),
+  ACAD_PROG_SID               INTEGER,
+  ADMIT_TERM_SID              INTEGER,
+  CAMPUS_SID                  INTEGER,
+  COMPL_TERM_SID              INTEGER,
+  EXP_GRAD_TERM_SID           INTEGER,
+  PROG_STAT_SID               INTEGER,
+  PROG_ACN_SID                INTEGER,
+  PROG_ACN_RSN_SID            INTEGER,
+  REQ_TERM_SID                INTEGER,
+  STACK_BEGIN_TERM_SID        INTEGER,
+  STACK_READMIT_TERM_SID      INTEGER,
+  EFFDT                       DATE,
+  EFFSEQ                      INTEGER,
+  ACTION_DT                   DATE,
+  ADM_APPL_NBR                VARCHAR2(8 BYTE),
+  DATA_FROM_ADM_APPL_FLG      VARCHAR2(1 BYTE),
+  DEGR_CHKOUT_STAT            VARCHAR2(2 BYTE),
+  DEGR_CHKOUT_LAST            VARCHAR2(2 BYTE),
+  DEGR_CHKOUT_LAST_EGT        VARCHAR2(2 BYTE),
+  DEGR_CHKOUT_LAST_EGT_EFFDT  DATE,
+  DEGR_CHKOUT_LAST_EGT_ORDER  INTEGER,
+  MIN_PROG_STAT_CTGRY         VARCHAR2(2 BYTE),
+  STACK_READMIT_EFFDT         DATE,
+  PROG_CNT                    INTEGER,
+  LOAD_ERROR                  VARCHAR2(1 BYTE),
+  DATA_ORIGIN                 VARCHAR2(1 BYTE),
+  CREATED_EW_DTTM             DATE,
+  LASTUPD_EW_DTTM             DATE,
+  BATCH_SID                   INTEGER
+)
+NOLOGGING 
+COMPRESS BASIC
+NO INMEMORY
+NOCACHE
+RESULT_CACHE (MODE DEFAULT)
+NOPARALLEL;

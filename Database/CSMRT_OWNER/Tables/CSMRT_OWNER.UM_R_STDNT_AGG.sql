@@ -1,0 +1,55 @@
+CREATE TABLE UM_R_STDNT_AGG
+(
+  TERM_SID                       INTEGER,
+  PERSON_SID                     INTEGER,
+  SRC_SYS_ID                     VARCHAR2(5 BYTE),
+  INSTITUTION_CD                 VARCHAR2(5 BYTE),
+  ACAD_CAR_CD                    VARCHAR2(5 BYTE),
+  TERM_CD                        VARCHAR2(4 BYTE),
+  PERSON_ID                      VARCHAR2(11 BYTE),
+  INSTITUTION_SID                INTEGER,
+  ACAD_CAR_SID                   INTEGER,
+  PS_STDNT_CAR_NUM               INTEGER,
+  PS_PROG_SID                    INTEGER,
+  PS_EFFDT                       DATE,
+  PS_PROG_STAT_SID               INTEGER,
+  PS_PROG_ACN_SID                INTEGER,
+  PS_PROG_ACN_RSN_SID            INTEGER,
+  PS_ADMIT_TERM_SID              INTEGER,
+  PS_EXP_GRAD_TERM_SID           INTEGER,
+  PS_DEGR_CHKOUT_LAST_EGT        VARCHAR2(2 BYTE),
+  PS_DEGR_CHKOUT_LAST_EGT_EFFDT  DATE,
+  STACK_BEGIN_FLG                VARCHAR2(1 BYTE),
+  STACK_CONTINUE_FLG             VARCHAR2(1 BYTE),
+  STACK_READMIT_FLG              VARCHAR2(1 BYTE),
+  MAJ1_ACAD_PLAN_SID             INTEGER,
+  MAJ1_PLAN_SEQUENCE             INTEGER,
+  MAJ1_SPLAN1_SID                INTEGER,
+  MAJ1_SPLAN2_SID                INTEGER,
+  MAJ1_SPLAN3_SID                INTEGER,
+  MAJ1_SPLAN4_SID                INTEGER,
+  MAJ2_ACAD_PLAN_SID             INTEGER,
+  MAJ2_SPLAN1_SID                INTEGER,
+  MAJ3_ACAD_PLAN_SID             INTEGER,
+  MAJ3_SPLAN1_SID                INTEGER,
+  MAJ4_ACAD_PLAN_SID             INTEGER,
+  MIN1_ACAD_PLAN_SID             INTEGER,
+  MIN2_ACAD_PLAN_SID             INTEGER,
+  MIN3_ACAD_PLAN_SID             INTEGER,
+  MIN4_ACAD_PLAN_SID             INTEGER,
+  OTH1_ACAD_PLAN_SID             INTEGER,
+  OTH2_ACAD_PLAN_SID             INTEGER,
+  ED_LVL_RANK                    INTEGER,
+  PREV_DEG_FLG                   VARCHAR2(1 BYTE),
+  UMBOS_HON_FLG                  VARCHAR2(1 BYTE),
+  UMDAR_DCE_FLG                  VARCHAR2(1 BYTE),
+  UMDAR_UGRD_SECOND_DEGR_FLG     VARCHAR2(1 BYTE),
+  UMLOW_UGRD_SECOND_DEGR_FLG     VARCHAR2(1 BYTE),
+  UNDUP_STDNT_CNT                INTEGER
+)
+NOLOGGING 
+COMPRESS BASIC
+NO INMEMORY
+NOCACHE
+RESULT_CACHE (MODE DEFAULT)
+NOPARALLEL;
