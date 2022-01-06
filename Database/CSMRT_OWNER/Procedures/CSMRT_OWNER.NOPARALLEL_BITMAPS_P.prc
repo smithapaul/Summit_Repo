@@ -1,0 +1,36 @@
+CREATE OR REPLACE PROCEDURE             NOPARALLEL_BITMAPS_P IS
+   bitmap_cur            SYS_REFCURSOR;
+   v_sql_str             varchar2(2000);
+   v_bitmap_total        number;
+
+BEGIN
+
+-- Open cursor for bitmap indexes.
+
+   v_bitmap_total := 0;
+
+   OPEN bitmap_cur FOR
+    select 'alter index '||INDEX_NAME||' noparallel'
+    from USER_IND_COLUMNS
+    where INDEX_NAME in (select INDEX_NAME from USER_INDEXES where INDEX_TYPE = 'BITMAP')
+    order by TABLE_NAME, COLUMN_NAME;
+
+   LOOP
+      FETCH bitmap_cur INTO v_sql_str;
+
+      EXIT WHEN bitmap_cur%NOTFOUND;
+
+      EXECUTE IMMEDIATE v_sql_str;
+
+         v_bitmap_total := v_bitmap_total + 1;
+
+         --DBMS_OUTPUT.PUT_LINE('SQL is: '||v_sql_str);
+
+   END LOOP;
+
+         DBMS_OUTPUT.PUT_LINE('Total BITMAP indexes altered: '||v_bitmap_total);
+         
+      CLOSE bitmap_cur;
+      
+END NOPARALLEL_BITMAPS_P;
+/

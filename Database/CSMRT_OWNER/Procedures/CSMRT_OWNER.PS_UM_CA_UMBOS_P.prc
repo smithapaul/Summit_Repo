@@ -1,0 +1,1019 @@
+CREATE OR REPLACE PROCEDURE             "PS_UM_CA_UMBOS_P" AUTHID CURRENT_USER IS
+
+------------------------------------------------------------------------
+-- George Adams
+--
+-- Loads stage table PS_UM_CA_UMBOS from PeopleSoft table PS_UM_CA_UMBOS.
+--
+-- V01  SMT-xxxx 05/30/2017,    Jim Doucette
+--                              Converted from PS_UM_CA_UMBOS.SQL
+-- V02  CASE-52863 08/20/2020,  Jim Doucette
+--                              Added fields
+-- V03  CASE-82799 01/13/2021,  Jim Doucette
+--                              Added field UM_CA_GENDER_IDENT
+--
+------------------------------------------------------------------------
+
+        strMartId                       Varchar2(50)    := 'CSW';
+        strProcessName                  Varchar2(100)   := 'PS_UM_CA_UMBOS';
+        intProcessSid                   Integer;
+        dtProcessStart                  Date            := SYSDATE;
+        strMessage01                    Varchar2(4000);
+        strMessage02                    Varchar2(512);
+        strMessage03                    Varchar2(512)   :='';
+        strNewLine                      Varchar2(2)     := chr(13) || chr(10);
+        strSqlCommand                   Varchar2(32767) :='';
+        strSqlDynamic                   Varchar2(32767) :='';
+        strClientInfo                   Varchar2(100);
+        intRowCount                     Integer;
+        intTotalRowCount                Integer         := 0;
+        numSqlCode                      Number;
+        strSqlErrm                      Varchar2(4000);
+        intTries                        Integer;
+
+BEGIN
+
+strSqlCommand := 'DBMS_APPLICATION_INFO.SET_CLIENT_INFO';
+DBMS_APPLICATION_INFO.SET_CLIENT_INFO (strProcessName);
+
+strSqlCommand := 'SMT_PROCESS_LOG.PROCESS_INIT';
+COMMON_OWNER.SMT_PROCESS_LOG.PROCESS_INIT
+        (
+                i_MartId                => strMartId,
+                i_ProcessName           => strProcessName,
+                i_ProcessStartTime      => dtProcessStart,
+                o_ProcessSid            => intProcessSid
+        );
+
+strMessage01    := 'Updating CSSTG_OWNER.UM_STAGE_JOBS';
+COMMON_OWNER.SMT_LOG.PUT_MESSAGE(i_Message => strMessage01);
+
+strSqlCommand   := 'update START_DT on CSSTG_OWNER.UM_STAGE_JOBS';
+update CSSTG_OWNER.UM_STAGE_JOBS
+   set TABLE_STATUS = 'Reading',
+       START_DT = sysdate,
+       END_DT = NULL
+ where TABLE_NAME = 'PS_UM_CA_UMBOS'
+;
+
+strSqlCommand := 'commit';
+commit;
+
+strSqlCommand   := 'update NEW_MAX_SCN on CSSTG_OWNER.UM_STAGE_JOBS';
+update CSSTG_OWNER.UM_STAGE_JOBS
+   set TABLE_STATUS = 'Merging',
+       NEW_MAX_SCN = (select /*+ full(S) */ max(ORA_ROWSCN) from SYSADM.PS_UM_CA_UMBOS@SASOURCE S)
+ where TABLE_NAME = 'PS_UM_CA_UMBOS'
+;
+
+strSqlCommand := 'commit';
+commit;
+
+strMessage01    := 'Merging data into CSSTG_OWNER.PS_UM_CA_UMBOS';
+COMMON_OWNER.SMT_LOG.PUT_MESSAGE(i_Message => strMessage01);
+
+strSqlCommand   := 'merge into CSSTG_OWNER.PS_UM_CA_UMBOS';
+merge /*+ use_hash(S,T) */ into CSSTG_OWNER.PS_UM_CA_UMBOS T
+using (select /*+ full(S) */
+    nvl(trim(UM_ADM_USERID),'-') UM_ADM_USERID, 
+    nvl(trim(INSTITUTION),'-') INSTITUTION, 
+    nvl(trim(UM_ADM_REC_NBR),'-') UM_ADM_REC_NBR, 
+    UM_CA_FIRST_NAME UM_CA_FIRST_NAME,
+    UM_CA_MIDDLE_NAME UM_CA_MIDDLE_NAME,
+    UM_CA_LAST_NAME UM_CA_LAST_NAME,
+    UM_CA_SUFFIX UM_CA_SUFFIX,
+    UM_CA_SEX UM_CA_SEX,
+    UM_CA_FORMER_LAST UM_CA_FORMER_LAST,
+    UM_CA_PREF_NAME UM_CA_PREF_NAME,
+    UM_CA_DOB UM_CA_DOB,
+    UM_CA_CITIZEN_STAT UM_CA_CITIZEN_STAT,
+    UM_CA_CITIZENSHIPS UM_CA_CITIZENSHIPS,
+    UM_CA_VISA_TYPE UM_CA_VISA_TYPE,
+    UM_CA_ALIEN_RG_NBR UM_CA_ALIEN_RG_NBR,
+    UM_CA_VISA_NUMBER UM_CA_VISA_NUMBER,
+    UM_CA_SSN UM_CA_SSN,
+    UM_CA_BIRTH_CITY UM_CA_BIRTH_CITY,
+    UM_CA_BIRTH_CNTRY UM_CA_BIRTH_CNTRY,
+    UM_CA_MILITRY_STAT UM_CA_MILITRY_STAT,
+    UM_CA_HISP_LATINO UM_CA_HISP_LATINO,
+    UM_CA_HISP_LAT_BCK UM_CA_HISP_LAT_BCK,
+    UM_CA_BACKGROUND UM_CA_BACKGROUND,
+    UM_CA_AMER_IND_BCK UM_CA_AMER_IND_BCK,
+    UM_CA_AMER_IND_OTH UM_CA_AMER_IND_OTH,
+    UM_CA_ASIAN_BCK UM_CA_ASIAN_BCK,
+    UM_CA_E_ASIA_OTH UM_CA_E_ASIA_OTH,
+    UM_CA_S_ASIA_OTH UM_CA_S_ASIA_OTH,
+    UM_CA_SE_ASIA_OTH UM_CA_SE_ASIA_OTH,
+    UM_CA_AFRICAN_BCK UM_CA_AFRICAN_BCK,
+    UM_CA_AFRICAN_OTH UM_CA_AFRICAN_OTH,
+    UM_CA_HAWAIIAN_BCK UM_CA_HAWAIIAN_BCK,
+    UM_CA_HAWAIIAN_OTH UM_CA_HAWAIIAN_OTH,
+    UM_CA_WHITE_BCK UM_CA_WHITE_BCK,
+    UM_CA_PERM_ADDR1 UM_CA_PERM_ADDR1,
+    UM_CA_PERM_ADDR2 UM_CA_PERM_ADDR2,
+    UM_CA_PERM_ADDR3 UM_CA_PERM_ADDR3,
+    UM_CA_PERM_CITY UM_CA_PERM_CITY,
+    UM_CA_PERM_STATE UM_CA_PERM_STATE,
+    UM_CA_PERM_ZIP UM_CA_PERM_ZIP,
+    UM_CA_PERM_COUNTRY UM_CA_PERM_COUNTRY,
+    UM_CA_PREF_PHONE UM_CA_PREF_PHONE,
+    UM_CA_ALT_PHONE UM_CA_ALT_PHONE,
+    UM_CA_EMAIL_ADDR UM_CA_EMAIL_ADDR,
+    UM_CA_CURR_ADDR1 UM_CA_CURR_ADDR1,
+    UM_CA_CURR_ADDR2 UM_CA_CURR_ADDR2,
+    UM_CA_CURR_ADDR3 UM_CA_CURR_ADDR3,
+    UM_CA_CURR_CITY UM_CA_CURR_CITY,
+    UM_CA_CURR_STATE UM_CA_CURR_STATE,
+    UM_CA_CURR_ZIP UM_CA_CURR_ZIP,
+    UM_CA_CURR_COUNTRY UM_CA_CURR_COUNTRY,
+    UM_CA_ALT_ADR_TODT UM_CA_ALT_ADR_TODT,
+    UM_CA_ALT_ADDR_FRM UM_CA_ALT_ADDR_FRM,
+    UM_CA_SCHL_CEEBCD UM_CA_SCHL_CEEBCD,
+    UM_CA_SCHL_CEEBNM UM_CA_SCHL_CEEBNM,
+    UM_CA_ENTRY_DATE UM_CA_ENTRY_DATE,
+    UM_CA_GRAD_DATE UM_CA_GRAD_DATE,
+    UM_CA_SCHL_TYPECD UM_CA_SCHL_TYPECD,
+    UM_CA_SCHL_STATE UM_CA_SCHL_STATE,
+    UM_CA_SCHL_COUNTRY UM_CA_SCHL_COUNTRY,
+    UM_CA_COUNSLR_PFIX UM_CA_COUNSLR_PFIX,
+    UM_CA_COUNSLR_FNAM UM_CA_COUNSLR_FNAM,
+    UM_CA_COUNSLR_LNAM UM_CA_COUNSLR_LNAM,
+    UM_CA_COUNSLR_EML UM_CA_COUNSLR_EML,
+    UM_CA_COUNSLR_PH UM_CA_COUNSLR_PH,
+    UM_CA_GED_DATE UM_CA_GED_DATE,
+    UM_CA_COL1_CEEBCD UM_CA_COL1_CEEBCD,
+    UM_CA_COL1_CEEBNM UM_CA_COL1_CEEBNM,
+    UM_CA_COL1_FROM UM_CA_COL1_FROM,
+    UM_CA_COL1_TODT UM_CA_COL1_TODT,
+    UM_CA_COL1_DEG UM_CA_COL1_DEG,
+    UM_CA_COL2_CEEBCD UM_CA_COL2_CEEBCD,
+    UM_CA_COL2_CEEBNM UM_CA_COL2_CEEBNM,
+    UM_CA_COL2_FROM UM_CA_COL2_FROM,
+    UM_CA_COL2_TODT UM_CA_COL2_TODT,
+    UM_CA_COL2_DEG UM_CA_COL2_DEG,
+    UM_CA_COL3_CEEBCD UM_CA_COL3_CEEBCD,
+    UM_CA_COL3_CEEBNM UM_CA_COL3_CEEBNM,
+    UM_CA_COL3_FROM UM_CA_COL3_FROM,
+    UM_CA_COL3_TODT UM_CA_COL3_TODT,
+    UM_CA_COL3_DEG UM_CA_COL3_DEG,
+    UM_CA_SCHL_DISCIPL UM_CA_SCHL_DISCIPL,
+    UM_CA_CRIMNL_HIST UM_CA_CRIMNL_HIST,
+    UM_CA_APP_SUB_DT UM_CA_APP_SUB_DT,
+    UM_CA_COM_APP_ID UM_CA_COM_APP_ID,
+    UM_CA_APP_CREAT_DT UM_CA_APP_CREAT_DT,
+    UM_CA_APP_PRINT_DT UM_CA_APP_PRINT_DT,
+    UM_CA_APP_EXPRT_DT UM_CA_APP_EXPRT_DT,
+    UM_CA_PAY_STATUS UM_CA_PAY_STATUS,
+    UM_CA_PAY_TYPE UM_CA_PAY_TYPE,
+    UM_CA_PAY_DT UM_CA_PAY_DT,
+    UM_CA_PAY_AMT UM_CA_PAY_AMT,
+    UM_CA_TRANS_ID UM_CA_TRANS_ID,
+    UM_CA_ORDER_ID UM_CA_ORDER_ID,
+    UM_CA_PRNT_RES_TYP UM_CA_PRNT_RES_TYP,
+    UM_CA_INSTATE_TUIT UM_CA_INSTATE_TUIT,
+    UM_CA_LANG1 UM_CA_LANG1,
+    UM_CA_LAN1_PROF UM_CA_LAN1_PROF,
+    UM_CA_LANG2 UM_CA_LANG2,
+    UM_CA_LAN2_PROF UM_CA_LAN2_PROF,
+    UM_CA_LANG3 UM_CA_LANG3,
+    UM_CA_LAN3_PROF UM_CA_LAN3_PROF,
+    UM_CA_LANG4 UM_CA_LANG4,
+    UM_CA_LAN4_PROF UM_CA_LAN4_PROF,
+    UM_CA_LANG5 UM_CA_LANG5,
+    UM_CA_LAN5_PROF UM_CA_LAN5_PROF,
+    UM_CA_ACAD1_QUES1 UM_CA_ACAD1_QUES1,
+    UM_CA_ACAD2_QUEST1 UM_CA_ACAD2_QUEST1,
+    UM_CA_PRF_STRT_TRM UM_CA_PRF_STRT_TRM,
+    UM_CA_STUDENT_TYPE UM_CA_STUDENT_TYPE,
+    UM_CA_ADM_PLAN UM_CA_ADM_PLAN,
+    UM_CA_DACA UM_CA_DACA,
+    UM_CA_OTH_COLLEGE UM_CA_OTH_COLLEGE,
+    UM_CA_SCHL_FEE_WAV UM_CA_SCHL_FEE_WAV,
+    UM_CA_TST_SCOR_EXP UM_CA_TST_SCOR_EXP,
+    UM_CA_FIN_AID UM_CA_FIN_AID,
+    UM_CA_PREV_APPLIED UM_CA_PREV_APPLIED,
+    UM_CA_PREV_APPL_DT UM_CA_PREV_APPL_DT,
+    UM_CA_CONTACT1 UM_CA_CONTACT1,
+    UM_CA_CONTACT2 UM_CA_CONTACT2,
+    UM_CA_CONTACT3 UM_CA_CONTACT3,
+    UM_CA_CONTACT4 UM_CA_CONTACT4,
+    UM_CA_CONTACT5 UM_CA_CONTACT5,
+    UM_CA_CONTACT6 UM_CA_CONTACT6,
+    UM_CA_CONTACT7 UM_CA_CONTACT7,
+    UM_CA_CONTACT8 UM_CA_CONTACT8,
+    UM_CA_CONTACT9 UM_CA_CONTACT9,
+    UM_CA_CONTACT10 UM_CA_CONTACT10,
+    UM_CA_CONTCT_CNSNT UM_CA_CONTCT_CNSNT,
+    UM_CA_PHON_NBR UM_CA_PHON_NBR,
+    UM_CA_AT_REL_ATTEN UM_CA_AT_REL_ATTEN,
+    UM_CA_ALT_REL_DET UM_CA_ALT_REL_DET,
+    UM_CA_STATE_RES UM_CA_STATE_RES,
+    UM_CA_STATE_CURR UM_CA_STATE_CURR,
+    UM_CA_CURR_ADDR UM_CA_CURR_ADDR,
+    UM_CA_ID_CARD UM_CA_ID_CARD,
+    UM_CA_ID_CARD_ST UM_CA_ID_CARD_ST,
+    UM_CA_ID_CARD_DT UM_CA_ID_CARD_DT,
+    UM_CA_APP_EMPLOYED UM_CA_APP_EMPLOYED,
+    UM_CA_APP_OFFCE_ST UM_CA_APP_OFFCE_ST,
+    UM_CA_TAX_LST_YEAR UM_CA_TAX_LST_YEAR,
+    UM_CA_TAX_LST_Y_ST UM_CA_TAX_LST_Y_ST,
+    UM_CA_TAX_THIS_YR UM_CA_TAX_THIS_YR,
+    UM_CA_TAX_YR_STATE UM_CA_TAX_YR_STATE,
+    UM_CA_PARNT_RES_TY UM_CA_PARNT_RES_TY,
+    UM_CA_PRNT_CUR_ADR UM_CA_PRNT_CUR_ADR,
+    UM_CA_PARNT_CITIZN UM_CA_PARNT_CITIZN,
+    UM_CA_PARNT_CITSHP UM_CA_PARNT_CITSHP,
+    UM_CA_PARNT_VISA UM_CA_PARNT_VISA,
+    UM_CA_PARNT_VSA_TY UM_CA_PARNT_VSA_TY,
+    UM_CA_P_TAX_LST_YR UM_CA_P_TAX_LST_YR,
+    UM_CA_P_TAX_LST_ST UM_CA_P_TAX_LST_ST,
+    UM_CA_P_CLAIMED_AP UM_CA_P_CLAIMED_AP,
+    UM_CA_PARNT_TAX UM_CA_PARNT_TAX,
+    UM_CA_PARNT_TAX_ST UM_CA_PARNT_TAX_ST,
+    UM_CA_P_CLAIM_AP_T UM_CA_P_CLAIM_AP_T,
+    UM_CA_SELF_RPT_GPA,     -- Nov 2019  
+    UM_CA_GPA_SCALE,        -- Nov 2019 
+    UM_CA_GPA_WEIGHT,       -- Nov 2019 
+    PROCESS_INSTANCE PROCESS_INSTANCE,
+	UM_CA_COVID19,          -- Aug 2020
+	UM_CA_GENDER_IDENT,     -- Jan 2021
+    to_date(to_char(case when DATETIME_CREATED < '01-JAN-1800' then NULL 
+                    else DATETIME_CREATED end,'MM/DD/YYYY HH24:MI:SS'),'MM/DD/YYYY HH24:MI:SS') DATETIME_CREATED
+from SYSADM.PS_UM_CA_UMBOS@SASOURCE S 
+where ORA_ROWSCN > (select OLD_MAX_SCN from CSSTG_OWNER.UM_STAGE_JOBS where TABLE_NAME = 'PS_UM_CA_UMBOS') ) S
+ on ( 
+    T.UM_ADM_USERID = S.UM_ADM_USERID and 
+    T.INSTITUTION = S.INSTITUTION and 
+    T.UM_ADM_REC_NBR = S.UM_ADM_REC_NBR and
+    T.DATETIME_CREATED = S.DATETIME_CREATED and  
+    T.SRC_SYS_ID = 'CS90')
+    when matched then update set
+    T.UM_CA_FIRST_NAME = S.UM_CA_FIRST_NAME,
+    T.UM_CA_MIDDLE_NAME = S.UM_CA_MIDDLE_NAME,
+    T.UM_CA_LAST_NAME = S.UM_CA_LAST_NAME,
+    T.UM_CA_SUFFIX = S.UM_CA_SUFFIX,
+    T.UM_CA_SEX = S.UM_CA_SEX,
+    T.UM_CA_FORMER_LAST = S.UM_CA_FORMER_LAST,
+    T.UM_CA_PREF_NAME = S.UM_CA_PREF_NAME,
+    T.UM_CA_DOB = S.UM_CA_DOB,
+    T.UM_CA_CITIZEN_STAT = S.UM_CA_CITIZEN_STAT,
+    T.UM_CA_CITIZENSHIPS = S.UM_CA_CITIZENSHIPS,
+    T.UM_CA_VISA_TYPE = S.UM_CA_VISA_TYPE,
+    T.UM_CA_ALIEN_RG_NBR = S.UM_CA_ALIEN_RG_NBR,
+    T.UM_CA_VISA_NUMBER = S.UM_CA_VISA_NUMBER,
+    T.UM_CA_SSN = S.UM_CA_SSN,
+    T.UM_CA_BIRTH_CITY = S.UM_CA_BIRTH_CITY,
+    T.UM_CA_BIRTH_CNTRY = S.UM_CA_BIRTH_CNTRY,
+    T.UM_CA_MILITRY_STAT = S.UM_CA_MILITRY_STAT,
+    T.UM_CA_HISP_LATINO = S.UM_CA_HISP_LATINO,
+    T.UM_CA_HISP_LAT_BCK = S.UM_CA_HISP_LAT_BCK,
+    T.UM_CA_BACKGROUND = S.UM_CA_BACKGROUND,
+    T.UM_CA_AMER_IND_BCK = S.UM_CA_AMER_IND_BCK,
+    T.UM_CA_AMER_IND_OTH = S.UM_CA_AMER_IND_OTH,
+    T.UM_CA_ASIAN_BCK = S.UM_CA_ASIAN_BCK,
+    T.UM_CA_E_ASIA_OTH = S.UM_CA_E_ASIA_OTH,
+    T.UM_CA_S_ASIA_OTH = S.UM_CA_S_ASIA_OTH,
+    T.UM_CA_SE_ASIA_OTH = S.UM_CA_SE_ASIA_OTH,
+    T.UM_CA_AFRICAN_BCK = S.UM_CA_AFRICAN_BCK,
+    T.UM_CA_AFRICAN_OTH = S.UM_CA_AFRICAN_OTH,
+    T.UM_CA_HAWAIIAN_BCK = S.UM_CA_HAWAIIAN_BCK,
+    T.UM_CA_HAWAIIAN_OTH = S.UM_CA_HAWAIIAN_OTH,
+    T.UM_CA_WHITE_BCK = S.UM_CA_WHITE_BCK,
+    T.UM_CA_PERM_ADDR1 = S.UM_CA_PERM_ADDR1,
+    T.UM_CA_PERM_ADDR2 = S.UM_CA_PERM_ADDR2,
+    T.UM_CA_PERM_ADDR3 = S.UM_CA_PERM_ADDR3,
+    T.UM_CA_PERM_CITY = S.UM_CA_PERM_CITY,
+    T.UM_CA_PERM_STATE = S.UM_CA_PERM_STATE,
+    T.UM_CA_PERM_ZIP = S.UM_CA_PERM_ZIP,
+    T.UM_CA_PERM_COUNTRY = S.UM_CA_PERM_COUNTRY,
+    T.UM_CA_PREF_PHONE = S.UM_CA_PREF_PHONE,
+    T.UM_CA_ALT_PHONE = S.UM_CA_ALT_PHONE,
+    T.UM_CA_EMAIL_ADDR = S.UM_CA_EMAIL_ADDR,
+    T.UM_CA_CURR_ADDR1 = S.UM_CA_CURR_ADDR1,
+    T.UM_CA_CURR_ADDR2 = S.UM_CA_CURR_ADDR2,
+    T.UM_CA_CURR_ADDR3 = S.UM_CA_CURR_ADDR3,
+    T.UM_CA_CURR_CITY = S.UM_CA_CURR_CITY,
+    T.UM_CA_CURR_STATE = S.UM_CA_CURR_STATE,
+    T.UM_CA_CURR_ZIP = S.UM_CA_CURR_ZIP,
+    T.UM_CA_CURR_COUNTRY = S.UM_CA_CURR_COUNTRY,
+    T.UM_CA_ALT_ADR_TODT = S.UM_CA_ALT_ADR_TODT,
+    T.UM_CA_ALT_ADDR_FRM = S.UM_CA_ALT_ADDR_FRM,
+    T.UM_CA_SCHL_CEEBCD = S.UM_CA_SCHL_CEEBCD,
+    T.UM_CA_SCHL_CEEBNM = S.UM_CA_SCHL_CEEBNM,
+    T.UM_CA_ENTRY_DATE = S.UM_CA_ENTRY_DATE,
+    T.UM_CA_GRAD_DATE = S.UM_CA_GRAD_DATE,
+    T.UM_CA_SCHL_TYPECD = S.UM_CA_SCHL_TYPECD,
+    T.UM_CA_SCHL_STATE = S.UM_CA_SCHL_STATE,
+    T.UM_CA_SCHL_COUNTRY = S.UM_CA_SCHL_COUNTRY,
+    T.UM_CA_COUNSLR_PFIX = S.UM_CA_COUNSLR_PFIX,
+    T.UM_CA_COUNSLR_FNAM = S.UM_CA_COUNSLR_FNAM,
+    T.UM_CA_COUNSLR_LNAM = S.UM_CA_COUNSLR_LNAM,
+    T.UM_CA_COUNSLR_EML = S.UM_CA_COUNSLR_EML,
+    T.UM_CA_COUNSLR_PH = S.UM_CA_COUNSLR_PH,
+    T.UM_CA_GED_DATE = S.UM_CA_GED_DATE,
+    T.UM_CA_COL1_CEEBCD = S.UM_CA_COL1_CEEBCD,
+    T.UM_CA_COL1_CEEBNM = S.UM_CA_COL1_CEEBNM,
+    T.UM_CA_COL1_FROM = S.UM_CA_COL1_FROM,
+    T.UM_CA_COL1_TODT = S.UM_CA_COL1_TODT,
+    T.UM_CA_COL1_DEG = S.UM_CA_COL1_DEG,
+    T.UM_CA_COL2_CEEBCD = S.UM_CA_COL2_CEEBCD,
+    T.UM_CA_COL2_CEEBNM = S.UM_CA_COL2_CEEBNM,
+    T.UM_CA_COL2_FROM = S.UM_CA_COL2_FROM,
+    T.UM_CA_COL2_TODT = S.UM_CA_COL2_TODT,
+    T.UM_CA_COL2_DEG = S.UM_CA_COL2_DEG,
+    T.UM_CA_COL3_CEEBCD = S.UM_CA_COL3_CEEBCD,
+    T.UM_CA_COL3_CEEBNM = S.UM_CA_COL3_CEEBNM,
+    T.UM_CA_COL3_FROM = S.UM_CA_COL3_FROM,
+    T.UM_CA_COL3_TODT = S.UM_CA_COL3_TODT,
+    T.UM_CA_COL3_DEG = S.UM_CA_COL3_DEG,
+    T.UM_CA_SCHL_DISCIPL = S.UM_CA_SCHL_DISCIPL,
+    T.UM_CA_CRIMNL_HIST = S.UM_CA_CRIMNL_HIST,
+    T.UM_CA_APP_SUB_DT = S.UM_CA_APP_SUB_DT,
+    T.UM_CA_COM_APP_ID = S.UM_CA_COM_APP_ID,
+    T.UM_CA_APP_CREAT_DT = S.UM_CA_APP_CREAT_DT,
+    T.UM_CA_APP_PRINT_DT = S.UM_CA_APP_PRINT_DT,
+    T.UM_CA_APP_EXPRT_DT = S.UM_CA_APP_EXPRT_DT,
+    T.UM_CA_PAY_STATUS = S.UM_CA_PAY_STATUS,
+    T.UM_CA_PAY_TYPE = S.UM_CA_PAY_TYPE,
+    T.UM_CA_PAY_DT = S.UM_CA_PAY_DT,
+    T.UM_CA_PAY_AMT = S.UM_CA_PAY_AMT,
+    T.UM_CA_TRANS_ID = S.UM_CA_TRANS_ID,
+    T.UM_CA_ORDER_ID = S.UM_CA_ORDER_ID,
+    T.UM_CA_PRNT_RES_TYP = S.UM_CA_PRNT_RES_TYP,
+    T.UM_CA_INSTATE_TUIT = S.UM_CA_INSTATE_TUIT,
+    T.UM_CA_LANG1 = S.UM_CA_LANG1,
+    T.UM_CA_LAN1_PROF = S.UM_CA_LAN1_PROF,
+    T.UM_CA_LANG2 = S.UM_CA_LANG2,
+    T.UM_CA_LAN2_PROF = S.UM_CA_LAN2_PROF,
+    T.UM_CA_LANG3 = S.UM_CA_LANG3,
+    T.UM_CA_LAN3_PROF = S.UM_CA_LAN3_PROF,
+    T.UM_CA_LANG4 = S.UM_CA_LANG4,
+    T.UM_CA_LAN4_PROF = S.UM_CA_LAN4_PROF,
+    T.UM_CA_LANG5 = S.UM_CA_LANG5,
+    T.UM_CA_LAN5_PROF = S.UM_CA_LAN5_PROF,
+    T.UM_CA_ACAD1_QUES1 = S.UM_CA_ACAD1_QUES1,
+    T.UM_CA_ACAD2_QUEST1 = S.UM_CA_ACAD2_QUEST1,
+    T.UM_CA_PRF_STRT_TRM = S.UM_CA_PRF_STRT_TRM,
+    T.UM_CA_STUDENT_TYPE = S.UM_CA_STUDENT_TYPE,
+    T.UM_CA_ADM_PLAN = S.UM_CA_ADM_PLAN,
+    T.UM_CA_DACA = S.UM_CA_DACA,
+    T.UM_CA_OTH_COLLEGE = S.UM_CA_OTH_COLLEGE,
+    T.UM_CA_SCHL_FEE_WAV = S.UM_CA_SCHL_FEE_WAV,
+    T.UM_CA_TST_SCOR_EXP = S.UM_CA_TST_SCOR_EXP,
+    T.UM_CA_FIN_AID = S.UM_CA_FIN_AID,
+    T.UM_CA_PREV_APPLIED = S.UM_CA_PREV_APPLIED,
+    T.UM_CA_PREV_APPL_DT = S.UM_CA_PREV_APPL_DT,
+    T.UM_CA_CONTACT1 = S.UM_CA_CONTACT1,
+    T.UM_CA_CONTACT2 = S.UM_CA_CONTACT2,
+    T.UM_CA_CONTACT3 = S.UM_CA_CONTACT3,
+    T.UM_CA_CONTACT4 = S.UM_CA_CONTACT4,
+    T.UM_CA_CONTACT5 = S.UM_CA_CONTACT5,
+    T.UM_CA_CONTACT6 = S.UM_CA_CONTACT6,
+    T.UM_CA_CONTACT7 = S.UM_CA_CONTACT7,
+    T.UM_CA_CONTACT8 = S.UM_CA_CONTACT8,
+    T.UM_CA_CONTACT9 = S.UM_CA_CONTACT9,
+    T.UM_CA_CONTACT10 = S.UM_CA_CONTACT10,
+    T.UM_CA_CONTCT_CNSNT = S.UM_CA_CONTCT_CNSNT,
+    T.UM_CA_PHON_NBR = S.UM_CA_PHON_NBR,
+    T.UM_CA_AT_REL_ATTEN = S.UM_CA_AT_REL_ATTEN,
+    T.UM_CA_ALT_REL_DET = S.UM_CA_ALT_REL_DET,
+    T.UM_CA_STATE_RES = S.UM_CA_STATE_RES,
+    T.UM_CA_STATE_CURR = S.UM_CA_STATE_CURR,
+    T.UM_CA_CURR_ADDR = S.UM_CA_CURR_ADDR,
+    T.UM_CA_ID_CARD = S.UM_CA_ID_CARD,
+    T.UM_CA_ID_CARD_ST = S.UM_CA_ID_CARD_ST,
+    T.UM_CA_ID_CARD_DT = S.UM_CA_ID_CARD_DT,
+    T.UM_CA_APP_EMPLOYED = S.UM_CA_APP_EMPLOYED,
+    T.UM_CA_APP_OFFCE_ST = S.UM_CA_APP_OFFCE_ST,
+    T.UM_CA_TAX_LST_YEAR = S.UM_CA_TAX_LST_YEAR,
+    T.UM_CA_TAX_LST_Y_ST = S.UM_CA_TAX_LST_Y_ST,
+    T.UM_CA_TAX_THIS_YR = S.UM_CA_TAX_THIS_YR,
+    T.UM_CA_TAX_YR_STATE = S.UM_CA_TAX_YR_STATE,
+    T.UM_CA_PARNT_RES_TY = S.UM_CA_PARNT_RES_TY,
+    T.UM_CA_PRNT_CUR_ADR = S.UM_CA_PRNT_CUR_ADR,
+    T.UM_CA_PARNT_CITIZN = S.UM_CA_PARNT_CITIZN,
+    T.UM_CA_PARNT_CITSHP = S.UM_CA_PARNT_CITSHP,
+    T.UM_CA_PARNT_VISA = S.UM_CA_PARNT_VISA,
+    T.UM_CA_PARNT_VSA_TY = S.UM_CA_PARNT_VSA_TY,
+    T.UM_CA_P_TAX_LST_YR = S.UM_CA_P_TAX_LST_YR,
+    T.UM_CA_P_TAX_LST_ST = S.UM_CA_P_TAX_LST_ST,
+    T.UM_CA_P_CLAIMED_AP = S.UM_CA_P_CLAIMED_AP,
+    T.UM_CA_PARNT_TAX = S.UM_CA_PARNT_TAX,
+    T.UM_CA_PARNT_TAX_ST = S.UM_CA_PARNT_TAX_ST,
+    T.UM_CA_P_CLAIM_AP_T = S.UM_CA_P_CLAIM_AP_T,
+    T.UM_CA_SELF_RPT_GPA = S.UM_CA_SELF_RPT_GPA,     -- Nov 2019  
+    T.UM_CA_GPA_SCALE = S.UM_CA_GPA_SCALE,           -- Nov 2019 
+    T.UM_CA_GPA_WEIGHT = S.UM_CA_GPA_WEIGHT,         -- Nov 2019 
+    T.PROCESS_INSTANCE = S.PROCESS_INSTANCE,
+	T.UM_CA_COVID19 = S.UM_CA_COVID19,               -- Aug 2020
+	T.UM_CA_GENDER_IDENT = S.UM_CA_GENDER_IDENT,     -- Jam 2021
+    T.DATA_ORIGIN = 'S',
+    T.LASTUPD_EW_DTTM = SYSDATE,
+    T.BATCH_SID = 1234
+where 
+    nvl(trim(T.UM_CA_FIRST_NAME),0) <> nvl(trim(S.UM_CA_FIRST_NAME),0) or 
+    nvl(trim(T.UM_CA_MIDDLE_NAME),0) <> nvl(trim(S.UM_CA_MIDDLE_NAME),0) or 
+    nvl(trim(T.UM_CA_LAST_NAME),0) <> nvl(trim(S.UM_CA_LAST_NAME),0) or 
+    nvl(trim(T.UM_CA_SUFFIX),0) <> nvl(trim(S.UM_CA_SUFFIX),0) or 
+    nvl(trim(T.UM_CA_SEX),0) <> nvl(trim(S.UM_CA_SEX),0) or 
+    nvl(trim(T.UM_CA_FORMER_LAST),0) <> nvl(trim(S.UM_CA_FORMER_LAST),0) or 
+    nvl(trim(T.UM_CA_PREF_NAME),0) <> nvl(trim(S.UM_CA_PREF_NAME),0) or 
+    nvl(trim(T.UM_CA_DOB),0) <> nvl(trim(S.UM_CA_DOB),0) or 
+    nvl(trim(T.UM_CA_CITIZEN_STAT),0) <> nvl(trim(S.UM_CA_CITIZEN_STAT),0) or 
+    nvl(trim(T.UM_CA_CITIZENSHIPS),0) <> nvl(trim(S.UM_CA_CITIZENSHIPS),0) or 
+    nvl(trim(T.UM_CA_VISA_TYPE),0) <> nvl(trim(S.UM_CA_VISA_TYPE),0) or 
+    nvl(trim(T.UM_CA_ALIEN_RG_NBR),0) <> nvl(trim(S.UM_CA_ALIEN_RG_NBR),0) or 
+    nvl(trim(T.UM_CA_VISA_NUMBER),0) <> nvl(trim(S.UM_CA_VISA_NUMBER),0) or 
+    nvl(trim(T.UM_CA_SSN),0) <> nvl(trim(S.UM_CA_SSN),0) or 
+    nvl(trim(T.UM_CA_BIRTH_CITY),0) <> nvl(trim(S.UM_CA_BIRTH_CITY),0) or 
+    nvl(trim(T.UM_CA_BIRTH_CNTRY),0) <> nvl(trim(S.UM_CA_BIRTH_CNTRY),0) or 
+    nvl(trim(T.UM_CA_MILITRY_STAT),0) <> nvl(trim(S.UM_CA_MILITRY_STAT),0) or 
+    nvl(trim(T.UM_CA_HISP_LATINO),0) <> nvl(trim(S.UM_CA_HISP_LATINO),0) or 
+    nvl(trim(T.UM_CA_HISP_LAT_BCK),0) <> nvl(trim(S.UM_CA_HISP_LAT_BCK),0) or 
+    nvl(trim(T.UM_CA_BACKGROUND),0) <> nvl(trim(S.UM_CA_BACKGROUND),0) or 
+    nvl(trim(T.UM_CA_AMER_IND_BCK),0) <> nvl(trim(S.UM_CA_AMER_IND_BCK),0) or 
+    nvl(trim(T.UM_CA_AMER_IND_OTH),0) <> nvl(trim(S.UM_CA_AMER_IND_OTH),0) or 
+    nvl(trim(T.UM_CA_ASIAN_BCK),0) <> nvl(trim(S.UM_CA_ASIAN_BCK),0) or 
+    nvl(trim(T.UM_CA_E_ASIA_OTH),0) <> nvl(trim(S.UM_CA_E_ASIA_OTH),0) or 
+    nvl(trim(T.UM_CA_S_ASIA_OTH),0) <> nvl(trim(S.UM_CA_S_ASIA_OTH),0) or 
+    nvl(trim(T.UM_CA_SE_ASIA_OTH),0) <> nvl(trim(S.UM_CA_SE_ASIA_OTH),0) or 
+    nvl(trim(T.UM_CA_AFRICAN_BCK),0) <> nvl(trim(S.UM_CA_AFRICAN_BCK),0) or 
+    nvl(trim(T.UM_CA_AFRICAN_OTH),0) <> nvl(trim(S.UM_CA_AFRICAN_OTH),0) or 
+    nvl(trim(T.UM_CA_HAWAIIAN_BCK),0) <> nvl(trim(S.UM_CA_HAWAIIAN_BCK),0) or 
+    nvl(trim(T.UM_CA_HAWAIIAN_OTH),0) <> nvl(trim(S.UM_CA_HAWAIIAN_OTH),0) or 
+    nvl(trim(T.UM_CA_WHITE_BCK),0) <> nvl(trim(S.UM_CA_WHITE_BCK),0) or 
+    nvl(trim(T.UM_CA_PERM_ADDR1),0) <> nvl(trim(S.UM_CA_PERM_ADDR1),0) or 
+    nvl(trim(T.UM_CA_PERM_ADDR2),0) <> nvl(trim(S.UM_CA_PERM_ADDR2),0) or 
+    nvl(trim(T.UM_CA_PERM_ADDR3),0) <> nvl(trim(S.UM_CA_PERM_ADDR3),0) or 
+    nvl(trim(T.UM_CA_PERM_CITY),0) <> nvl(trim(S.UM_CA_PERM_CITY),0) or 
+    nvl(trim(T.UM_CA_PERM_STATE),0) <> nvl(trim(S.UM_CA_PERM_STATE),0) or 
+    nvl(trim(T.UM_CA_PERM_ZIP),0) <> nvl(trim(S.UM_CA_PERM_ZIP),0) or 
+    nvl(trim(T.UM_CA_PERM_COUNTRY),0) <> nvl(trim(S.UM_CA_PERM_COUNTRY),0) or 
+    nvl(trim(T.UM_CA_PREF_PHONE),0) <> nvl(trim(S.UM_CA_PREF_PHONE),0) or 
+    nvl(trim(T.UM_CA_ALT_PHONE),0) <> nvl(trim(S.UM_CA_ALT_PHONE),0) or 
+    nvl(trim(T.UM_CA_EMAIL_ADDR),0) <> nvl(trim(S.UM_CA_EMAIL_ADDR),0) or 
+    nvl(trim(T.UM_CA_CURR_ADDR1),0) <> nvl(trim(S.UM_CA_CURR_ADDR1),0) or 
+    nvl(trim(T.UM_CA_CURR_ADDR2),0) <> nvl(trim(S.UM_CA_CURR_ADDR2),0) or 
+    nvl(trim(T.UM_CA_CURR_ADDR3),0) <> nvl(trim(S.UM_CA_CURR_ADDR3),0) or 
+    nvl(trim(T.UM_CA_CURR_CITY),0) <> nvl(trim(S.UM_CA_CURR_CITY),0) or 
+    nvl(trim(T.UM_CA_CURR_STATE),0) <> nvl(trim(S.UM_CA_CURR_STATE),0) or 
+    nvl(trim(T.UM_CA_CURR_ZIP),0) <> nvl(trim(S.UM_CA_CURR_ZIP),0) or 
+    nvl(trim(T.UM_CA_CURR_COUNTRY),0) <> nvl(trim(S.UM_CA_CURR_COUNTRY),0) or 
+    nvl(trim(T.UM_CA_ALT_ADR_TODT),0) <> nvl(trim(S.UM_CA_ALT_ADR_TODT),0) or 
+    nvl(trim(T.UM_CA_ALT_ADDR_FRM),0) <> nvl(trim(S.UM_CA_ALT_ADDR_FRM),0) or 
+    nvl(trim(T.UM_CA_SCHL_CEEBCD),0) <> nvl(trim(S.UM_CA_SCHL_CEEBCD),0) or 
+    nvl(trim(T.UM_CA_SCHL_CEEBNM),0) <> nvl(trim(S.UM_CA_SCHL_CEEBNM),0) or 
+    nvl(trim(T.UM_CA_ENTRY_DATE),0) <> nvl(trim(S.UM_CA_ENTRY_DATE),0) or 
+    nvl(trim(T.UM_CA_GRAD_DATE),0) <> nvl(trim(S.UM_CA_GRAD_DATE),0) or 
+    nvl(trim(T.UM_CA_SCHL_TYPECD),0) <> nvl(trim(S.UM_CA_SCHL_TYPECD),0) or 
+    nvl(trim(T.UM_CA_SCHL_STATE),0) <> nvl(trim(S.UM_CA_SCHL_STATE),0) or 
+    nvl(trim(T.UM_CA_SCHL_COUNTRY),0) <> nvl(trim(S.UM_CA_SCHL_COUNTRY),0) or 
+    nvl(trim(T.UM_CA_COUNSLR_PFIX),0) <> nvl(trim(S.UM_CA_COUNSLR_PFIX),0) or 
+    nvl(trim(T.UM_CA_COUNSLR_FNAM),0) <> nvl(trim(S.UM_CA_COUNSLR_FNAM),0) or 
+    nvl(trim(T.UM_CA_COUNSLR_LNAM),0) <> nvl(trim(S.UM_CA_COUNSLR_LNAM),0) or 
+    nvl(trim(T.UM_CA_COUNSLR_EML),0) <> nvl(trim(S.UM_CA_COUNSLR_EML),0) or 
+    nvl(trim(T.UM_CA_COUNSLR_PH),0) <> nvl(trim(S.UM_CA_COUNSLR_PH),0) or 
+    nvl(trim(T.UM_CA_GED_DATE),0) <> nvl(trim(S.UM_CA_GED_DATE),0) or 
+    nvl(trim(T.UM_CA_COL1_CEEBCD),0) <> nvl(trim(S.UM_CA_COL1_CEEBCD),0) or 
+    nvl(trim(T.UM_CA_COL1_CEEBNM),0) <> nvl(trim(S.UM_CA_COL1_CEEBNM),0) or 
+    nvl(trim(T.UM_CA_COL1_FROM),0) <> nvl(trim(S.UM_CA_COL1_FROM),0) or 
+    nvl(trim(T.UM_CA_COL1_TODT),0) <> nvl(trim(S.UM_CA_COL1_TODT),0) or 
+    nvl(trim(T.UM_CA_COL1_DEG),0) <> nvl(trim(S.UM_CA_COL1_DEG),0) or 
+    nvl(trim(T.UM_CA_COL2_CEEBCD),0) <> nvl(trim(S.UM_CA_COL2_CEEBCD),0) or 
+    nvl(trim(T.UM_CA_COL2_CEEBNM),0) <> nvl(trim(S.UM_CA_COL2_CEEBNM),0) or 
+    nvl(trim(T.UM_CA_COL2_FROM),0) <> nvl(trim(S.UM_CA_COL2_FROM),0) or 
+    nvl(trim(T.UM_CA_COL2_TODT),0) <> nvl(trim(S.UM_CA_COL2_TODT),0) or 
+    nvl(trim(T.UM_CA_COL2_DEG),0) <> nvl(trim(S.UM_CA_COL2_DEG),0) or 
+    nvl(trim(T.UM_CA_COL3_CEEBCD),0) <> nvl(trim(S.UM_CA_COL3_CEEBCD),0) or 
+    nvl(trim(T.UM_CA_COL3_CEEBNM),0) <> nvl(trim(S.UM_CA_COL3_CEEBNM),0) or 
+    nvl(trim(T.UM_CA_COL3_FROM),0) <> nvl(trim(S.UM_CA_COL3_FROM),0) or 
+    nvl(trim(T.UM_CA_COL3_TODT),0) <> nvl(trim(S.UM_CA_COL3_TODT),0) or 
+    nvl(trim(T.UM_CA_COL3_DEG),0) <> nvl(trim(S.UM_CA_COL3_DEG),0) or 
+    nvl(trim(T.UM_CA_SCHL_DISCIPL),0) <> nvl(trim(S.UM_CA_SCHL_DISCIPL),0) or 
+    nvl(trim(T.UM_CA_CRIMNL_HIST),0) <> nvl(trim(S.UM_CA_CRIMNL_HIST),0) or 
+    nvl(trim(T.UM_CA_APP_SUB_DT),0) <> nvl(trim(S.UM_CA_APP_SUB_DT),0) or 
+    nvl(trim(T.UM_CA_COM_APP_ID),0) <> nvl(trim(S.UM_CA_COM_APP_ID),0) or 
+    nvl(trim(T.UM_CA_APP_CREAT_DT),0) <> nvl(trim(S.UM_CA_APP_CREAT_DT),0) or 
+    nvl(trim(T.UM_CA_APP_PRINT_DT),0) <> nvl(trim(S.UM_CA_APP_PRINT_DT),0) or 
+    nvl(trim(T.UM_CA_APP_EXPRT_DT),0) <> nvl(trim(S.UM_CA_APP_EXPRT_DT),0) or 
+    nvl(trim(T.UM_CA_PAY_STATUS),0) <> nvl(trim(S.UM_CA_PAY_STATUS),0) or 
+    nvl(trim(T.UM_CA_PAY_TYPE),0) <> nvl(trim(S.UM_CA_PAY_TYPE),0) or 
+    nvl(trim(T.UM_CA_PAY_DT),0) <> nvl(trim(S.UM_CA_PAY_DT),0) or 
+    nvl(trim(T.UM_CA_PAY_AMT),0) <> nvl(trim(S.UM_CA_PAY_AMT),0) or 
+    nvl(trim(T.UM_CA_TRANS_ID),0) <> nvl(trim(S.UM_CA_TRANS_ID),0) or 
+    nvl(trim(T.UM_CA_ORDER_ID),0) <> nvl(trim(S.UM_CA_ORDER_ID),0) or 
+    nvl(trim(T.UM_CA_PRNT_RES_TYP),0) <> nvl(trim(S.UM_CA_PRNT_RES_TYP),0) or 
+    nvl(trim(T.UM_CA_INSTATE_TUIT),0) <> nvl(trim(S.UM_CA_INSTATE_TUIT),0) or 
+    nvl(trim(T.UM_CA_LANG1),0) <> nvl(trim(S.UM_CA_LANG1),0) or 
+    nvl(trim(T.UM_CA_LAN1_PROF),0) <> nvl(trim(S.UM_CA_LAN1_PROF),0) or 
+    nvl(trim(T.UM_CA_LANG2),0) <> nvl(trim(S.UM_CA_LANG2),0) or 
+    nvl(trim(T.UM_CA_LAN2_PROF),0) <> nvl(trim(S.UM_CA_LAN2_PROF),0) or 
+    nvl(trim(T.UM_CA_LANG3),0) <> nvl(trim(S.UM_CA_LANG3),0) or 
+    nvl(trim(T.UM_CA_LAN3_PROF),0) <> nvl(trim(S.UM_CA_LAN3_PROF),0) or 
+    nvl(trim(T.UM_CA_LANG4),0) <> nvl(trim(S.UM_CA_LANG4),0) or 
+    nvl(trim(T.UM_CA_LAN4_PROF),0) <> nvl(trim(S.UM_CA_LAN4_PROF),0) or 
+    nvl(trim(T.UM_CA_LANG5),0) <> nvl(trim(S.UM_CA_LANG5),0) or 
+    nvl(trim(T.UM_CA_LAN5_PROF),0) <> nvl(trim(S.UM_CA_LAN5_PROF),0) or 
+    nvl(trim(T.UM_CA_ACAD1_QUES1),0) <> nvl(trim(S.UM_CA_ACAD1_QUES1),0) or 
+    nvl(trim(T.UM_CA_ACAD2_QUEST1),0) <> nvl(trim(S.UM_CA_ACAD2_QUEST1),0) or 
+    nvl(trim(T.UM_CA_PRF_STRT_TRM),0) <> nvl(trim(S.UM_CA_PRF_STRT_TRM),0) or 
+    nvl(trim(T.UM_CA_STUDENT_TYPE),0) <> nvl(trim(S.UM_CA_STUDENT_TYPE),0) or 
+    nvl(trim(T.UM_CA_ADM_PLAN),0) <> nvl(trim(S.UM_CA_ADM_PLAN),0) or 
+    nvl(trim(T.UM_CA_DACA),0) <> nvl(trim(S.UM_CA_DACA),0) or 
+    nvl(trim(T.UM_CA_OTH_COLLEGE),0) <> nvl(trim(S.UM_CA_OTH_COLLEGE),0) or 
+    nvl(trim(T.UM_CA_SCHL_FEE_WAV),0) <> nvl(trim(S.UM_CA_SCHL_FEE_WAV),0) or 
+    nvl(trim(T.UM_CA_TST_SCOR_EXP),0) <> nvl(trim(S.UM_CA_TST_SCOR_EXP),0) or 
+    nvl(trim(T.UM_CA_FIN_AID),0) <> nvl(trim(S.UM_CA_FIN_AID),0) or 
+    nvl(trim(T.UM_CA_PREV_APPLIED),0) <> nvl(trim(S.UM_CA_PREV_APPLIED),0) or 
+    nvl(trim(T.UM_CA_PREV_APPL_DT),0) <> nvl(trim(S.UM_CA_PREV_APPL_DT),0) or 
+    nvl(trim(T.UM_CA_CONTACT1),0) <> nvl(trim(S.UM_CA_CONTACT1),0) or 
+    nvl(trim(T.UM_CA_CONTACT2),0) <> nvl(trim(S.UM_CA_CONTACT2),0) or 
+    nvl(trim(T.UM_CA_CONTACT3),0) <> nvl(trim(S.UM_CA_CONTACT3),0) or 
+    nvl(trim(T.UM_CA_CONTACT4),0) <> nvl(trim(S.UM_CA_CONTACT4),0) or 
+    nvl(trim(T.UM_CA_CONTACT5),0) <> nvl(trim(S.UM_CA_CONTACT5),0) or 
+    nvl(trim(T.UM_CA_CONTACT6),0) <> nvl(trim(S.UM_CA_CONTACT6),0) or 
+    nvl(trim(T.UM_CA_CONTACT7),0) <> nvl(trim(S.UM_CA_CONTACT7),0) or 
+    nvl(trim(T.UM_CA_CONTACT8),0) <> nvl(trim(S.UM_CA_CONTACT8),0) or 
+    nvl(trim(T.UM_CA_CONTACT9),0) <> nvl(trim(S.UM_CA_CONTACT9),0) or 
+    nvl(trim(T.UM_CA_CONTACT10),0) <> nvl(trim(S.UM_CA_CONTACT10),0) or 
+    nvl(trim(T.UM_CA_CONTCT_CNSNT),0) <> nvl(trim(S.UM_CA_CONTCT_CNSNT),0) or 
+    nvl(trim(T.UM_CA_PHON_NBR),0) <> nvl(trim(S.UM_CA_PHON_NBR),0) or 
+    nvl(trim(T.UM_CA_AT_REL_ATTEN),0) <> nvl(trim(S.UM_CA_AT_REL_ATTEN),0) or 
+    nvl(trim(T.UM_CA_ALT_REL_DET),0) <> nvl(trim(S.UM_CA_ALT_REL_DET),0) or 
+    nvl(trim(T.UM_CA_STATE_RES),0) <> nvl(trim(S.UM_CA_STATE_RES),0) or 
+    nvl(trim(T.UM_CA_STATE_CURR),0) <> nvl(trim(S.UM_CA_STATE_CURR),0) or 
+    nvl(trim(T.UM_CA_CURR_ADDR),0) <> nvl(trim(S.UM_CA_CURR_ADDR),0) or 
+    nvl(trim(T.UM_CA_ID_CARD),0) <> nvl(trim(S.UM_CA_ID_CARD),0) or 
+    nvl(trim(T.UM_CA_ID_CARD_ST),0) <> nvl(trim(S.UM_CA_ID_CARD_ST),0) or 
+    nvl(trim(T.UM_CA_ID_CARD_DT),0) <> nvl(trim(S.UM_CA_ID_CARD_DT),0) or 
+    nvl(trim(T.UM_CA_APP_EMPLOYED),0) <> nvl(trim(S.UM_CA_APP_EMPLOYED),0) or 
+    nvl(trim(T.UM_CA_APP_OFFCE_ST),0) <> nvl(trim(S.UM_CA_APP_OFFCE_ST),0) or 
+    nvl(trim(T.UM_CA_TAX_LST_YEAR),0) <> nvl(trim(S.UM_CA_TAX_LST_YEAR),0) or 
+    nvl(trim(T.UM_CA_TAX_LST_Y_ST),0) <> nvl(trim(S.UM_CA_TAX_LST_Y_ST),0) or 
+    nvl(trim(T.UM_CA_TAX_THIS_YR),0) <> nvl(trim(S.UM_CA_TAX_THIS_YR),0) or 
+    nvl(trim(T.UM_CA_TAX_YR_STATE),0) <> nvl(trim(S.UM_CA_TAX_YR_STATE),0) or 
+    nvl(trim(T.UM_CA_PARNT_RES_TY),0) <> nvl(trim(S.UM_CA_PARNT_RES_TY),0) or 
+    nvl(trim(T.UM_CA_PRNT_CUR_ADR),0) <> nvl(trim(S.UM_CA_PRNT_CUR_ADR),0) or 
+    nvl(trim(T.UM_CA_PARNT_CITIZN),0) <> nvl(trim(S.UM_CA_PARNT_CITIZN),0) or 
+    nvl(trim(T.UM_CA_PARNT_CITSHP),0) <> nvl(trim(S.UM_CA_PARNT_CITSHP),0) or 
+    nvl(trim(T.UM_CA_PARNT_VISA),0) <> nvl(trim(S.UM_CA_PARNT_VISA),0) or 
+    nvl(trim(T.UM_CA_PARNT_VSA_TY),0) <> nvl(trim(S.UM_CA_PARNT_VSA_TY),0) or 
+    nvl(trim(T.UM_CA_P_TAX_LST_YR),0) <> nvl(trim(S.UM_CA_P_TAX_LST_YR),0) or 
+    nvl(trim(T.UM_CA_P_TAX_LST_ST),0) <> nvl(trim(S.UM_CA_P_TAX_LST_ST),0) or 
+    nvl(trim(T.UM_CA_P_CLAIMED_AP),0) <> nvl(trim(S.UM_CA_P_CLAIMED_AP),0) or 
+    nvl(trim(T.UM_CA_PARNT_TAX),0) <> nvl(trim(S.UM_CA_PARNT_TAX),0) or 
+    nvl(trim(T.UM_CA_PARNT_TAX_ST),0) <> nvl(trim(S.UM_CA_PARNT_TAX_ST),0) or 
+    nvl(trim(T.UM_CA_P_CLAIM_AP_T),0) <> nvl(trim(S.UM_CA_P_CLAIM_AP_T),0) or 
+    nvl(trim(T.UM_CA_SELF_RPT_GPA),0) <> nvl(trim(S.UM_CA_SELF_RPT_GPA),0) or      -- Nov 2019  
+    nvl(trim(T.UM_CA_GPA_SCALE),0) <> nvl(trim(S.UM_CA_GPA_SCALE),0) or            -- Nov 2019 
+    nvl(trim(T.UM_CA_GPA_WEIGHT),0) <> nvl(trim(S.UM_CA_GPA_WEIGHT),0) or          -- Nov 2019 
+    nvl(trim(T.PROCESS_INSTANCE),0) <> nvl(trim(S.PROCESS_INSTANCE),0) or 
+	nvl(trim(T.UM_CA_COVID19),0) <> nvl(trim(S.UM_CA_COVID19),0) or                -- Aug 2020
+	nvl(trim(T.UM_CA_GENDER_IDENT),0) <> nvl(trim(S.UM_CA_GENDER_IDENT),0) or      -- Jan 2021
+--    nvl(trim(T.DATETIME_CREATED),0) <> nvl(trim(S.DATETIME_CREATED),0) or 
+    T.DATA_ORIGIN = 'D' 
+when not matched then 
+insert (
+    T.UM_ADM_USERID,
+    T.INSTITUTION,
+    T.UM_ADM_REC_NBR, 
+    T.SRC_SYS_ID, 
+    T.UM_CA_FIRST_NAME, 
+    T.UM_CA_MIDDLE_NAME,
+    T.UM_CA_LAST_NAME,
+    T.UM_CA_SUFFIX, 
+    T.UM_CA_SEX,
+    T.UM_CA_FORMER_LAST,
+    T.UM_CA_PREF_NAME,
+    T.UM_CA_DOB,
+    T.UM_CA_CITIZEN_STAT, 
+    T.UM_CA_CITIZENSHIPS, 
+    T.UM_CA_VISA_TYPE,
+    T.UM_CA_ALIEN_RG_NBR, 
+    T.UM_CA_VISA_NUMBER,
+    T.UM_CA_SSN,
+    T.UM_CA_BIRTH_CITY, 
+    T.UM_CA_BIRTH_CNTRY,
+    T.UM_CA_MILITRY_STAT, 
+    T.UM_CA_HISP_LATINO,
+    T.UM_CA_HISP_LAT_BCK, 
+    T.UM_CA_BACKGROUND, 
+    T.UM_CA_AMER_IND_BCK, 
+    T.UM_CA_AMER_IND_OTH, 
+    T.UM_CA_ASIAN_BCK,
+    T.UM_CA_E_ASIA_OTH, 
+    T.UM_CA_S_ASIA_OTH, 
+    T.UM_CA_SE_ASIA_OTH,
+    T.UM_CA_AFRICAN_BCK,
+    T.UM_CA_AFRICAN_OTH,
+    T.UM_CA_HAWAIIAN_BCK, 
+    T.UM_CA_HAWAIIAN_OTH, 
+    T.UM_CA_WHITE_BCK,
+    T.UM_CA_PERM_ADDR1, 
+    T.UM_CA_PERM_ADDR2, 
+    T.UM_CA_PERM_ADDR3, 
+    T.UM_CA_PERM_CITY,
+    T.UM_CA_PERM_STATE, 
+    T.UM_CA_PERM_ZIP, 
+    T.UM_CA_PERM_COUNTRY, 
+    T.UM_CA_PREF_PHONE, 
+    T.UM_CA_ALT_PHONE,
+    T.UM_CA_EMAIL_ADDR, 
+    T.UM_CA_CURR_ADDR1, 
+    T.UM_CA_CURR_ADDR2, 
+    T.UM_CA_CURR_ADDR3, 
+    T.UM_CA_CURR_CITY,
+    T.UM_CA_CURR_STATE, 
+    T.UM_CA_CURR_ZIP, 
+    T.UM_CA_CURR_COUNTRY, 
+    T.UM_CA_ALT_ADR_TODT, 
+    T.UM_CA_ALT_ADDR_FRM, 
+    T.UM_CA_SCHL_CEEBCD,
+    T.UM_CA_SCHL_CEEBNM,
+    T.UM_CA_ENTRY_DATE, 
+    T.UM_CA_GRAD_DATE,
+    T.UM_CA_SCHL_TYPECD,
+    T.UM_CA_SCHL_STATE, 
+    T.UM_CA_SCHL_COUNTRY, 
+    T.UM_CA_COUNSLR_PFIX, 
+    T.UM_CA_COUNSLR_FNAM, 
+    T.UM_CA_COUNSLR_LNAM, 
+    T.UM_CA_COUNSLR_EML,
+    T.UM_CA_COUNSLR_PH, 
+    T.UM_CA_GED_DATE, 
+    T.UM_CA_COL1_CEEBCD,
+    T.UM_CA_COL1_CEEBNM,
+    T.UM_CA_COL1_FROM,
+    T.UM_CA_COL1_TODT,
+    T.UM_CA_COL1_DEG, 
+    T.UM_CA_COL2_CEEBCD,
+    T.UM_CA_COL2_CEEBNM,
+    T.UM_CA_COL2_FROM,
+    T.UM_CA_COL2_TODT,
+    T.UM_CA_COL2_DEG, 
+    T.UM_CA_COL3_CEEBCD,
+    T.UM_CA_COL3_CEEBNM,
+    T.UM_CA_COL3_FROM,
+    T.UM_CA_COL3_TODT,
+    T.UM_CA_COL3_DEG, 
+    T.UM_CA_SCHL_DISCIPL, 
+    T.UM_CA_CRIMNL_HIST,
+    T.UM_CA_APP_SUB_DT, 
+    T.UM_CA_COM_APP_ID, 
+    T.UM_CA_APP_CREAT_DT, 
+    T.UM_CA_APP_PRINT_DT, 
+    T.UM_CA_APP_EXPRT_DT, 
+    T.UM_CA_PAY_STATUS, 
+    T.UM_CA_PAY_TYPE, 
+    T.UM_CA_PAY_DT, 
+    T.UM_CA_PAY_AMT,
+    T.UM_CA_TRANS_ID, 
+    T.UM_CA_ORDER_ID, 
+    T.UM_CA_PRNT_RES_TYP, 
+    T.UM_CA_INSTATE_TUIT, 
+    T.UM_CA_LANG1,
+    T.UM_CA_LAN1_PROF,
+    T.UM_CA_LANG2,
+    T.UM_CA_LAN2_PROF,
+    T.UM_CA_LANG3,
+    T.UM_CA_LAN3_PROF,
+    T.UM_CA_LANG4,
+    T.UM_CA_LAN4_PROF,
+    T.UM_CA_LANG5,
+    T.UM_CA_LAN5_PROF,
+    T.UM_CA_ACAD1_QUES1,
+    T.UM_CA_ACAD2_QUEST1, 
+    T.UM_CA_PRF_STRT_TRM, 
+    T.UM_CA_STUDENT_TYPE, 
+    T.UM_CA_ADM_PLAN, 
+    T.UM_CA_DACA, 
+    T.UM_CA_OTH_COLLEGE,
+    T.UM_CA_SCHL_FEE_WAV, 
+    T.UM_CA_TST_SCOR_EXP, 
+    T.UM_CA_FIN_AID,
+    T.UM_CA_PREV_APPLIED, 
+    T.UM_CA_PREV_APPL_DT, 
+    T.UM_CA_CONTACT1, 
+    T.UM_CA_CONTACT2, 
+    T.UM_CA_CONTACT3, 
+    T.UM_CA_CONTACT4, 
+    T.UM_CA_CONTACT5, 
+    T.UM_CA_CONTACT6, 
+    T.UM_CA_CONTACT7, 
+    T.UM_CA_CONTACT8, 
+    T.UM_CA_CONTACT9, 
+    T.UM_CA_CONTACT10,
+    T.UM_CA_CONTCT_CNSNT, 
+    T.UM_CA_PHON_NBR, 
+    T.UM_CA_AT_REL_ATTEN, 
+    T.UM_CA_ALT_REL_DET,
+    T.UM_CA_STATE_RES,
+    T.UM_CA_STATE_CURR, 
+    T.UM_CA_CURR_ADDR,
+    T.UM_CA_ID_CARD,
+    T.UM_CA_ID_CARD_ST, 
+    T.UM_CA_ID_CARD_DT, 
+    T.UM_CA_APP_EMPLOYED, 
+    T.UM_CA_APP_OFFCE_ST, 
+    T.UM_CA_TAX_LST_YEAR, 
+    T.UM_CA_TAX_LST_Y_ST, 
+    T.UM_CA_TAX_THIS_YR,
+    T.UM_CA_TAX_YR_STATE, 
+    T.UM_CA_PARNT_RES_TY, 
+    T.UM_CA_PRNT_CUR_ADR, 
+    T.UM_CA_PARNT_CITIZN, 
+    T.UM_CA_PARNT_CITSHP, 
+    T.UM_CA_PARNT_VISA, 
+    T.UM_CA_PARNT_VSA_TY, 
+    T.UM_CA_P_TAX_LST_YR, 
+    T.UM_CA_P_TAX_LST_ST, 
+    T.UM_CA_P_CLAIMED_AP, 
+    T.UM_CA_PARNT_TAX,
+    T.UM_CA_PARNT_TAX_ST, 
+    T.UM_CA_P_CLAIM_AP_T, 
+    T.UM_CA_SELF_RPT_GPA,     -- Nov 2019  
+    T.UM_CA_GPA_SCALE,        -- Nov 2019 
+    T.UM_CA_GPA_WEIGHT,       -- Nov 2019 
+    T.PROCESS_INSTANCE, 
+	T.UM_CA_COVID19,          -- Aug 2020
+	T.UM_CA_GENDER_IDENT,     -- Jan 2021
+    T.DATETIME_CREATED, 
+    T.LOAD_ERROR, 
+    T.DATA_ORIGIN,
+    T.CREATED_EW_DTTM,
+    T.LASTUPD_EW_DTTM,
+    T.BATCH_SID
+) 
+values (
+    S.UM_ADM_USERID,
+    S.INSTITUTION,
+    S.UM_ADM_REC_NBR, 
+    'CS90', 
+    S.UM_CA_FIRST_NAME, 
+    S.UM_CA_MIDDLE_NAME,
+    S.UM_CA_LAST_NAME,
+    S.UM_CA_SUFFIX, 
+    S.UM_CA_SEX,
+    S.UM_CA_FORMER_LAST,
+    S.UM_CA_PREF_NAME,
+    S.UM_CA_DOB,
+    S.UM_CA_CITIZEN_STAT, 
+    S.UM_CA_CITIZENSHIPS, 
+    S.UM_CA_VISA_TYPE,
+    S.UM_CA_ALIEN_RG_NBR, 
+    S.UM_CA_VISA_NUMBER,
+    S.UM_CA_SSN,
+    S.UM_CA_BIRTH_CITY, 
+    S.UM_CA_BIRTH_CNTRY,
+    S.UM_CA_MILITRY_STAT, 
+    S.UM_CA_HISP_LATINO,
+    S.UM_CA_HISP_LAT_BCK, 
+    S.UM_CA_BACKGROUND, 
+    S.UM_CA_AMER_IND_BCK, 
+    S.UM_CA_AMER_IND_OTH, 
+    S.UM_CA_ASIAN_BCK,
+    S.UM_CA_E_ASIA_OTH, 
+    S.UM_CA_S_ASIA_OTH, 
+    S.UM_CA_SE_ASIA_OTH,
+    S.UM_CA_AFRICAN_BCK,
+    S.UM_CA_AFRICAN_OTH,
+    S.UM_CA_HAWAIIAN_BCK, 
+    S.UM_CA_HAWAIIAN_OTH, 
+    S.UM_CA_WHITE_BCK,
+    S.UM_CA_PERM_ADDR1, 
+    S.UM_CA_PERM_ADDR2, 
+    S.UM_CA_PERM_ADDR3, 
+    S.UM_CA_PERM_CITY,
+    S.UM_CA_PERM_STATE, 
+    S.UM_CA_PERM_ZIP, 
+    S.UM_CA_PERM_COUNTRY, 
+    S.UM_CA_PREF_PHONE, 
+    S.UM_CA_ALT_PHONE,
+    S.UM_CA_EMAIL_ADDR, 
+    S.UM_CA_CURR_ADDR1, 
+    S.UM_CA_CURR_ADDR2, 
+    S.UM_CA_CURR_ADDR3, 
+    S.UM_CA_CURR_CITY,
+    S.UM_CA_CURR_STATE, 
+    S.UM_CA_CURR_ZIP, 
+    S.UM_CA_CURR_COUNTRY, 
+    S.UM_CA_ALT_ADR_TODT, 
+    S.UM_CA_ALT_ADDR_FRM, 
+    S.UM_CA_SCHL_CEEBCD,
+    S.UM_CA_SCHL_CEEBNM,
+    S.UM_CA_ENTRY_DATE, 
+    S.UM_CA_GRAD_DATE,
+    S.UM_CA_SCHL_TYPECD,
+    S.UM_CA_SCHL_STATE, 
+    S.UM_CA_SCHL_COUNTRY, 
+    S.UM_CA_COUNSLR_PFIX, 
+    S.UM_CA_COUNSLR_FNAM, 
+    S.UM_CA_COUNSLR_LNAM, 
+    S.UM_CA_COUNSLR_EML,
+    S.UM_CA_COUNSLR_PH, 
+    S.UM_CA_GED_DATE, 
+    S.UM_CA_COL1_CEEBCD,
+    S.UM_CA_COL1_CEEBNM,
+    S.UM_CA_COL1_FROM,
+    S.UM_CA_COL1_TODT,
+    S.UM_CA_COL1_DEG, 
+    S.UM_CA_COL2_CEEBCD,
+    S.UM_CA_COL2_CEEBNM,
+    S.UM_CA_COL2_FROM,
+    S.UM_CA_COL2_TODT,
+    S.UM_CA_COL2_DEG, 
+    S.UM_CA_COL3_CEEBCD,
+    S.UM_CA_COL3_CEEBNM,
+    S.UM_CA_COL3_FROM,
+    S.UM_CA_COL3_TODT,
+    S.UM_CA_COL3_DEG, 
+    S.UM_CA_SCHL_DISCIPL, 
+    S.UM_CA_CRIMNL_HIST,
+    S.UM_CA_APP_SUB_DT, 
+    S.UM_CA_COM_APP_ID, 
+    S.UM_CA_APP_CREAT_DT, 
+    S.UM_CA_APP_PRINT_DT, 
+    S.UM_CA_APP_EXPRT_DT, 
+    S.UM_CA_PAY_STATUS, 
+    S.UM_CA_PAY_TYPE, 
+    S.UM_CA_PAY_DT, 
+    S.UM_CA_PAY_AMT,
+    S.UM_CA_TRANS_ID, 
+    S.UM_CA_ORDER_ID, 
+    S.UM_CA_PRNT_RES_TYP, 
+    S.UM_CA_INSTATE_TUIT, 
+    S.UM_CA_LANG1,
+    S.UM_CA_LAN1_PROF,
+    S.UM_CA_LANG2,
+    S.UM_CA_LAN2_PROF,
+    S.UM_CA_LANG3,
+    S.UM_CA_LAN3_PROF,
+    S.UM_CA_LANG4,
+    S.UM_CA_LAN4_PROF,
+    S.UM_CA_LANG5,
+    S.UM_CA_LAN5_PROF,
+    S.UM_CA_ACAD1_QUES1,
+    S.UM_CA_ACAD2_QUEST1, 
+    S.UM_CA_PRF_STRT_TRM, 
+    S.UM_CA_STUDENT_TYPE, 
+    S.UM_CA_ADM_PLAN, 
+    S.UM_CA_DACA, 
+    S.UM_CA_OTH_COLLEGE,
+    S.UM_CA_SCHL_FEE_WAV, 
+    S.UM_CA_TST_SCOR_EXP, 
+    S.UM_CA_FIN_AID,
+    S.UM_CA_PREV_APPLIED, 
+    S.UM_CA_PREV_APPL_DT, 
+    S.UM_CA_CONTACT1, 
+    S.UM_CA_CONTACT2, 
+    S.UM_CA_CONTACT3, 
+    S.UM_CA_CONTACT4, 
+    S.UM_CA_CONTACT5, 
+    S.UM_CA_CONTACT6, 
+    S.UM_CA_CONTACT7, 
+    S.UM_CA_CONTACT8, 
+    S.UM_CA_CONTACT9, 
+    S.UM_CA_CONTACT10,
+    S.UM_CA_CONTCT_CNSNT, 
+    S.UM_CA_PHON_NBR, 
+    S.UM_CA_AT_REL_ATTEN, 
+    S.UM_CA_ALT_REL_DET,
+    S.UM_CA_STATE_RES,
+    S.UM_CA_STATE_CURR, 
+    S.UM_CA_CURR_ADDR,
+    S.UM_CA_ID_CARD,
+    S.UM_CA_ID_CARD_ST, 
+    S.UM_CA_ID_CARD_DT, 
+    S.UM_CA_APP_EMPLOYED, 
+    S.UM_CA_APP_OFFCE_ST, 
+    S.UM_CA_TAX_LST_YEAR, 
+    S.UM_CA_TAX_LST_Y_ST, 
+    S.UM_CA_TAX_THIS_YR,
+    S.UM_CA_TAX_YR_STATE, 
+    S.UM_CA_PARNT_RES_TY, 
+    S.UM_CA_PRNT_CUR_ADR, 
+    S.UM_CA_PARNT_CITIZN, 
+    S.UM_CA_PARNT_CITSHP, 
+    S.UM_CA_PARNT_VISA, 
+    S.UM_CA_PARNT_VSA_TY, 
+    S.UM_CA_P_TAX_LST_YR, 
+    S.UM_CA_P_TAX_LST_ST, 
+    S.UM_CA_P_CLAIMED_AP, 
+    S.UM_CA_PARNT_TAX,
+    S.UM_CA_PARNT_TAX_ST, 
+    S.UM_CA_P_CLAIM_AP_T, 
+    S.UM_CA_SELF_RPT_GPA,     -- Nov 2019  
+    S.UM_CA_GPA_SCALE,        -- Nov 2019 
+    S.UM_CA_GPA_WEIGHT,       -- Nov 2019 
+    S.PROCESS_INSTANCE, 
+	S.UM_CA_COVID19,          -- Aug 2020
+	S.UM_CA_GENDER_IDENT,     -- Jan 2021
+    S.DATETIME_CREATED, 
+    'N',
+    'S',
+    sysdate,
+    sysdate,
+    1234);
+
+strSqlCommand   := 'SET intRowCount';
+intRowCount     := SQL%ROWCOUNT;
+
+strSqlCommand := 'commit';
+commit;
+
+strMessage01    := '# of PS_UM_CA_UMBOS rows merged: ' || TO_CHAR(intRowCount,'999,999,999,999');
+COMMON_OWNER.SMT_LOG.PUT_MESSAGE(i_Message => strMessage01);
+
+strSqlCommand := 'SMT_PROCESS_LOG.PROCESS_DETAIL';
+COMMON_OWNER.SMT_PROCESS_LOG.PROCESS_DETAIL
+        (
+                i_TargetTableName   => 'PS_UM_CA_UMBOS',
+                i_Action            => 'MERGE',
+                i_RowCount          => intRowCount
+        );
+
+strMessage01    := 'Updating CSSTG_OWNER.UM_STAGE_JOBS';
+COMMON_OWNER.SMT_LOG.PUT_MESSAGE(i_Message => strMessage01);
+
+strSqlCommand   := 'update TABLE_STATUS on CSSTG_OWNER.UM_STAGE_JOBS';
+update CSSTG_OWNER.UM_STAGE_JOBS
+   set TABLE_STATUS = 'Deleting',
+       OLD_MAX_SCN = NEW_MAX_SCN
+ where TABLE_NAME = 'PS_UM_CA_UMBOS';
+
+strSqlCommand := 'commit';
+commit;
+
+strMessage01    := 'Updating DATA_ORIGIN on CSSTG_OWNER.PS_UM_CA_UMBOS';
+COMMON_OWNER.SMT_LOG.PUT_MESSAGE(i_Message => strMessage01);
+
+strSqlCommand   := 'update DATA_ORIGIN on CSSTG_OWNER.PS_UM_CA_UMBOS';
+update CSSTG_OWNER.PS_UM_CA_UMBOS T
+        set T.DATA_ORIGIN = 'D',
+               T.LASTUPD_EW_DTTM = SYSDATE
+ where T.DATA_ORIGIN <> 'D'
+   and exists 
+(select 1 from
+(select UM_ADM_USERID, INSTITUTION, UM_ADM_REC_NBR, DATETIME_CREATED
+   from CSSTG_OWNER.PS_UM_CA_UMBOS T2
+  where (select DELETE_FLG from CSSTG_OWNER.UM_STAGE_JOBS where TABLE_NAME = 'PS_UM_CA_UMBOS') = 'Y'
+  minus
+ select nvl(trim(UM_ADM_USERID),'-') UM_ADM_USERID, INSTITUTION, UM_ADM_REC_NBR, DATETIME_CREATED
+   from SYSADM.PS_UM_CA_UMBOS@SASOURCE S2
+  where (select DELETE_FLG from CSSTG_OWNER.UM_STAGE_JOBS where TABLE_NAME = 'PS_UM_CA_UMBOS') = 'Y'
+   ) S
+ where T.UM_ADM_USERID = S.UM_ADM_USERID
+   and T.INSTITUTION = S.INSTITUTION
+   and T.UM_ADM_REC_NBR = S.UM_ADM_REC_NBR
+   and T.SRC_SYS_ID = 'CS90' 
+   ) 
+;
+
+strSqlCommand   := 'SET intRowCount';
+intRowCount     := SQL%ROWCOUNT;
+
+strSqlCommand := 'commit';
+commit;
+
+strMessage01    := '# of PS_UM_CA_UMBOS rows updated: ' || TO_CHAR(intRowCount,'999,999,999,999');
+COMMON_OWNER.SMT_LOG.PUT_MESSAGE(i_Message => strMessage01);
+
+strSqlCommand := 'SMT_PROCESS_LOG.PROCESS_DETAIL';
+COMMON_OWNER.SMT_PROCESS_LOG.PROCESS_DETAIL
+        (
+                i_TargetTableName   => 'PS_UM_CA_UMBOS',
+                i_Action            => 'UPDATE',
+                i_RowCount          => intRowCount
+        );
+
+strMessage01    := 'Updating CSSTG_OWNER.UM_STAGE_JOBS';
+COMMON_OWNER.SMT_LOG.PUT_MESSAGE(i_Message => strMessage01);
+
+strSqlCommand   := 'update END_DT on CSSTG_OWNER.UM_STAGE_JOBS';
+
+update CSSTG_OWNER.UM_STAGE_JOBS
+   set TABLE_STATUS = 'Complete',
+       END_DT = SYSDATE
+ where TABLE_NAME = 'PS_UM_CA_UMBOS'
+;
+
+strSqlCommand := 'commit';
+commit;
+
+strSqlCommand := 'SMT_PROCESS_LOG.PROCESS_SUCCESS';
+COMMON_OWNER.SMT_PROCESS_LOG.PROCESS_SUCCESS;
+
+strMessage01    := strProcessName || ' is complete.';
+COMMON_OWNER.SMT_LOG.PUT_MESSAGE(i_Message => strMessage01);
+
+EXCEPTION
+    WHEN OTHERS THEN
+        COMMON_OWNER.SMT_PROCESS_LOG.PROCESS_EXCEPTION
+                (
+                        i_SqlCommand   => strSqlCommand,
+                        i_SqlCode      => SQLCODE,
+                        i_SqlErrm      => SQLERRM
+                );
+
+END PS_UM_CA_UMBOS_P;
+/

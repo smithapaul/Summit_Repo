@@ -1,0 +1,330 @@
+CREATE OR REPLACE PROCEDURE             "PS_CLASS_ASSOC_P"
+   AUTHID CURRENT_USER
+IS
+   /*
+   -- Run before the first time
+   DELETE
+   FROM CSSTG_OWNER.UM_STAGE_JOBS
+    WHERE TABLE_NAME = 'PS_CLASS_ASSOC'
+
+   INSERT INTO CSSTG_OWNER.UM_STAGE_JOBS
+   (TABLE_NAME, DELETE_FLG)
+   VALUES
+   ('PS_CLASS_ASSOC', 'Y')
+
+   SELECT *
+   FROM CSSTG_OWNER.UM_STAGE_JOBS
+    WHERE TABLE_NAME = 'PS_CLASS_ASSOC'
+   */
+
+
+   ------------------------------------------------------------------------
+   -- George Adams
+   --
+   -- Loads stage table PS_CLASS_ASSOC from PeopleSoft table PS_CLASS_ASSOC.
+   --
+   -- V01  SMT-xxxx 07/10/2017,    Preethi Lodha
+   --                              Converted from PS_CLASS_ASSOC.sql
+   --
+   ------------------------------------------------------------------------
+
+   strMartId          VARCHAR2 (50) := 'CSW';
+   strProcessName     VARCHAR2 (100) := 'PS_CLASS_ASSOC';
+   intProcessSid      INTEGER;
+   dtProcessStart     DATE := SYSDATE;
+   strMessage01       VARCHAR2 (4000);
+   strMessage02       VARCHAR2 (512);
+   strMessage03       VARCHAR2 (512) := '';
+   strNewLine         VARCHAR2 (2) := CHR (13) || CHR (10);
+   strSqlCommand      VARCHAR2 (32767) := '';
+   strSqlDynamic      VARCHAR2 (32767) := '';
+   strClientInfo      VARCHAR2 (100);
+   intRowCount        INTEGER;
+   intTotalRowCount   INTEGER := 0;
+   numSqlCode         NUMBER;
+   strSqlErrm         VARCHAR2 (4000);
+   intTries           INTEGER;
+BEGIN
+   strSqlCommand := 'DBMS_APPLICATION_INFO.SET_CLIENT_INFO';
+   DBMS_APPLICATION_INFO.SET_CLIENT_INFO (strProcessName);
+
+   strSqlCommand := 'SMT_PROCESS_LOG.PROCESS_INIT';
+   COMMON_OWNER.SMT_PROCESS_LOG.PROCESS_INIT (
+      i_MartId             => strMartId,
+      i_ProcessName        => strProcessName,
+      i_ProcessStartTime   => dtProcessStart,
+      o_ProcessSid         => intProcessSid);
+
+   strMessage01 := 'Updating CSSTG_OWNER.UM_STAGE_JOBS';
+   COMMON_OWNER.SMT_LOG.PUT_MESSAGE (i_Message => strMessage01);
+
+
+   strSqlCommand := 'update START_DT on CSSTG_OWNER.UM_STAGE_JOBS';
+
+   UPDATE CSSTG_OWNER.UM_STAGE_JOBS
+      SET TABLE_STATUS = 'Reading', START_DT = SYSDATE, END_DT = NULL
+    WHERE TABLE_NAME = 'PS_CLASS_ASSOC';
+
+   strSqlCommand := 'commit';
+   COMMIT;
+
+
+   strSqlCommand := 'update NEW_MAX_SCN on CSSTG_OWNER.UM_STAGE_JOBS';
+
+   UPDATE CSSTG_OWNER.UM_STAGE_JOBS
+      SET TABLE_STATUS = 'Merging',
+          NEW_MAX_SCN =
+             (SELECT /*+ full(S) */
+                    MAX (ORA_ROWSCN)
+                FROM SYSADM.PS_CLASS_ASSOC@SASOURCE S)
+    WHERE TABLE_NAME = 'PS_CLASS_ASSOC';
+
+   strSqlCommand := 'commit';
+   COMMIT;
+
+
+   strMessage01 := 'Merging data into CSSTG_OWNER.PS_CLASS_ASSOC';
+   COMMON_OWNER.SMT_LOG.PUT_MESSAGE (i_Message => strMessage01);
+
+   strSqlCommand := 'merge into CSSTG_OWNER.PS_CLASS_ASSOC';
+merge /*+ use_hash(S,T) */ into CSSTG_OWNER.PS_CLASS_ASSOC T
+using (select /*+ full(S) */
+nvl(trim(CRSE_ID),'-') CRSE_ID,
+nvl(CRSE_OFFER_NBR,0) CRSE_OFFER_NBR,
+nvl(trim(STRM),'-') STRM,
+nvl(trim(SESSION_CODE),'-') SESSION_CODE,
+nvl(ASSOCIATED_CLASS,0) ASSOCIATED_CLASS,
+nvl(UNITS_MINIMUM,0) UNITS_MINIMUM,
+nvl(UNITS_MAXIMUM,0) UNITS_MAXIMUM,
+nvl(UNITS_ACAD_PROG,0) UNITS_ACAD_PROG,
+nvl(UNITS_FINAID_PROG,0) UNITS_FINAID_PROG,
+nvl(trim(GRADING_BASIS),'-') GRADING_BASIS,
+nvl(trim(GRADE_ROSTER_PRINT),'-') GRADE_ROSTER_PRINT,
+nvl(trim(SSR_COMPONENT),'-') SSR_COMPONENT,
+nvl(BILLING_FACTOR,0) BILLING_FACTOR,
+nvl(CRSE_CONTACT_HRS,0) CRSE_CONTACT_HRS,
+nvl(trim(RQRMNT_GROUP),'-') RQRMNT_GROUP,
+nvl(trim(USE_CATLG_RQS),'-') USE_CATLG_RQS,
+nvl(trim(RQMNT_DESIGNTN),'-') RQMNT_DESIGNTN,
+nvl(CRSE_COUNT,0) CRSE_COUNT,
+nvl(trim(INSTRUCTOR_EDIT),'-') INSTRUCTOR_EDIT,
+nvl(trim(USE_BLIND_GRADING),'-') USE_BLIND_GRADING,
+nvl(trim(SEL_GROUP),'-') SEL_GROUP,
+nvl(trim(COMPONENT_PRIMARY),'-') COMPONENT_PRIMARY,
+nvl(trim(UPDATE_STDNT_ENRL),'-') UPDATE_STDNT_ENRL
+from SYSADM.PS_CLASS_ASSOC@SASOURCE S
+where ORA_ROWSCN > (select OLD_MAX_SCN from CSSTG_OWNER.UM_STAGE_JOBS where TABLE_NAME = 'PS_CLASS_ASSOC') ) S
+   on (
+T.CRSE_ID = S.CRSE_ID and
+T.CRSE_OFFER_NBR = S.CRSE_OFFER_NBR and
+T.STRM = S.STRM and
+T.SESSION_CODE = S.SESSION_CODE and
+T.ASSOCIATED_CLASS = S.ASSOCIATED_CLASS and
+T.SRC_SYS_ID = 'CS90')
+when matched then update set
+T.UNITS_MINIMUM = S.UNITS_MINIMUM,
+T.UNITS_MAXIMUM = S.UNITS_MAXIMUM,
+T.UNITS_ACAD_PROG = S.UNITS_ACAD_PROG,
+T.UNITS_FINAID_PROG = S.UNITS_FINAID_PROG,
+T.GRADING_BASIS = S.GRADING_BASIS,
+T.GRADE_ROSTER_PRINT = S.GRADE_ROSTER_PRINT,
+T.SSR_COMPONENT = S.SSR_COMPONENT,
+T.BILLING_FACTOR = S.BILLING_FACTOR,
+T.CRSE_CONTACT_HRS = S.CRSE_CONTACT_HRS,
+T.RQRMNT_GROUP = S.RQRMNT_GROUP,
+T.USE_CATLG_RQS = S.USE_CATLG_RQS,
+T.RQMNT_DESIGNTN = S.RQMNT_DESIGNTN,
+T.CRSE_COUNT = S.CRSE_COUNT,
+T.INSTRUCTOR_EDIT = S.INSTRUCTOR_EDIT,
+T.USE_BLIND_GRADING = S.USE_BLIND_GRADING,
+T.SEL_GROUP = S.SEL_GROUP,
+T.COMPONENT_PRIMARY = S.COMPONENT_PRIMARY,
+T.UPDATE_STDNT_ENRL = S.UPDATE_STDNT_ENRL,
+T.DATA_ORIGIN = 'S',
+T.LASTUPD_EW_DTTM = sysdate,
+T.BATCH_SID   = 1234
+where
+T.UNITS_MINIMUM <> S.UNITS_MINIMUM or
+T.UNITS_MAXIMUM <> S.UNITS_MAXIMUM or
+T.UNITS_ACAD_PROG <> S.UNITS_ACAD_PROG or
+T.UNITS_FINAID_PROG <> S.UNITS_FINAID_PROG or
+T.GRADING_BASIS <> S.GRADING_BASIS or
+T.GRADE_ROSTER_PRINT <> S.GRADE_ROSTER_PRINT or
+T.SSR_COMPONENT <> S.SSR_COMPONENT or
+T.BILLING_FACTOR <> S.BILLING_FACTOR or
+T.CRSE_CONTACT_HRS <> S.CRSE_CONTACT_HRS or
+T.RQRMNT_GROUP <> S.RQRMNT_GROUP or
+T.USE_CATLG_RQS <> S.USE_CATLG_RQS or
+T.RQMNT_DESIGNTN <> S.RQMNT_DESIGNTN or
+T.CRSE_COUNT <> S.CRSE_COUNT or
+T.INSTRUCTOR_EDIT <> S.INSTRUCTOR_EDIT or
+T.USE_BLIND_GRADING <> S.USE_BLIND_GRADING or
+T.SEL_GROUP <> S.SEL_GROUP or
+T.COMPONENT_PRIMARY <> S.COMPONENT_PRIMARY or
+T.UPDATE_STDNT_ENRL <> S.UPDATE_STDNT_ENRL or
+T.DATA_ORIGIN = 'D'
+when not matched then
+insert (
+T.CRSE_ID,
+T.CRSE_OFFER_NBR,
+T.STRM,
+T.SESSION_CODE,
+T.ASSOCIATED_CLASS,
+T.SRC_SYS_ID,
+T.UNITS_MINIMUM,
+T.UNITS_MAXIMUM,
+T.UNITS_ACAD_PROG,
+T.UNITS_FINAID_PROG,
+T.GRADING_BASIS,
+T.GRADE_ROSTER_PRINT,
+T.SSR_COMPONENT,
+T.BILLING_FACTOR,
+T.CRSE_CONTACT_HRS,
+T.RQRMNT_GROUP,
+T.USE_CATLG_RQS,
+T.RQMNT_DESIGNTN,
+T.CRSE_COUNT,
+T.INSTRUCTOR_EDIT,
+T.USE_BLIND_GRADING,
+T.SEL_GROUP,
+T.COMPONENT_PRIMARY,
+T.UPDATE_STDNT_ENRL,
+T.LOAD_ERROR,
+T.DATA_ORIGIN,
+T.CREATED_EW_DTTM,
+T.LASTUPD_EW_DTTM,
+T.BATCH_SID
+)
+values (
+S.CRSE_ID,
+S.CRSE_OFFER_NBR,
+S.STRM,
+S.SESSION_CODE,
+S.ASSOCIATED_CLASS,
+'CS90',
+S.UNITS_MINIMUM,
+S.UNITS_MAXIMUM,
+S.UNITS_ACAD_PROG,
+S.UNITS_FINAID_PROG,
+S.GRADING_BASIS,
+S.GRADE_ROSTER_PRINT,
+S.SSR_COMPONENT,
+S.BILLING_FACTOR,
+S.CRSE_CONTACT_HRS,
+S.RQRMNT_GROUP,
+S.USE_CATLG_RQS,
+S.RQMNT_DESIGNTN,
+S.CRSE_COUNT,
+S.INSTRUCTOR_EDIT,
+S.USE_BLIND_GRADING,
+S.SEL_GROUP,
+S.COMPONENT_PRIMARY,
+S.UPDATE_STDNT_ENRL,
+'N',
+'S',
+sysdate,
+sysdate,
+1234);
+   strSqlCommand := 'SET intRowCount';
+   intRowCount := SQL%ROWCOUNT;
+
+   strSqlCommand := 'commit';
+   COMMIT;
+
+   strMessage01 :=
+         '# of PS_CLASS_ASSOC rows merged: '
+      || TO_CHAR (intRowCount, '999,999,999,999');
+   COMMON_OWNER.SMT_LOG.PUT_MESSAGE (i_Message => strMessage01);
+
+   strSqlCommand := 'SMT_PROCESS_LOG.PROCESS_DETAIL';
+   COMMON_OWNER.SMT_PROCESS_LOG.PROCESS_DETAIL (
+      i_TargetTableName   => 'PS_CLASS_ASSOC',
+      i_Action            => 'MERGE',
+      i_RowCount          => intRowCount);
+
+
+   strMessage01 := 'Updating CSSTG_OWNER.UM_STAGE_JOBS';
+   COMMON_OWNER.SMT_LOG.PUT_MESSAGE (i_Message => strMessage01);
+
+   strSqlCommand := 'update TABLE_STATUS on CSSTG_OWNER.UM_STAGE_JOBS';
+
+   UPDATE CSSTG_OWNER.UM_STAGE_JOBS
+      SET TABLE_STATUS = 'Deleting', OLD_MAX_SCN = NEW_MAX_SCN
+    WHERE TABLE_NAME = 'PS_CLASS_ASSOC';
+
+   strSqlCommand := 'commit';
+   COMMIT;
+
+
+   strMessage01 := 'Updating DATA_ORIGIN on CSSTG_OWNER.PS_CLASS_ASSOC';
+   COMMON_OWNER.SMT_LOG.PUT_MESSAGE (i_Message => strMessage01);
+
+   strSqlCommand := 'update DATA_ORIGIN on CSSTG_OWNER.PS_CLASS_ASSOC';
+
+update CSSTG_OWNER.PS_CLASS_ASSOC T
+        set T.DATA_ORIGIN = 'D',
+               T.LASTUPD_EW_DTTM = SYSDATE
+ where T.DATA_ORIGIN <> 'D'
+   and exists 
+(select 1 from
+(select CRSE_ID, CRSE_OFFER_NBR, STRM, SESSION_CODE, ASSOCIATED_CLASS
+   from CSSTG_OWNER.PS_CLASS_ASSOC T2
+  where (select DELETE_FLG from CSSTG_OWNER.UM_STAGE_JOBS where TABLE_NAME = 'PS_CLASS_ASSOC') = 'Y'
+  minus
+ select CRSE_ID, CRSE_OFFER_NBR, STRM, SESSION_CODE, ASSOCIATED_CLASS
+   from SYSADM.PS_CLASS_ASSOC@SASOURCE
+  where (select DELETE_FLG from CSSTG_OWNER.UM_STAGE_JOBS where TABLE_NAME = 'PS_CLASS_ASSOC') = 'Y' 
+   ) S
+ where T.CRSE_ID = S.CRSE_ID   
+  AND T.CRSE_OFFER_NBR = S.CRSE_OFFER_NBR
+  AND T.STRM = S.STRM
+  AND T.SESSION_CODE = S.SESSION_CODE
+  AND T.ASSOCIATED_CLASS = S.ASSOCIATED_CLASS
+   and T.SRC_SYS_ID = 'CS90' 
+   ) 
+;
+   strSqlCommand := 'SET intRowCount';
+   intRowCount := SQL%ROWCOUNT;
+
+   strSqlCommand := 'commit';
+   COMMIT;
+
+   strMessage01 :=
+         '# of PS_CLASS_ASSOC rows updated: '
+      || TO_CHAR (intRowCount, '999,999,999,999');
+   COMMON_OWNER.SMT_LOG.PUT_MESSAGE (i_Message => strMessage01);
+
+   strSqlCommand := 'SMT_PROCESS_LOG.PROCESS_DETAIL';
+   COMMON_OWNER.SMT_PROCESS_LOG.PROCESS_DETAIL (
+      i_TargetTableName   => 'PS_CLASS_ASSOC',
+      i_Action            => 'UPDATE',
+      i_RowCount          => intRowCount);
+
+
+   strMessage01 := 'Updating CSSTG_OWNER.UM_STAGE_JOBS';
+   COMMON_OWNER.SMT_LOG.PUT_MESSAGE (i_Message => strMessage01);
+
+   strSqlCommand := 'update END_DT on CSSTG_OWNER.UM_STAGE_JOBS';
+
+   UPDATE CSSTG_OWNER.UM_STAGE_JOBS
+      SET TABLE_STATUS = 'Complete', END_DT = SYSDATE
+    WHERE TABLE_NAME = 'PS_CLASS_ASSOC';
+
+   strSqlCommand := 'commit';
+   COMMIT;
+
+
+   strSqlCommand := 'SMT_PROCESS_LOG.PROCESS_SUCCESS';
+   COMMON_OWNER.SMT_PROCESS_LOG.PROCESS_SUCCESS;
+
+   strMessage01 := strProcessName || ' is complete.';
+   COMMON_OWNER.SMT_LOG.PUT_MESSAGE (i_Message => strMessage01);
+EXCEPTION
+   WHEN OTHERS
+   THEN
+      COMMON_OWNER.SMT_PROCESS_LOG.PROCESS_EXCEPTION (
+         i_SqlCommand   => strSqlCommand,
+         i_SqlCode      => SQLCODE,
+         i_SqlErrm      => SQLERRM);
+END PS_CLASS_ASSOC_P;
+/

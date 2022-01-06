@@ -1,0 +1,452 @@
+CREATE OR REPLACE PROCEDURE             "PS_STDNT_AWARDS_P" AUTHID CURRENT_USER IS
+
+------------------------------------------------------------------------
+-- George Adams
+--
+-- Loads stage table PS_STDNT_AWARDS from PeopleSoft table PS_STDNT_AWARDS.
+--
+-- V01  SMT-xxxx 04/18/2017,    Jim Doucette
+--                              Converted from PS_STDNT_AWARDS.SQL
+--
+------------------------------------------------------------------------
+
+        strMartId                       Varchar2(50)    := 'CSW';
+        strProcessName                  Varchar2(100)   := 'PS_STDNT_AWARDS';
+        intProcessSid                   Integer;
+        dtProcessStart                  Date            := SYSDATE;
+        strMessage01                    Varchar2(4000);
+        strMessage02                    Varchar2(512);
+        strMessage03                    Varchar2(512)   :='';
+        strNewLine                      Varchar2(2)     := chr(13) || chr(10);
+        strSqlCommand                   Varchar2(32767) :='';
+        strSqlDynamic                   Varchar2(32767) :='';
+        strClientInfo                   Varchar2(100);
+        intRowCount                     Integer;
+        intTotalRowCount                Integer         := 0;
+        numSqlCode                      Number;
+        strSqlErrm                      Varchar2(4000);
+        intTries                        Integer;
+
+BEGIN
+strSqlCommand := 'DBMS_APPLICATION_INFO.SET_CLIENT_INFO';
+DBMS_APPLICATION_INFO.SET_CLIENT_INFO (strProcessName);
+
+strSqlCommand := 'SMT_PROCESS_LOG.PROCESS_INIT';
+COMMON_OWNER.SMT_PROCESS_LOG.PROCESS_INIT
+        (
+                i_MartId                => strMartId,
+                i_ProcessName           => strProcessName,
+                i_ProcessStartTime      => dtProcessStart,
+                o_ProcessSid            => intProcessSid
+        );
+
+strMessage01    := 'Updating CSSTG_OWNER.UM_STAGE_JOBS';
+COMMON_OWNER.SMT_LOG.PUT_MESSAGE(i_Message => strMessage01);
+
+
+strSqlCommand   := 'update START_DT on CSSTG_OWNER.UM_STAGE_JOBS';
+update CSSTG_OWNER.UM_STAGE_JOBS
+   set TABLE_STATUS = 'Reading',
+       START_DT = sysdate,
+       END_DT = NULL
+ where TABLE_NAME = 'PS_STDNT_AWARDS'
+;
+
+strSqlCommand := 'commit';
+commit;
+
+
+strSqlCommand   := 'update NEW_MAX_SCN on CSSTG_OWNER.UM_STAGE_JOBS';
+update CSSTG_OWNER.UM_STAGE_JOBS
+   set TABLE_STATUS = 'Merging',
+       NEW_MAX_SCN = (select /*+ full(S) */ max(ORA_ROWSCN) from SYSADM.PS_STDNT_AWARDS@SASOURCE S)
+ where TABLE_NAME = 'PS_STDNT_AWARDS'
+;
+
+strSqlCommand := 'commit';
+commit;
+
+
+strMessage01    := 'Merging data into CSSTG_OWNER.PS_STDNT_AWARDS';
+COMMON_OWNER.SMT_LOG.PUT_MESSAGE(i_Message => strMessage01);
+
+strSqlCommand   := 'merge into CSSTG_OWNER.PS_STDNT_AWARDS';
+merge /*+ use_hash(S,T) */ into CSSTG_OWNER.PS_STDNT_AWARDS T
+using (select /*+ full(S) */
+nvl(trim(EMPLID),'-') EMPLID,
+nvl(trim(INSTITUTION),'-') INSTITUTION,
+nvl(trim(AID_YEAR),'-') AID_YEAR,
+nvl(trim(ITEM_TYPE),'-') ITEM_TYPE,
+nvl(trim(ACAD_CAREER),'-') ACAD_CAREER,
+nvl(trim(DISBURSEMENT_PLAN),'-') DISBURSEMENT_PLAN,
+nvl(trim(SPLIT_CODE),'-') SPLIT_CODE,
+nvl(trim(SETID),'-') SETID,
+nvl(trim(AWARD_STATUS),'-') AWARD_STATUS,
+nvl(trim(AWARD_MSG_CD),'-') AWARD_MSG_CD,
+nvl(OFFER_AMOUNT,0) OFFER_AMOUNT,
+nvl(ACCEPT_AMOUNT,0) ACCEPT_AMOUNT,
+nvl(DISBURSED_AMOUNT,0) DISBURSED_AMOUNT,
+nvl(AUTHORIZED_AMOUNT,0) AUTHORIZED_AMOUNT,
+nvl(HIGHEST_OFFER_AMT,0) HIGHEST_OFFER_AMT,
+nvl(HIGHEST_ACCEPT_AMT,0) HIGHEST_ACCEPT_AMT,
+nvl(WS_ERND_TO_DT,0) WS_ERND_TO_DT,
+nvl(trim(CURRENCY_CD),'-') CURRENCY_CD,
+nvl(NET_AWARD_AMT,0) NET_AWARD_AMT,
+nvl(CANCEL_DECLINE_AMT,0) CANCEL_DECLINE_AMT,
+nvl(trim(OFFER_ACTIVITY_IND),'-') OFFER_ACTIVITY_IND,
+nvl(trim(FIN_AID_TYPE),'-') FIN_AID_TYPE,
+nvl(trim(LOAN_ADJUST_CD),'-') LOAN_ADJUST_CD,
+nvl(SCHEDULED_AWARD,0) SCHEDULED_AWARD,
+nvl(LOAN_TOT_ORIG,0) LOAN_TOT_ORIG,
+nvl(LOAN_TOT_DISB,0) LOAN_TOT_DISB,
+nvl(trim(LOCK_AWARD_FLAG),'-') LOCK_AWARD_FLAG,
+nvl(trim(CHARGE_PRIORITY),'-') CHARGE_PRIORITY,
+nvl(PKG_STATUS_CD,0) PKG_STATUS_CD,
+nvl(ACCEPT_LOAN_FEE,0) ACCEPT_LOAN_FEE,
+nvl(OFFER_LOAN_FEE,0) OFFER_LOAN_FEE,
+nvl(NET_OFFER_AMT,0) NET_OFFER_AMT,
+nvl(trim(AWARD_PERIOD),'-') AWARD_PERIOD,
+nvl(trim(PKG_PLAN_ID),'-') PKG_PLAN_ID,
+nvl(PKG_SEQ_NBR,0) PKG_SEQ_NBR,
+nvl(trim(AWARD_POSTED),'-') AWARD_POSTED,
+nvl(trim(FA_PROF_JUDGEMENT),'-') FA_PROF_JUDGEMENT,
+nvl(trim(CUSTOM_LOAN_FEE),'-') CUSTOM_LOAN_FEE,
+nvl(trim(PKG_APP_DATA_USED),'-') PKG_APP_DATA_USED,
+nvl(trim(OVERRIDE_NEED),'-') OVERRIDE_NEED,
+nvl(trim(OVERRIDE_FL),'-') OVERRIDE_FL,
+nvl(LN_DEST_FEE_PRCNT,0) LN_DEST_FEE_PRCNT,
+nvl(OFFER_REBATE_AMT,0) OFFER_REBATE_AMT,
+nvl(ACCEPT_REBATE_AMT,0) ACCEPT_REBATE_AMT,
+nvl(trim(SFA_PKG_DEP_STAT),'-') SFA_PKG_DEP_STAT,
+nvl(trim(SFA_AGGR_SRC_USED),'-') SFA_AGGR_SRC_USED
+from SYSADM.PS_STDNT_AWARDS@SASOURCE S
+where ORA_ROWSCN > (select OLD_MAX_SCN from CSSTG_OWNER.UM_STAGE_JOBS where TABLE_NAME = 'PS_STDNT_AWARDS') ) S
+   on (
+T.EMPLID = S.EMPLID and
+T.INSTITUTION = S.INSTITUTION and
+T.AID_YEAR = S.AID_YEAR and
+T.ITEM_TYPE = S.ITEM_TYPE and
+T.ACAD_CAREER = S.ACAD_CAREER and
+T.SRC_SYS_ID = 'CS90')
+when matched then update set
+T.DISBURSEMENT_PLAN = S.DISBURSEMENT_PLAN,
+T.SPLIT_CODE = S.SPLIT_CODE,
+T.SETID = S.SETID,
+T.AWARD_STATUS = S.AWARD_STATUS,
+T.AWARD_MSG_CD = S.AWARD_MSG_CD,
+T.OFFER_AMOUNT = S.OFFER_AMOUNT,
+T.ACCEPT_AMOUNT = S.ACCEPT_AMOUNT,
+T.DISBURSED_AMOUNT = S.DISBURSED_AMOUNT,
+T.AUTHORIZED_AMOUNT = S.AUTHORIZED_AMOUNT,
+T.HIGHEST_OFFER_AMT = S.HIGHEST_OFFER_AMT,
+T.HIGHEST_ACCEPT_AMT = S.HIGHEST_ACCEPT_AMT,
+T.WS_ERND_TO_DT = S.WS_ERND_TO_DT,
+T.CURRENCY_CD = S.CURRENCY_CD,
+T.NET_AWARD_AMT = S.NET_AWARD_AMT,
+T.CANCEL_DECLINE_AMT = S.CANCEL_DECLINE_AMT,
+T.OFFER_ACTIVITY_IND = S.OFFER_ACTIVITY_IND,
+T.FIN_AID_TYPE = S.FIN_AID_TYPE,
+T.LOAN_ADJUST_CD = S.LOAN_ADJUST_CD,
+T.SCHEDULED_AWARD = S.SCHEDULED_AWARD,
+T.LOAN_TOT_ORIG = S.LOAN_TOT_ORIG,
+T.LOAN_TOT_DISB = S.LOAN_TOT_DISB,
+T.LOCK_AWARD_FLAG = S.LOCK_AWARD_FLAG,
+T.CHARGE_PRIORITY = S.CHARGE_PRIORITY,
+T.PKG_STATUS_CD = S.PKG_STATUS_CD,
+T.ACCEPT_LOAN_FEE = S.ACCEPT_LOAN_FEE,
+T.OFFER_LOAN_FEE = S.OFFER_LOAN_FEE,
+T.NET_OFFER_AMT = S.NET_OFFER_AMT,
+T.AWARD_PERIOD = S.AWARD_PERIOD,
+T.PKG_PLAN_ID = S.PKG_PLAN_ID,
+T.PKG_SEQ_NBR = S.PKG_SEQ_NBR,
+T.AWARD_POSTED = S.AWARD_POSTED,
+T.FA_PROF_JUDGEMENT = S.FA_PROF_JUDGEMENT,
+T.CUSTOM_LOAN_FEE = S.CUSTOM_LOAN_FEE,
+T.PKG_APP_DATA_USED = S.PKG_APP_DATA_USED,
+T.OVERRIDE_NEED = S.OVERRIDE_NEED,
+T.OVERRIDE_FL = S.OVERRIDE_FL,
+T.LN_DEST_FEE_PRCNT = S.LN_DEST_FEE_PRCNT,
+T.OFFER_REBATE_AMT = S.OFFER_REBATE_AMT,
+T.ACCEPT_REBATE_AMT = S.ACCEPT_REBATE_AMT,
+T.SFA_PKG_DEP_STAT = S.SFA_PKG_DEP_STAT,
+T.SFA_AGGR_SRC_USED = S.SFA_AGGR_SRC_USED,
+T.DATA_ORIGIN = 'S',
+T.LASTUPD_EW_DTTM = sysdate,
+T.BATCH_SID   = 1234
+where
+T.DISBURSEMENT_PLAN <> S.DISBURSEMENT_PLAN or
+T.SPLIT_CODE <> S.SPLIT_CODE or
+T.SETID <> S.SETID or
+T.AWARD_STATUS <> S.AWARD_STATUS or
+T.AWARD_MSG_CD <> S.AWARD_MSG_CD or
+T.OFFER_AMOUNT <> S.OFFER_AMOUNT or
+T.ACCEPT_AMOUNT <> S.ACCEPT_AMOUNT or
+T.DISBURSED_AMOUNT <> S.DISBURSED_AMOUNT or
+T.AUTHORIZED_AMOUNT <> S.AUTHORIZED_AMOUNT or
+T.HIGHEST_OFFER_AMT <> S.HIGHEST_OFFER_AMT or
+T.HIGHEST_ACCEPT_AMT <> S.HIGHEST_ACCEPT_AMT or
+T.WS_ERND_TO_DT <> S.WS_ERND_TO_DT or
+T.CURRENCY_CD <> S.CURRENCY_CD or
+T.NET_AWARD_AMT <> S.NET_AWARD_AMT or
+T.CANCEL_DECLINE_AMT <> S.CANCEL_DECLINE_AMT or
+T.OFFER_ACTIVITY_IND <> S.OFFER_ACTIVITY_IND or
+T.FIN_AID_TYPE <> S.FIN_AID_TYPE or
+T.LOAN_ADJUST_CD <> S.LOAN_ADJUST_CD or
+T.SCHEDULED_AWARD <> S.SCHEDULED_AWARD or
+T.LOAN_TOT_ORIG <> S.LOAN_TOT_ORIG or
+T.LOAN_TOT_DISB <> S.LOAN_TOT_DISB or
+T.LOCK_AWARD_FLAG <> S.LOCK_AWARD_FLAG or
+T.CHARGE_PRIORITY <> S.CHARGE_PRIORITY or
+T.PKG_STATUS_CD <> S.PKG_STATUS_CD or
+T.ACCEPT_LOAN_FEE <> S.ACCEPT_LOAN_FEE or
+T.OFFER_LOAN_FEE <> S.OFFER_LOAN_FEE or
+T.NET_OFFER_AMT <> S.NET_OFFER_AMT or
+T.AWARD_PERIOD <> S.AWARD_PERIOD or
+T.PKG_PLAN_ID <> S.PKG_PLAN_ID or
+T.PKG_SEQ_NBR <> S.PKG_SEQ_NBR or
+T.AWARD_POSTED <> S.AWARD_POSTED or
+T.FA_PROF_JUDGEMENT <> S.FA_PROF_JUDGEMENT or
+T.CUSTOM_LOAN_FEE <> S.CUSTOM_LOAN_FEE or
+T.PKG_APP_DATA_USED <> S.PKG_APP_DATA_USED or
+T.OVERRIDE_NEED <> S.OVERRIDE_NEED or
+T.OVERRIDE_FL <> S.OVERRIDE_FL or
+T.LN_DEST_FEE_PRCNT <> S.LN_DEST_FEE_PRCNT or
+T.OFFER_REBATE_AMT <> S.OFFER_REBATE_AMT or
+T.ACCEPT_REBATE_AMT <> S.ACCEPT_REBATE_AMT or
+T.SFA_PKG_DEP_STAT <> S.SFA_PKG_DEP_STAT or
+T.SFA_AGGR_SRC_USED <> S.SFA_AGGR_SRC_USED or
+T.DATA_ORIGIN = 'D'
+when not matched then
+insert (
+T.EMPLID,
+T.INSTITUTION,
+T.AID_YEAR,
+T.ITEM_TYPE,
+T.ACAD_CAREER,
+T.SRC_SYS_ID,
+T.DISBURSEMENT_PLAN,
+T.SPLIT_CODE,
+T.SETID,
+T.AWARD_STATUS,
+T.AWARD_MSG_CD,
+T.OFFER_AMOUNT,
+T.ACCEPT_AMOUNT,
+T.DISBURSED_AMOUNT,
+T.AUTHORIZED_AMOUNT,
+T.HIGHEST_OFFER_AMT,
+T.HIGHEST_ACCEPT_AMT,
+T.WS_ERND_TO_DT,
+T.CURRENCY_CD,
+T.NET_AWARD_AMT,
+T.CANCEL_DECLINE_AMT,
+T.OFFER_ACTIVITY_IND,
+T.FIN_AID_TYPE,
+T.LOAN_ADJUST_CD,
+T.SCHEDULED_AWARD,
+T.LOAN_TOT_ORIG,
+T.LOAN_TOT_DISB,
+T.LOCK_AWARD_FLAG,
+T.CHARGE_PRIORITY,
+T.PKG_STATUS_CD,
+T.ACCEPT_LOAN_FEE,
+T.OFFER_LOAN_FEE,
+T.NET_OFFER_AMT,
+T.AWARD_PERIOD,
+T.PKG_PLAN_ID,
+T.PKG_SEQ_NBR,
+T.AWARD_POSTED,
+T.FA_PROF_JUDGEMENT,
+T.CUSTOM_LOAN_FEE,
+T.PKG_APP_DATA_USED,
+T.OVERRIDE_NEED,
+T.OVERRIDE_FL,
+T.LN_DEST_FEE_PRCNT,
+T.OFFER_REBATE_AMT,
+T.ACCEPT_REBATE_AMT,
+T.SFA_PKG_DEP_STAT,
+T.SFA_AGGR_SRC_USED,
+T.LOAD_ERROR,
+T.DATA_ORIGIN,
+T.CREATED_EW_DTTM,
+T.LASTUPD_EW_DTTM,
+T.BATCH_SID
+)
+values (
+S.EMPLID,
+S.INSTITUTION,
+S.AID_YEAR,
+S.ITEM_TYPE,
+S.ACAD_CAREER,
+'CS90',
+S.DISBURSEMENT_PLAN,
+S.SPLIT_CODE,
+S.SETID,
+S.AWARD_STATUS,
+S.AWARD_MSG_CD,
+S.OFFER_AMOUNT,
+S.ACCEPT_AMOUNT,
+S.DISBURSED_AMOUNT,
+S.AUTHORIZED_AMOUNT,
+S.HIGHEST_OFFER_AMT,
+S.HIGHEST_ACCEPT_AMT,
+S.WS_ERND_TO_DT,
+S.CURRENCY_CD,
+S.NET_AWARD_AMT,
+S.CANCEL_DECLINE_AMT,
+S.OFFER_ACTIVITY_IND,
+S.FIN_AID_TYPE,
+S.LOAN_ADJUST_CD,
+S.SCHEDULED_AWARD,
+S.LOAN_TOT_ORIG,
+S.LOAN_TOT_DISB,
+S.LOCK_AWARD_FLAG,
+S.CHARGE_PRIORITY,
+S.PKG_STATUS_CD,
+S.ACCEPT_LOAN_FEE,
+S.OFFER_LOAN_FEE,
+S.NET_OFFER_AMT,
+S.AWARD_PERIOD,
+S.PKG_PLAN_ID,
+S.PKG_SEQ_NBR,
+S.AWARD_POSTED,
+S.FA_PROF_JUDGEMENT,
+S.CUSTOM_LOAN_FEE,
+S.PKG_APP_DATA_USED,
+S.OVERRIDE_NEED,
+S.OVERRIDE_FL,
+S.LN_DEST_FEE_PRCNT,
+S.OFFER_REBATE_AMT,
+S.ACCEPT_REBATE_AMT,
+S.SFA_PKG_DEP_STAT,
+S.SFA_AGGR_SRC_USED,
+'N',
+'S',
+sysdate,
+sysdate,
+1234);
+
+strSqlCommand   := 'SET intRowCount';
+intRowCount     := SQL%ROWCOUNT;
+
+strSqlCommand := 'commit';
+commit;
+
+strMessage01    := '# of PS_STDNT_AWARDS rows merged: ' || TO_CHAR(intRowCount,'999,999,999,999');
+COMMON_OWNER.SMT_LOG.PUT_MESSAGE(i_Message => strMessage01);
+
+strSqlCommand := 'SMT_PROCESS_LOG.PROCESS_DETAIL';
+COMMON_OWNER.SMT_PROCESS_LOG.PROCESS_DETAIL
+        (
+                i_TargetTableName   => 'PS_STDNT_AWARDS',
+                i_Action            => 'MERGE',
+                i_RowCount          => intRowCount
+        );
+
+
+strMessage01    := 'Updating CSSTG_OWNER.UM_STAGE_JOBS';
+COMMON_OWNER.SMT_LOG.PUT_MESSAGE(i_Message => strMessage01);
+
+strSqlCommand   := 'update TABLE_STATUS on CSSTG_OWNER.UM_STAGE_JOBS';
+update CSSTG_OWNER.UM_STAGE_JOBS
+   set TABLE_STATUS = 'Deleting',
+       OLD_MAX_SCN = NEW_MAX_SCN
+ where TABLE_NAME = 'PS_STDNT_AWARDS';
+
+strSqlCommand := 'commit';
+commit;
+
+
+strMessage01    := 'Updating DATA_ORIGIN on CSSTG_OWNER.PS_STDNT_AWARDS';
+COMMON_OWNER.SMT_LOG.PUT_MESSAGE(i_Message => strMessage01);
+
+strSqlCommand   := 'update DATA_ORIGIN on CSSTG_OWNER.PS_STDNT_AWARDS';
+update CSSTG_OWNER.PS_STDNT_AWARDS T
+   set T.DATA_ORIGIN = 'D',
+          T.LASTUPD_EW_DTTM = SYSDATE
+ where T.DATA_ORIGIN <> 'D'
+   and exists 
+(select 1 from
+(select EMPLID, INSTITUTION, AID_YEAR, ITEM_TYPE, ACAD_CAREER
+   from CSSTG_OWNER.PS_STDNT_AWARDS T2
+  where (select DELETE_FLG from CSSTG_OWNER.UM_STAGE_JOBS where TABLE_NAME = 'PS_STDNT_AWARDS') = 'Y'
+  minus
+ select nvl(trim(EMPLID),'-'), nvl(trim(INSTITUTION),'-'), nvl(trim(AID_YEAR),'-'), nvl(trim(ITEM_TYPE),'-'), nvl(trim(ACAD_CAREER),'-')
+   from SYSADM.PS_STDNT_AWARDS@SASOURCE S2
+  where (select DELETE_FLG from CSSTG_OWNER.UM_STAGE_JOBS where TABLE_NAME = 'PS_STDNT_AWARDS') = 'Y'
+   ) S
+ where T.EMPLID = S.EMPLID
+   and T.INSTITUTION = S.INSTITUTION
+   and T.AID_YEAR = S.AID_YEAR
+   and T.ITEM_TYPE = S.ITEM_TYPE
+   and T.ACAD_CAREER = S.ACAD_CAREER
+   and T.SRC_SYS_ID = 'CS90' 
+   ) 
+;
+
+strSqlCommand   := 'SET intRowCount';
+intRowCount     := SQL%ROWCOUNT;
+
+strSqlCommand := 'commit';
+commit;
+
+strMessage01    := '# of PS_STDNT_AWARDS rows updated: ' || TO_CHAR(intRowCount,'999,999,999,999');
+COMMON_OWNER.SMT_LOG.PUT_MESSAGE(i_Message => strMessage01);
+
+strSqlCommand := 'SMT_PROCESS_LOG.PROCESS_DETAIL';
+COMMON_OWNER.SMT_PROCESS_LOG.PROCESS_DETAIL
+        (
+                i_TargetTableName   => 'PS_STDNT_AWARDS',
+                i_Action            => 'UPDATE',
+                i_RowCount          => intRowCount
+        );
+
+
+strMessage01    := 'Updating CSSTG_OWNER.UM_STAGE_JOBS';
+COMMON_OWNER.SMT_LOG.PUT_MESSAGE(i_Message => strMessage01);
+
+strSqlCommand   := 'update END_DT on CSSTG_OWNER.UM_STAGE_JOBS';
+
+update CSSTG_OWNER.UM_STAGE_JOBS
+   set TABLE_STATUS = 'Complete',
+       END_DT = SYSDATE
+ where TABLE_NAME = 'PS_STDNT_AWARDS'
+;
+
+strSqlCommand := 'commit';
+commit;
+
+
+strSqlCommand := 'SMT_PROCESS_LOG.PROCESS_SUCCESS';
+COMMON_OWNER.SMT_PROCESS_LOG.PROCESS_SUCCESS;
+
+strMessage01    := strProcessName || ' is complete.';
+COMMON_OWNER.SMT_LOG.PUT_MESSAGE(i_Message => strMessage01);
+
+
+EXCEPTION
+    WHEN OTHERS THEN
+        numSqlCode := SQLCODE;
+        strSqlErrm := SQLERRM;
+
+        ROLLBACK;
+  
+        strMessage01 := 'Error code: ' || TO_CHAR(SQLCODE) || ' Error Message: ' || SQLERRM;
+        strMessage02 := TO_CHAR(SQLCODE);
+  
+        COMMON_OWNER.SMT_PROCESS_LOG.PROCESS_FAILURE
+                       (i_SqlCommand    => strSqlCommand,
+                        i_ErrorText     => strMessage01,
+                        i_ErrorCode     => strMessage02,
+                        i_ErrorMessage  => strSqlErrm
+                       );
+               
+        strMessage01 := 'Error...'
+                        || strNewLine   || 'SQL Command:   ' || strSqlCommand
+                        || strNewLine   || 'Error code:    ' || numSqlCode
+                        || strNewLine   || 'Error Message: ' || strSqlErrm;
+
+        COMMON_OWNER.SMT_LOG.PUT_MESSAGE(i_Message => strMessage01);
+        RAISE_APPLICATION_ERROR( -20001, strMessage01);
+
+END PS_STDNT_AWARDS_P;
+/

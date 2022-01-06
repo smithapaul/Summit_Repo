@@ -1,0 +1,856 @@
+CREATE OR REPLACE PROCEDURE             "PS_ISIR_CONTROL_P" AUTHID CURRENT_USER IS
+
+------------------------------------------------------------------------
+-- George Adams
+--
+-- Loads stage table PS_ISIR_CONTROL from PeopleSoft table PS_ISIR_CONTROL.
+--
+-- V01  SMT-xxxx 04/10/2017,    Jim Doucette
+--                              Converted from PS_ISIR_CONTROL.SQL
+--
+------------------------------------------------------------------------
+
+        strMartId                       Varchar2(50)    := 'CSW';
+        strProcessName                  Varchar2(100)   := 'PS_ISIR_CONTROL';
+        intProcessSid                   Integer;
+        dtProcessStart                  Date            := SYSDATE;
+        strMessage01                    Varchar2(4000);
+        strMessage02                    Varchar2(512);
+        strMessage03                    Varchar2(512)   :='';
+        strNewLine                      Varchar2(2)     := chr(13) || chr(10);
+        strSqlCommand                   Varchar2(32767) :='';
+        strSqlDynamic                   Varchar2(32767) :='';
+        strClientInfo                   Varchar2(100);
+        intRowCount                     Integer;
+        intTotalRowCount                Integer         := 0;
+        numSqlCode                      Number;
+        strSqlErrm                      Varchar2(4000);
+        intTries                        Integer;
+
+BEGIN
+strSqlCommand := 'DBMS_APPLICATION_INFO.SET_CLIENT_INFO';
+DBMS_APPLICATION_INFO.SET_CLIENT_INFO (strProcessName);
+
+strSqlCommand := 'SMT_PROCESS_LOG.PROCESS_INIT';
+COMMON_OWNER.SMT_PROCESS_LOG.PROCESS_INIT
+        (
+                i_MartId                => strMartId,
+                i_ProcessName           => strProcessName,
+                i_ProcessStartTime      => dtProcessStart,
+                o_ProcessSid            => intProcessSid
+        );
+
+strMessage01    := 'Updating CSSTG_OWNER.UM_STAGE_JOBS';
+COMMON_OWNER.SMT_LOG.PUT_MESSAGE(i_Message => strMessage01);
+
+
+strSqlCommand   := 'update START_DT on CSSTG_OWNER.UM_STAGE_JOBS';
+update CSSTG_OWNER.UM_STAGE_JOBS
+   set TABLE_STATUS = 'Reading',
+       START_DT = sysdate,
+       END_DT = NULL
+ where TABLE_NAME = 'PS_ISIR_CONTROL'
+;
+
+strSqlCommand := 'commit';
+commit;
+
+
+strSqlCommand   := 'update NEW_MAX_SCN on CSSTG_OWNER.UM_STAGE_JOBS';
+update CSSTG_OWNER.UM_STAGE_JOBS
+   set TABLE_STATUS = 'Merging',
+       NEW_MAX_SCN = (select /*+ full(S) */ max(ORA_ROWSCN) from SYSADM.PS_ISIR_CONTROL@SASOURCE S)
+ where TABLE_NAME = 'PS_ISIR_CONTROL'
+;
+
+strSqlCommand := 'commit';
+commit;
+
+
+strMessage01    := 'Merging data into CSSTG_OWNER.PS_ISIR_CONTROL';
+COMMON_OWNER.SMT_LOG.PUT_MESSAGE(i_Message => strMessage01);
+
+strSqlCommand   := 'merge into CSSTG_OWNER.PS_ISIR_CONTROL';
+merge /*+ use_hash(S,T) */ into CSSTG_OWNER.PS_ISIR_CONTROL T 
+using (select /*+ full(S) */
+    nvl(trim(EMPLID),'-') EMPLID, 
+    nvl(trim(INSTITUTION),'-') INSTITUTION, 
+    nvl(trim(AID_YEAR),'-') AID_YEAR, 
+    to_date(to_char(case when EFFDT < '01-JAN-1800' then NULL 
+                    else EFFDT end,'MM/DD/YYYY HH24:MI:SS'),'MM/DD/YYYY HH24:MI:SS') EFFDT, 
+    nvl(EFFSEQ,0) EFFSEQ, 
+    nvl(ISIR_TXN_NBR,0) ISIR_TXN_NBR, 
+    nvl(trim(ORIG_SSN),'-') ORIG_SSN, 
+    nvl(trim(NAME_CD),'-') NAME_CD, 
+    nvl(trim(LAST_NAME_SSN_CHNG),'-') LAST_NAME_SSN_CHNG, 
+    nvl(trim(SS_MATCH),'-') SS_MATCH, 
+    nvl(trim(SS_REGISTRATION),'-') SS_REGISTRATION, 
+    nvl(trim(INS_MATCH),'-') INS_MATCH, 
+    nvl(trim(SSN_MATCH),'-') SSN_MATCH, 
+    to_date(to_char(case when DT_APP_RECEIVED < '01-JAN-1800' then NULL 
+                    else DT_APP_RECEIVED end,'MM/DD/YYYY HH24:MI:SS'),'MM/DD/YYYY HH24:MI:SS') DT_APP_RECEIVED, 
+    nvl(trim(PELL_ELIGIBILITY),'-') PELL_ELIGIBILITY, 
+    nvl(ASSIGNED_PIN,0) ASSIGNED_PIN, 
+    nvl(trim(DUPLICATE_REQUEST),'-') DUPLICATE_REQUEST, 
+    nvl(trim(SAR_C_FLAG),'-') SAR_C_FLAG, 
+    nvl(trim(MDE_EDE_SITE_CODE),'-') MDE_EDE_SITE_CODE, 
+    nvl(trim(MDE_SITE_NBR),'-') MDE_SITE_NBR, 
+    nvl(trim(VERF_SELECTION_IND),'-') VERF_SELECTION_IND, 
+    nvl(trim(HOLD_IND),'-') HOLD_IND, 
+    nvl(trim(SYSTEM_GENERATED),'-') SYSTEM_GENERATED, 
+    to_date(to_char(case when TRANS_RECEIPT_DT < '01-JAN-1800' then NULL 
+                    else TRANS_RECEIPT_DT end,'MM/DD/YYYY HH24:MI:SS'),'MM/DD/YYYY HH24:MI:SS') TRANS_RECEIPT_DT,
+    to_date(to_char(case when TRANS_PROCESS_DT < '01-JAN-1800' then NULL 
+               else TRANS_PROCESS_DT end,'MM/DD/YYYY HH24:MI:SS'),'MM/DD/YYYY HH24:MI:SS') TRANS_PROCESS_DT,
+    nvl(trim(CPS_REPROCESS_CD),'-') CPS_REPROCESS_CD, 
+    nvl(trim(APP_SOURCE_CODE),'-') APP_SOURCE_CODE, 
+    nvl(trim(APP_SOURCE_SITE),'-') APP_SOURCE_SITE, 
+    nvl(trim(BATCH_NUMBER),'-') BATCH_NUMBER, 
+    nvl(trim(SFA_TRANS_TYPE),'-') SFA_TRANS_TYPE, 
+    nvl(trim(ELEC_INSTITUT_IND),'-') ELEC_INSTITUT_IND, 
+    nvl(trim(VERIFCATION_TYPE),'-') VERIFCATION_TYPE, 
+    nvl(trim(CORRECTION_APPLIED),'-') CORRECTION_APPLIED, 
+    nvl(trim(FAA_INSTITUT_NUM),'-') FAA_INSTITUT_NUM, 
+    nvl(trim(INS_VERF_NUM),'-') INS_VERF_NUM, 
+    nvl(trim(FULL_PARTIAL_ESAR),'-') FULL_PARTIAL_ESAR, 
+    nvl(trim(MULTI_INSTITUTION),'-') MULTI_INSTITUTION, 
+    nvl(trim(SEND_ISAR_SW),'-') SEND_ISAR_SW, 
+    nvl(trim(FINAL_REVIEW_SW),'-') FINAL_REVIEW_SW, 
+    nvl(trim(DEPNDNCY_OVERRIDE),'-') DEPNDNCY_OVERRIDE, 
+    nvl(trim(FAA_SIGNATURE),'-') FAA_SIGNATURE, 
+    nvl(trim(APPLICATION_STAT),'-') APPLICATION_STAT, 
+    to_date(to_char(case when APP_STAT_DT < '01-JAN-1800' then NULL 
+                    else APP_STAT_DT end,'MM/DD/YYYY HH24:MI:SS'),'MM/DD/YYYY HH24:MI:SS') APP_STAT_DT, 
+    nvl(trim(EFC_STATUS),'-') EFC_STATUS, 
+    nvl(trim(OPRID),'-') OPRID, 
+    nvl(trim(ADJ_EFC_CALC_REQ),'-') ADJ_EFC_CALC_REQ, 
+    nvl(trim(ASSUMPTION_OVRRIDE),'-') ASSUMPTION_OVRRIDE, 
+    nvl(trim(CORRECTION_STATUS),'-') CORRECTION_STATUS, 
+    to_date(to_char(case when CORR_STAT_DT < '01-JAN-1800' then NULL 
+                    else CORR_STAT_DT end,'MM/DD/YYYY HH24:MI:SS'),'MM/DD/YYYY HH24:MI:SS') CORR_STAT_DT,
+    nvl(trim(CORR_NAME),'-') CORR_NAME, 
+    nvl(trim(CORR_ADDRESS),'-') CORR_ADDRESS, 
+    nvl(trim(CORR_SSN),'-') CORR_SSN, 
+    nvl(trim(CORR_DOB),'-') CORR_DOB, 
+    nvl(trim(CORR_PHONE),'-') CORR_PHONE, 
+    nvl(trim(CORR_STATE_RES),'-') CORR_STATE_RES, 
+    nvl(trim(CORR_STATE_RES_DT),'-') CORR_STATE_RES_DT, 
+    nvl(trim(CORR_LICENSE),'-') CORR_LICENSE, 
+    nvl(trim(CORR_LICENSE_STATE),'-') CORR_LICENSE_STATE, 
+    nvl(trim(CORR_CIT_STATUS),'-') CORR_CIT_STATUS, 
+    nvl(trim(CORR_ALIEN_REG_NUM),'-') CORR_ALIEN_REG_NUM, 
+    nvl(trim(CORR_MARITAL_STAT),'-') CORR_MARITAL_STAT, 
+    nvl(trim(CORR_MARITAL_DATE),'-') CORR_MARITAL_DATE, 
+    nvl(trim(TITLEIV_ELIG),'-') TITLEIV_ELIG, 
+    nvl(trim(ISIR_PRINT_REQUEST),'-') ISIR_PRINT_REQUEST, 
+    to_date(to_char(case when ISIR_PRINT_DT < '01-JAN-1800' then NULL 
+                    else ISIR_PRINT_DT end,'MM/DD/YYYY HH24:MI:SS'),'MM/DD/YYYY HH24:MI:SS') ISIR_PRINT_DT, 
+    to_date(to_char(case when INST_PROCESS_DT < '01-JAN-1800' then NULL 
+               else INST_PROCESS_DT end,'MM/DD/YYYY HH24:MI:SS'),'MM/DD/YYYY HH24:MI:SS') INST_PROCESS_DT, 
+    nvl(ADJ_EFC,0) ADJ_EFC, 
+    nvl(trim(SSA_CITIZENSHP_IND),'-') SSA_CITIZENSHP_IND, 
+    nvl(ISIR_SERIAL_NUM,0) ISIR_SERIAL_NUM, 
+    nvl(trim(OWNING_SCHOOL_CD),'-') OWNING_SCHOOL_CD, 
+    nvl(trim(SEND_VERIFY_FIELDS),'-') SEND_VERIFY_FIELDS, 
+    nvl(trim(NSLDS_TXN_NBR),'-') NSLDS_TXN_NBR, 
+    nvl(trim(INAS_RFC_CALL),'-') INAS_RFC_CALL, 
+    nvl(trim(EARLY_ANALYSIS_FLG),'-') EARLY_ANALYSIS_FLG, 
+    nvl(trim(ELECTRONIC_APP_VER),'-') ELECTRONIC_APP_VER, 
+    nvl(trim(ETI_DEST_CD),'-') ETI_DEST_CD, 
+    nvl(trim(ISIR_REC_TYPE),'-') ISIR_REC_TYPE, 
+    nvl(trim(SIMP_NEED_TEST),'-') SIMP_NEED_TEST, 
+    to_date(to_char(case when SSN_DATE_OF_DEATH < '01-JAN-1800' then NULL 
+               else SSN_DATE_OF_DEATH end,'MM/DD/YYYY HH24:MI:SS'),'MM/DD/YYYY HH24:MI:SS') SSN_DATE_OF_DEATH, 
+    nvl(trim(SUB_APP_FLAG),'-') SUB_APP_FLAG, 
+    nvl(trim(COMPUTE_BTCH_NO),'-') COMPUTE_BTCH_NO, 
+    to_date(to_char(case when DUP_PROC_DT < '01-JAN-1800' then NULL 
+               else DUP_PROC_DT end,'MM/DD/YYYY HH24:MI:SS'),'MM/DD/YYYY HH24:MI:SS') DUP_PROC_DT, 
+    nvl(trim(VA_MATCH),'-') VA_MATCH, 
+    nvl(trim(PRISONER_MATCH),'-') PRISONER_MATCH, 
+    nvl(PROCESS_INSTANCE,0) PROCESS_INSTANCE, 
+    to_date(to_char(case when PROCESS_DT < '01-JAN-1800' then NULL 
+               else PROCESS_DT end,'MM/DD/YYYY HH24:MI:SS'),'MM/DD/YYYY HH24:MI:SS') PROCESS_DT,
+    nvl(trim(APP_SOURCE),'-') APP_SOURCE, 
+    nvl(trim(TRANS_SOURCE),'-') TRANS_SOURCE, 
+    nvl(trim(ADDRESS_TYPE),'-') ADDRESS_TYPE, 
+    nvl(trim(OVRD_ADDR_TYPE),'-') OVRD_ADDR_TYPE, 
+    nvl(trim(PREP_SSN),'-') PREP_SSN, 
+    nvl(trim(PREP_SIGNATURE),'-') PREP_SIGNATURE, 
+    nvl(trim(PREP_EIN),'-') PREP_EIN, 
+    nvl(trim(ISIR_CORR_SRC),'-') ISIR_CORR_SRC, 
+    nvl(trim(ISIR_EFC_CHANGE),'-') ISIR_EFC_CHANGE, 
+    nvl(trim(ISIR_SEC_INS_MATCH),'-') ISIR_SEC_INS_MATCH, 
+    nvl(trim(ISIR_SEC_INS_VERF),'-') ISIR_SEC_INS_VERF, 
+    nvl(trim(ISIR_DUP_SSN_CD),'-') ISIR_DUP_SSN_CD, 
+    nvl(trim(CORR_EMAIL_ADDR),'-') CORR_EMAIL_ADDR, 
+    nvl(trim(ISIR_ORIG_IND),'-') ISIR_ORIG_IND, 
+    nvl(trim(VERIF_TRK_FLG),'-') VERIF_TRK_FLG, 
+    nvl(trim(EFC_OVRD_DSPLAY_FM),'-') EFC_OVRD_DSPLAY_FM, 
+    nvl(trim(ISIR_CPS_PUSHED),'-') ISIR_CPS_PUSHED, 
+    nvl(trim(ISIR_SAR_C_CHNG),'-') ISIR_SAR_C_CHNG, 
+    nvl(trim(FATHER_SSN_MATCH),'-') FATHER_SSN_MATCH, 
+    nvl(trim(MOTHER_SSN_MATCH),'-') MOTHER_SSN_MATCH, 
+    nvl(trim(SFA_VF_SEL_CHG_FLG),'-') SFA_VF_SEL_CHG_FLG, 
+    nvl(trim(SFA_REJ_ST_CHG_FLG),'-') SFA_REJ_ST_CHG_FLG, 
+    nvl(trim(ISIR_OVRD_E_TYPE),'-') ISIR_OVRD_E_TYPE, 
+    nvl(trim(ISIR_OVRD_P_TYPE),'-') ISIR_OVRD_P_TYPE, 
+    nvl(trim(PHONE_TYPE),'-') PHONE_TYPE, 
+    nvl(trim(E_ADDR_TYPE),'-') E_ADDR_TYPE, 
+    nvl(trim(SFA_SPL_CIRCUM_FLG),'-') SFA_SPL_CIRCUM_FLG, 
+    nvl(trim(SFA_DOD_MATCH),'-') SFA_DOD_MATCH, 
+    to_date(to_char(case when SFA_DOD_PARENT < '01-JAN-1800' then NULL 
+                    else SFA_DOD_PARENT end,'MM/DD/YYYY HH24:MI:SS'),'MM/DD/YYYY HH24:MI:SS') SFA_DOD_PARENT,
+    nvl(trim(SFA_STU_IRS_REQUST),'-') SFA_STU_IRS_REQUST, 
+    nvl(trim(SFA_PAR_IRS_REQUST),'-') SFA_PAR_IRS_REQUST, 
+    nvl(trim(SFA_HIGH_SCHL_FLAG),'-') SFA_HIGH_SCHL_FLAG, 
+    nvl(trim(SFA_STU_IRS_AGI),'-') SFA_STU_IRS_AGI, 
+    nvl(trim(SFA_STU_IRS_FIT),'-') SFA_STU_IRS_FIT, 
+    nvl(trim(SFA_PAR_IRS_AGI),'-') SFA_PAR_IRS_AGI, 
+    nvl(trim(SFA_PAR_IRS_FIT),'-') SFA_PAR_IRS_FIT, 
+    nvl(trim(SFA_STU_IRS_DISP),'-') SFA_STU_IRS_DISP, 
+    nvl(trim(SFA_PAR_IRS_DISP),'-') SFA_PAR_IRS_DISP
+  from SYSADM.PS_ISIR_CONTROL@SASOURCE S
+ where ORA_ROWSCN > (select OLD_MAX_SCN from CSSTG_OWNER.UM_STAGE_JOBS where TABLE_NAME = 'PS_ISIR_CONTROL')
+   and EMPLID between '00000000' and '99999999'
+   and length(EMPLID) = 8 ) S 
+     on ( 
+    T.EMPLID = S.EMPLID and 
+    T.INSTITUTION = S.INSTITUTION and 
+    T.AID_YEAR = S.AID_YEAR and 
+    T.EFFDT = S.EFFDT and 
+    T.EFFSEQ = S.EFFSEQ and 
+    T.SRC_SYS_ID = 'CS90')
+    when matched then update set
+    T.ISIR_TXN_NBR = S.ISIR_TXN_NBR,
+    T.ORIG_SSN = S.ORIG_SSN,
+    T.NAME_CD = S.NAME_CD,
+    T.LAST_NAME_SSN_CHNG = S.LAST_NAME_SSN_CHNG,
+    T.SS_MATCH = S.SS_MATCH,
+    T.SS_REGISTRATION = S.SS_REGISTRATION,
+    T.INS_MATCH = S.INS_MATCH,
+    T.SSN_MATCH = S.SSN_MATCH,
+    T.DT_APP_RECEIVED = S.DT_APP_RECEIVED,
+    T.PELL_ELIGIBILITY = S.PELL_ELIGIBILITY,
+    T.ASSIGNED_PIN = S.ASSIGNED_PIN,
+    T.DUPLICATE_REQUEST = S.DUPLICATE_REQUEST,
+    T.SAR_C_FLAG = S.SAR_C_FLAG,
+    T.MDE_EDE_SITE_CODE = S.MDE_EDE_SITE_CODE,
+    T.MDE_SITE_NBR = S.MDE_SITE_NBR,
+    T.VERF_SELECTION_IND = S.VERF_SELECTION_IND,
+    T.HOLD_IND = S.HOLD_IND,
+    T.SYSTEM_GENERATED = S.SYSTEM_GENERATED,
+    T.TRANS_RECEIPT_DT = S.TRANS_RECEIPT_DT,
+    T.TRANS_PROCESS_DT = S.TRANS_PROCESS_DT,
+    T.CPS_REPROCESS_CD = S.CPS_REPROCESS_CD,
+    T.APP_SOURCE_CODE = S.APP_SOURCE_CODE,
+    T.APP_SOURCE_SITE = S.APP_SOURCE_SITE,
+    T.BATCH_NUMBER = S.BATCH_NUMBER,
+    T.SFA_TRANS_TYPE = S.SFA_TRANS_TYPE,
+    T.ELEC_INSTITUT_IND = S.ELEC_INSTITUT_IND,
+    T.VERIFCATION_TYPE = S.VERIFCATION_TYPE,
+    T.CORRECTION_APPLIED = S.CORRECTION_APPLIED,
+    T.FAA_INSTITUT_NUM = S.FAA_INSTITUT_NUM,
+    T.INS_VERF_NUM = S.INS_VERF_NUM,
+    T.FULL_PARTIAL_ESAR = S.FULL_PARTIAL_ESAR,
+    T.MULTI_INSTITUTION = S.MULTI_INSTITUTION,
+    T.SEND_ISAR_SW = S.SEND_ISAR_SW,
+    T.FINAL_REVIEW_SW = S.FINAL_REVIEW_SW,
+    T.DEPNDNCY_OVERRIDE = S.DEPNDNCY_OVERRIDE,
+    T.FAA_SIGNATURE = S.FAA_SIGNATURE,
+    T.APPLICATION_STAT = S.APPLICATION_STAT,
+    T.APP_STAT_DT = S.APP_STAT_DT,
+    T.EFC_STATUS = S.EFC_STATUS,
+    T.OPRID = S.OPRID,
+    T.ADJ_EFC_CALC_REQ = S.ADJ_EFC_CALC_REQ,
+    T.ASSUMPTION_OVRRIDE = S.ASSUMPTION_OVRRIDE,
+    T.CORRECTION_STATUS = S.CORRECTION_STATUS,
+    T.CORR_STAT_DT = S.CORR_STAT_DT,
+    T.CORR_NAME = S.CORR_NAME,
+    T.CORR_ADDRESS = S.CORR_ADDRESS,
+    T.CORR_SSN = S.CORR_SSN,
+    T.CORR_DOB = S.CORR_DOB,
+    T.CORR_PHONE = S.CORR_PHONE,
+    T.CORR_STATE_RES = S.CORR_STATE_RES,
+    T.CORR_STATE_RES_DT = S.CORR_STATE_RES_DT,
+    T.CORR_LICENSE = S.CORR_LICENSE,
+    T.CORR_LICENSE_STATE = S.CORR_LICENSE_STATE,
+    T.CORR_CIT_STATUS = S.CORR_CIT_STATUS,
+    T.CORR_ALIEN_REG_NUM = S.CORR_ALIEN_REG_NUM,
+    T.CORR_MARITAL_STAT = S.CORR_MARITAL_STAT,
+    T.CORR_MARITAL_DATE = S.CORR_MARITAL_DATE,
+    T.TITLEIV_ELIG = S.TITLEIV_ELIG,
+    T.ISIR_PRINT_REQUEST = S.ISIR_PRINT_REQUEST,
+    T.ISIR_PRINT_DT = S.ISIR_PRINT_DT,
+    T.INST_PROCESS_DT = S.INST_PROCESS_DT,
+    T.ADJ_EFC = S.ADJ_EFC,
+    T.SSA_CITIZENSHP_IND = S.SSA_CITIZENSHP_IND,
+    T.ISIR_SERIAL_NUM = S.ISIR_SERIAL_NUM,
+    T.OWNING_SCHOOL_CD = S.OWNING_SCHOOL_CD,
+    T.SEND_VERIFY_FIELDS = S.SEND_VERIFY_FIELDS,
+    T.NSLDS_TXN_NBR = S.NSLDS_TXN_NBR,
+    T.INAS_RFC_CALL = S.INAS_RFC_CALL,
+    T.EARLY_ANALYSIS_FLG = S.EARLY_ANALYSIS_FLG,
+    T.ELECTRONIC_APP_VER = S.ELECTRONIC_APP_VER,
+    T.ETI_DEST_CD = S.ETI_DEST_CD,
+    T.ISIR_REC_TYPE = S.ISIR_REC_TYPE,
+    T.SIMP_NEED_TEST = S.SIMP_NEED_TEST,
+    T.SSN_DATE_OF_DEATH = S.SSN_DATE_OF_DEATH,
+    T.SUB_APP_FLAG = S.SUB_APP_FLAG,
+    T.COMPUTE_BTCH_NO = S.COMPUTE_BTCH_NO,
+    T.DUP_PROC_DT = S.DUP_PROC_DT,
+    T.VA_MATCH = S.VA_MATCH,
+    T.PRISONER_MATCH = S.PRISONER_MATCH,
+    T.PROCESS_INSTANCE = S.PROCESS_INSTANCE,
+    T.PROCESS_DT = S.PROCESS_DT,
+    T.APP_SOURCE = S.APP_SOURCE,
+    T.TRANS_SOURCE = S.TRANS_SOURCE,
+    T.ADDRESS_TYPE = S.ADDRESS_TYPE,
+    T.OVRD_ADDR_TYPE = S.OVRD_ADDR_TYPE,
+    T.PREP_SSN = S.PREP_SSN,
+    T.PREP_SIGNATURE = S.PREP_SIGNATURE,
+    T.PREP_EIN = S.PREP_EIN,
+    T.ISIR_CORR_SRC = S.ISIR_CORR_SRC,
+    T.ISIR_EFC_CHANGE = S.ISIR_EFC_CHANGE,
+    T.ISIR_SEC_INS_MATCH = S.ISIR_SEC_INS_MATCH,
+    T.ISIR_SEC_INS_VERF = S.ISIR_SEC_INS_VERF,
+    T.ISIR_DUP_SSN_CD = S.ISIR_DUP_SSN_CD,
+    T.CORR_EMAIL_ADDR = S.CORR_EMAIL_ADDR,
+    T.ISIR_ORIG_IND = S.ISIR_ORIG_IND,
+    T.VERIF_TRK_FLG = S.VERIF_TRK_FLG,
+    T.EFC_OVRD_DSPLAY_FM = S.EFC_OVRD_DSPLAY_FM,
+    T.ISIR_CPS_PUSHED = S.ISIR_CPS_PUSHED,
+    T.ISIR_SAR_C_CHNG = S.ISIR_SAR_C_CHNG,
+    T.FATHER_SSN_MATCH = S.FATHER_SSN_MATCH,
+    T.MOTHER_SSN_MATCH = S.MOTHER_SSN_MATCH,
+    T.SFA_VF_SEL_CHG_FLG = S.SFA_VF_SEL_CHG_FLG,
+    T.SFA_REJ_ST_CHG_FLG = S.SFA_REJ_ST_CHG_FLG,
+    T.ISIR_OVRD_E_TYPE = S.ISIR_OVRD_E_TYPE,
+    T.ISIR_OVRD_P_TYPE = S.ISIR_OVRD_P_TYPE,
+    T.PHONE_TYPE = S.PHONE_TYPE,
+    T.E_ADDR_TYPE = S.E_ADDR_TYPE,
+    T.SFA_SPL_CIRCUM_FLG = S.SFA_SPL_CIRCUM_FLG,
+    T.SFA_DOD_MATCH = S.SFA_DOD_MATCH,
+    T.SFA_DOD_PARENT = S.SFA_DOD_PARENT,
+    T.SFA_STU_IRS_REQUST = S.SFA_STU_IRS_REQUST,
+    T.SFA_PAR_IRS_REQUST = S.SFA_PAR_IRS_REQUST,
+    T.SFA_HIGH_SCHL_FLAG = S.SFA_HIGH_SCHL_FLAG,
+    T.SFA_STU_IRS_AGI = S.SFA_STU_IRS_AGI,
+    T.SFA_STU_IRS_FIT = S.SFA_STU_IRS_FIT,
+    T.SFA_PAR_IRS_AGI = S.SFA_PAR_IRS_AGI,
+    T.SFA_PAR_IRS_FIT = S.SFA_PAR_IRS_FIT,
+    T.SFA_STU_IRS_DISP = S.SFA_STU_IRS_DISP,
+    T.SFA_PAR_IRS_DISP = S.SFA_PAR_IRS_DISP,
+    T.DATA_ORIGIN = 'S',
+    T.LASTUPD_EW_DTTM = sysdate,
+    T.BATCH_SID = 1234
+where 
+    T.ISIR_TXN_NBR <> S.ISIR_TXN_NBR or 
+    T.ORIG_SSN <> S.ORIG_SSN or 
+    T.NAME_CD <> S.NAME_CD or 
+    T.LAST_NAME_SSN_CHNG <> S.LAST_NAME_SSN_CHNG or 
+    T.SS_MATCH <> S.SS_MATCH or 
+    T.SS_REGISTRATION <> S.SS_REGISTRATION or 
+    T.INS_MATCH <> S.INS_MATCH or 
+    T.SSN_MATCH <> S.SSN_MATCH or 
+    nvl(trim(T.DT_APP_RECEIVED),0) <> nvl(trim(S.DT_APP_RECEIVED),0) or 
+    T.PELL_ELIGIBILITY <> S.PELL_ELIGIBILITY or 
+    T.ASSIGNED_PIN <> S.ASSIGNED_PIN or 
+    T.DUPLICATE_REQUEST <> S.DUPLICATE_REQUEST or 
+    T.SAR_C_FLAG <> S.SAR_C_FLAG or 
+    T.MDE_EDE_SITE_CODE <> S.MDE_EDE_SITE_CODE or 
+    T.MDE_SITE_NBR <> S.MDE_SITE_NBR or 
+    T.VERF_SELECTION_IND <> S.VERF_SELECTION_IND or 
+    T.HOLD_IND <> S.HOLD_IND or 
+    T.SYSTEM_GENERATED <> S.SYSTEM_GENERATED or 
+    nvl(trim(T.TRANS_RECEIPT_DT),0) <> nvl(trim(S.TRANS_RECEIPT_DT),0) or 
+    nvl(trim(T.TRANS_PROCESS_DT),0) <> nvl(trim(S.TRANS_PROCESS_DT),0) or 
+    T.CPS_REPROCESS_CD <> S.CPS_REPROCESS_CD or 
+    T.APP_SOURCE_CODE <> S.APP_SOURCE_CODE or 
+    T.APP_SOURCE_SITE <> S.APP_SOURCE_SITE or 
+    T.BATCH_NUMBER <> S.BATCH_NUMBER or 
+    T.SFA_TRANS_TYPE <> S.SFA_TRANS_TYPE or 
+    T.ELEC_INSTITUT_IND <> S.ELEC_INSTITUT_IND or 
+    T.VERIFCATION_TYPE <> S.VERIFCATION_TYPE or 
+    T.CORRECTION_APPLIED <> S.CORRECTION_APPLIED or 
+    T.FAA_INSTITUT_NUM <> S.FAA_INSTITUT_NUM or 
+    T.INS_VERF_NUM <> S.INS_VERF_NUM or 
+    T.FULL_PARTIAL_ESAR <> S.FULL_PARTIAL_ESAR or 
+    T.MULTI_INSTITUTION <> S.MULTI_INSTITUTION or 
+    T.SEND_ISAR_SW <> S.SEND_ISAR_SW or 
+    T.FINAL_REVIEW_SW <> S.FINAL_REVIEW_SW or 
+    T.DEPNDNCY_OVERRIDE <> S.DEPNDNCY_OVERRIDE or 
+    T.FAA_SIGNATURE <> S.FAA_SIGNATURE or 
+    T.APPLICATION_STAT <> S.APPLICATION_STAT or 
+    nvl(trim(T.APP_STAT_DT),0) <> nvl(trim(S.APP_STAT_DT),0) or 
+    T.EFC_STATUS <> S.EFC_STATUS or 
+    T.OPRID <> S.OPRID or 
+    T.ADJ_EFC_CALC_REQ <> S.ADJ_EFC_CALC_REQ or 
+    T.ASSUMPTION_OVRRIDE <> S.ASSUMPTION_OVRRIDE or 
+    T.CORRECTION_STATUS <> S.CORRECTION_STATUS or 
+    nvl(trim(T.CORR_STAT_DT),0) <> nvl(trim(S.CORR_STAT_DT),0) or 
+    T.CORR_NAME <> S.CORR_NAME or 
+    T.CORR_ADDRESS <> S.CORR_ADDRESS or 
+    T.CORR_SSN <> S.CORR_SSN or 
+    T.CORR_DOB <> S.CORR_DOB or 
+    T.CORR_PHONE <> S.CORR_PHONE or 
+    T.CORR_STATE_RES <> S.CORR_STATE_RES or 
+    T.CORR_STATE_RES_DT <> S.CORR_STATE_RES_DT or 
+    T.CORR_LICENSE <> S.CORR_LICENSE or 
+    T.CORR_LICENSE_STATE <> S.CORR_LICENSE_STATE or 
+    T.CORR_CIT_STATUS <> S.CORR_CIT_STATUS or 
+    T.CORR_ALIEN_REG_NUM <> S.CORR_ALIEN_REG_NUM or 
+    T.CORR_MARITAL_STAT <> S.CORR_MARITAL_STAT or 
+    T.CORR_MARITAL_DATE <> S.CORR_MARITAL_DATE or 
+    T.TITLEIV_ELIG <> S.TITLEIV_ELIG or 
+    T.ISIR_PRINT_REQUEST <> S.ISIR_PRINT_REQUEST or 
+    nvl(trim(T.ISIR_PRINT_DT),0) <> nvl(trim(S.ISIR_PRINT_DT),0) or 
+    nvl(trim(T.INST_PROCESS_DT),0) <> nvl(trim(S.INST_PROCESS_DT),0) or 
+    T.ADJ_EFC <> S.ADJ_EFC or 
+    T.SSA_CITIZENSHP_IND <> S.SSA_CITIZENSHP_IND or 
+    T.ISIR_SERIAL_NUM <> S.ISIR_SERIAL_NUM or 
+    T.OWNING_SCHOOL_CD <> S.OWNING_SCHOOL_CD or 
+    T.SEND_VERIFY_FIELDS <> S.SEND_VERIFY_FIELDS or 
+    T.NSLDS_TXN_NBR <> S.NSLDS_TXN_NBR or 
+    T.INAS_RFC_CALL <> S.INAS_RFC_CALL or 
+    T.EARLY_ANALYSIS_FLG <> S.EARLY_ANALYSIS_FLG or 
+    T.ELECTRONIC_APP_VER <> S.ELECTRONIC_APP_VER or 
+    T.ETI_DEST_CD <> S.ETI_DEST_CD or 
+    T.ISIR_REC_TYPE <> S.ISIR_REC_TYPE or 
+    T.SIMP_NEED_TEST <> S.SIMP_NEED_TEST or 
+    nvl(trim(T.SSN_DATE_OF_DEATH),0) <> nvl(trim(S.SSN_DATE_OF_DEATH),0) or 
+    T.SUB_APP_FLAG <> S.SUB_APP_FLAG or 
+    T.COMPUTE_BTCH_NO <> S.COMPUTE_BTCH_NO or 
+    nvl(trim(T.DUP_PROC_DT),0) <> nvl(trim(S.DUP_PROC_DT),0) or 
+    T.VA_MATCH <> S.VA_MATCH or 
+    T.PRISONER_MATCH <> S.PRISONER_MATCH or 
+    T.PROCESS_INSTANCE <> S.PROCESS_INSTANCE or 
+    nvl(trim(T.PROCESS_DT),0) <> nvl(trim(S.PROCESS_DT),0) or 
+    T.APP_SOURCE <> S.APP_SOURCE or 
+    T.TRANS_SOURCE <> S.TRANS_SOURCE or 
+    T.ADDRESS_TYPE <> S.ADDRESS_TYPE or 
+    T.OVRD_ADDR_TYPE <> S.OVRD_ADDR_TYPE or 
+    T.PREP_SSN <> S.PREP_SSN or 
+    T.PREP_SIGNATURE <> S.PREP_SIGNATURE or 
+    T.PREP_EIN <> S.PREP_EIN or 
+    T.ISIR_CORR_SRC <> S.ISIR_CORR_SRC or 
+    T.ISIR_EFC_CHANGE <> S.ISIR_EFC_CHANGE or 
+    T.ISIR_SEC_INS_MATCH <> S.ISIR_SEC_INS_MATCH or 
+    T.ISIR_SEC_INS_VERF <> S.ISIR_SEC_INS_VERF or 
+    T.ISIR_DUP_SSN_CD <> S.ISIR_DUP_SSN_CD or 
+    T.CORR_EMAIL_ADDR <> S.CORR_EMAIL_ADDR or 
+    T.ISIR_ORIG_IND <> S.ISIR_ORIG_IND or 
+    T.VERIF_TRK_FLG <> S.VERIF_TRK_FLG or 
+    T.EFC_OVRD_DSPLAY_FM <> S.EFC_OVRD_DSPLAY_FM or 
+    T.ISIR_CPS_PUSHED <> S.ISIR_CPS_PUSHED or 
+    T.ISIR_SAR_C_CHNG <> S.ISIR_SAR_C_CHNG or 
+    T.FATHER_SSN_MATCH <> S.FATHER_SSN_MATCH or 
+    T.MOTHER_SSN_MATCH <> S.MOTHER_SSN_MATCH or 
+    T.SFA_VF_SEL_CHG_FLG <> S.SFA_VF_SEL_CHG_FLG or 
+    T.SFA_REJ_ST_CHG_FLG <> S.SFA_REJ_ST_CHG_FLG or 
+    T.ISIR_OVRD_E_TYPE <> S.ISIR_OVRD_E_TYPE or 
+    T.ISIR_OVRD_P_TYPE <> S.ISIR_OVRD_P_TYPE or 
+    T.PHONE_TYPE <> S.PHONE_TYPE or 
+    T.E_ADDR_TYPE <> S.E_ADDR_TYPE or 
+    T.SFA_SPL_CIRCUM_FLG <> S.SFA_SPL_CIRCUM_FLG or 
+    T.SFA_DOD_MATCH <> S.SFA_DOD_MATCH or 
+    nvl(trim(T.SFA_DOD_PARENT),0) <> nvl(trim(S.SFA_DOD_PARENT),0) or 
+    T.SFA_STU_IRS_REQUST <> S.SFA_STU_IRS_REQUST or 
+    T.SFA_PAR_IRS_REQUST <> S.SFA_PAR_IRS_REQUST or 
+    T.SFA_HIGH_SCHL_FLAG <> S.SFA_HIGH_SCHL_FLAG or 
+    T.SFA_STU_IRS_AGI <> S.SFA_STU_IRS_AGI or 
+    T.SFA_STU_IRS_FIT <> S.SFA_STU_IRS_FIT or 
+    T.SFA_PAR_IRS_AGI <> S.SFA_PAR_IRS_AGI or 
+    T.SFA_PAR_IRS_FIT <> S.SFA_PAR_IRS_FIT or 
+    T.SFA_STU_IRS_DISP <> S.SFA_STU_IRS_DISP or 
+    T.SFA_PAR_IRS_DISP <> S.SFA_PAR_IRS_DISP or 
+    T.DATA_ORIGIN = 'D' 
+when not matched then 
+insert (
+    T.EMPLID, 
+    T.INSTITUTION,
+    T.AID_YEAR, 
+    T.EFFDT,
+    T.EFFSEQ, 
+    T.SRC_SYS_ID, 
+    T.ISIR_TXN_NBR, 
+    T.ORIG_SSN, 
+    T.NAME_CD,
+    T.LAST_NAME_SSN_CHNG, 
+    T.SS_MATCH, 
+    T.SS_REGISTRATION,
+    T.INS_MATCH,
+    T.SSN_MATCH,
+    T.DT_APP_RECEIVED,
+    T.PELL_ELIGIBILITY, 
+    T.ASSIGNED_PIN, 
+    T.DUPLICATE_REQUEST,
+    T.SAR_C_FLAG, 
+    T.MDE_EDE_SITE_CODE,
+    T.MDE_SITE_NBR, 
+    T.VERF_SELECTION_IND, 
+    T.HOLD_IND, 
+    T.SYSTEM_GENERATED, 
+    T.TRANS_RECEIPT_DT, 
+    T.TRANS_PROCESS_DT, 
+    T.CPS_REPROCESS_CD, 
+    T.APP_SOURCE_CODE,
+    T.APP_SOURCE_SITE,
+    T.BATCH_NUMBER, 
+    T.SFA_TRANS_TYPE, 
+    T.ELEC_INSTITUT_IND,
+    T.VERIFCATION_TYPE, 
+    T.CORRECTION_APPLIED, 
+    T.FAA_INSTITUT_NUM, 
+    T.INS_VERF_NUM, 
+    T.FULL_PARTIAL_ESAR,
+    T.MULTI_INSTITUTION,
+    T.SEND_ISAR_SW, 
+    T.FINAL_REVIEW_SW,
+    T.DEPNDNCY_OVERRIDE,
+    T.FAA_SIGNATURE,
+    T.APPLICATION_STAT, 
+    T.APP_STAT_DT,
+    T.EFC_STATUS, 
+    T.OPRID,
+    T.ADJ_EFC_CALC_REQ, 
+    T.ASSUMPTION_OVRRIDE, 
+    T.CORRECTION_STATUS,
+    T.CORR_STAT_DT, 
+    T.CORR_NAME,
+    T.CORR_ADDRESS, 
+    T.CORR_SSN, 
+    T.CORR_DOB, 
+    T.CORR_PHONE, 
+    T.CORR_STATE_RES, 
+    T.CORR_STATE_RES_DT,
+    T.CORR_LICENSE, 
+    T.CORR_LICENSE_STATE, 
+    T.CORR_CIT_STATUS,
+    T.CORR_ALIEN_REG_NUM, 
+    T.CORR_MARITAL_STAT,
+    T.CORR_MARITAL_DATE,
+    T.TITLEIV_ELIG, 
+    T.ISIR_PRINT_REQUEST, 
+    T.ISIR_PRINT_DT,
+    T.INST_PROCESS_DT,
+    T.ADJ_EFC,
+    T.SSA_CITIZENSHP_IND, 
+    T.ISIR_SERIAL_NUM,
+    T.OWNING_SCHOOL_CD, 
+    T.SEND_VERIFY_FIELDS, 
+    T.NSLDS_TXN_NBR,
+    T.INAS_RFC_CALL,
+    T.EARLY_ANALYSIS_FLG, 
+    T.ELECTRONIC_APP_VER, 
+    T.ETI_DEST_CD,
+    T.ISIR_REC_TYPE,
+    T.SIMP_NEED_TEST, 
+    T.SSN_DATE_OF_DEATH,
+    T.SUB_APP_FLAG, 
+    T.COMPUTE_BTCH_NO,
+    T.DUP_PROC_DT,
+    T.VA_MATCH, 
+    T.PRISONER_MATCH, 
+    T.PROCESS_INSTANCE, 
+    T.PROCESS_DT, 
+    T.APP_SOURCE, 
+    T.TRANS_SOURCE, 
+    T.ADDRESS_TYPE, 
+    T.OVRD_ADDR_TYPE, 
+    T.PREP_SSN, 
+    T.PREP_SIGNATURE, 
+    T.PREP_EIN, 
+    T.ISIR_CORR_SRC,
+    T.ISIR_EFC_CHANGE,
+    T.ISIR_SEC_INS_MATCH, 
+    T.ISIR_SEC_INS_VERF,
+    T.ISIR_DUP_SSN_CD,
+    T.CORR_EMAIL_ADDR,
+    T.ISIR_ORIG_IND,
+    T.VERIF_TRK_FLG,
+    T.EFC_OVRD_DSPLAY_FM, 
+    T.ISIR_CPS_PUSHED,
+    T.ISIR_SAR_C_CHNG,
+    T.FATHER_SSN_MATCH, 
+    T.MOTHER_SSN_MATCH, 
+    T.SFA_VF_SEL_CHG_FLG, 
+    T.SFA_REJ_ST_CHG_FLG, 
+    T.ISIR_OVRD_E_TYPE, 
+    T.ISIR_OVRD_P_TYPE, 
+    T.PHONE_TYPE, 
+    T.E_ADDR_TYPE,
+    T.SFA_SPL_CIRCUM_FLG, 
+    T.SFA_DOD_MATCH,
+    T.SFA_DOD_PARENT, 
+    T.SFA_STU_IRS_REQUST, 
+    T.SFA_PAR_IRS_REQUST, 
+    T.SFA_HIGH_SCHL_FLAG, 
+    T.SFA_STU_IRS_AGI,
+    T.SFA_STU_IRS_FIT,
+    T.SFA_PAR_IRS_AGI,
+    T.SFA_PAR_IRS_FIT,
+    T.SFA_STU_IRS_DISP, 
+    T.SFA_PAR_IRS_DISP, 
+    T.LOAD_ERROR, 
+    T.DATA_ORIGIN,
+    T.CREATED_EW_DTTM,
+    T.LASTUPD_EW_DTTM,
+    T.BATCH_SID
+) 
+values (
+    S.EMPLID, 
+    S.INSTITUTION,
+    S.AID_YEAR, 
+    S.EFFDT,
+    S.EFFSEQ, 
+    'CS90', 
+    S.ISIR_TXN_NBR, 
+    S.ORIG_SSN, 
+    S.NAME_CD,
+    S.LAST_NAME_SSN_CHNG, 
+    S.SS_MATCH, 
+    S.SS_REGISTRATION,
+    S.INS_MATCH,
+    S.SSN_MATCH,
+    S.DT_APP_RECEIVED,
+    S.PELL_ELIGIBILITY, 
+    S.ASSIGNED_PIN, 
+    S.DUPLICATE_REQUEST,
+    S.SAR_C_FLAG, 
+    S.MDE_EDE_SITE_CODE,
+    S.MDE_SITE_NBR, 
+    S.VERF_SELECTION_IND, 
+    S.HOLD_IND, 
+    S.SYSTEM_GENERATED, 
+    S.TRANS_RECEIPT_DT, 
+    S.TRANS_PROCESS_DT, 
+    S.CPS_REPROCESS_CD, 
+    S.APP_SOURCE_CODE,
+    S.APP_SOURCE_SITE,
+    S.BATCH_NUMBER, 
+    S.SFA_TRANS_TYPE, 
+    S.ELEC_INSTITUT_IND,
+    S.VERIFCATION_TYPE, 
+    S.CORRECTION_APPLIED, 
+    S.FAA_INSTITUT_NUM, 
+    S.INS_VERF_NUM, 
+    S.FULL_PARTIAL_ESAR,
+    S.MULTI_INSTITUTION,
+    S.SEND_ISAR_SW, 
+    S.FINAL_REVIEW_SW,
+    S.DEPNDNCY_OVERRIDE,
+    S.FAA_SIGNATURE,
+    S.APPLICATION_STAT, 
+    S.APP_STAT_DT,
+    S.EFC_STATUS, 
+    S.OPRID,
+    S.ADJ_EFC_CALC_REQ, 
+    S.ASSUMPTION_OVRRIDE, 
+    S.CORRECTION_STATUS,
+    S.CORR_STAT_DT, 
+    S.CORR_NAME,
+    S.CORR_ADDRESS, 
+    S.CORR_SSN, 
+    S.CORR_DOB, 
+    S.CORR_PHONE, 
+    S.CORR_STATE_RES, 
+    S.CORR_STATE_RES_DT,
+    S.CORR_LICENSE, 
+    S.CORR_LICENSE_STATE, 
+    S.CORR_CIT_STATUS,
+    S.CORR_ALIEN_REG_NUM, 
+    S.CORR_MARITAL_STAT,
+    S.CORR_MARITAL_DATE,
+    S.TITLEIV_ELIG, 
+    S.ISIR_PRINT_REQUEST, 
+    S.ISIR_PRINT_DT,
+    S.INST_PROCESS_DT,
+    S.ADJ_EFC,
+    S.SSA_CITIZENSHP_IND, 
+    S.ISIR_SERIAL_NUM,
+    S.OWNING_SCHOOL_CD, 
+    S.SEND_VERIFY_FIELDS, 
+    S.NSLDS_TXN_NBR,
+    S.INAS_RFC_CALL,
+    S.EARLY_ANALYSIS_FLG, 
+    S.ELECTRONIC_APP_VER, 
+    S.ETI_DEST_CD,
+    S.ISIR_REC_TYPE,
+    S.SIMP_NEED_TEST, 
+    S.SSN_DATE_OF_DEATH,
+    S.SUB_APP_FLAG, 
+    S.COMPUTE_BTCH_NO,
+    S.DUP_PROC_DT,
+    S.VA_MATCH, 
+    S.PRISONER_MATCH, 
+    S.PROCESS_INSTANCE, 
+    S.PROCESS_DT, 
+    S.APP_SOURCE, 
+    S.TRANS_SOURCE, 
+    S.ADDRESS_TYPE, 
+    S.OVRD_ADDR_TYPE, 
+    S.PREP_SSN, 
+    S.PREP_SIGNATURE, 
+    S.PREP_EIN, 
+    S.ISIR_CORR_SRC,
+    S.ISIR_EFC_CHANGE,
+    S.ISIR_SEC_INS_MATCH, 
+    S.ISIR_SEC_INS_VERF,
+    S.ISIR_DUP_SSN_CD,
+    S.CORR_EMAIL_ADDR,
+    S.ISIR_ORIG_IND,
+    S.VERIF_TRK_FLG,
+    S.EFC_OVRD_DSPLAY_FM, 
+    S.ISIR_CPS_PUSHED,
+    S.ISIR_SAR_C_CHNG,
+    S.FATHER_SSN_MATCH, 
+    S.MOTHER_SSN_MATCH, 
+    S.SFA_VF_SEL_CHG_FLG, 
+    S.SFA_REJ_ST_CHG_FLG, 
+    S.ISIR_OVRD_E_TYPE, 
+    S.ISIR_OVRD_P_TYPE, 
+    S.PHONE_TYPE, 
+    S.E_ADDR_TYPE,
+    S.SFA_SPL_CIRCUM_FLG, 
+    S.SFA_DOD_MATCH,
+    S.SFA_DOD_PARENT, 
+    S.SFA_STU_IRS_REQUST, 
+    S.SFA_PAR_IRS_REQUST, 
+    S.SFA_HIGH_SCHL_FLAG, 
+    S.SFA_STU_IRS_AGI,
+    S.SFA_STU_IRS_FIT,
+    S.SFA_PAR_IRS_AGI,
+    S.SFA_PAR_IRS_FIT,
+    S.SFA_STU_IRS_DISP, 
+    S.SFA_PAR_IRS_DISP, 
+    'N',
+    'S',
+    sysdate,
+    sysdate,
+    1234);
+
+strSqlCommand   := 'SET intRowCount';
+intRowCount     := SQL%ROWCOUNT;
+
+strSqlCommand := 'commit';
+commit;
+
+strMessage01    := '# of PS_ISIR_CONTROL rows merged: ' || TO_CHAR(intRowCount,'999,999,999,999');
+COMMON_OWNER.SMT_LOG.PUT_MESSAGE(i_Message => strMessage01);
+
+strSqlCommand := 'SMT_PROCESS_LOG.PROCESS_DETAIL';
+COMMON_OWNER.SMT_PROCESS_LOG.PROCESS_DETAIL
+        (
+                i_TargetTableName   => 'PS_ISIR_CONTROL',
+                i_Action            => 'MERGE',
+                i_RowCount          => intRowCount
+        );
+
+
+strMessage01    := 'Updating CSSTG_OWNER.UM_STAGE_JOBS';
+COMMON_OWNER.SMT_LOG.PUT_MESSAGE(i_Message => strMessage01);
+
+strSqlCommand   := 'update TABLE_STATUS on CSSTG_OWNER.UM_STAGE_JOBS';
+update CSSTG_OWNER.UM_STAGE_JOBS
+   set TABLE_STATUS = 'Deleting',
+       OLD_MAX_SCN = NEW_MAX_SCN
+ where TABLE_NAME = 'PS_ISIR_CONTROL';
+
+strSqlCommand := 'commit';
+commit;
+
+
+strMessage01    := 'Updating DATA_ORIGIN on CSSTG_OWNER.PS_ISIR_CONTROL';
+COMMON_OWNER.SMT_LOG.PUT_MESSAGE(i_Message => strMessage01);
+
+strSqlCommand   := 'update DATA_ORIGIN on CSSTG_OWNER.PS_ISIR_CONTROL';
+update CSSTG_OWNER.PS_ISIR_CONTROL T
+   set T.DATA_ORIGIN = 'D',
+          T.LASTUPD_EW_DTTM = SYSDATE
+ where T.DATA_ORIGIN <> 'D'
+   and exists 
+(select 1 from
+(select EMPLID, INSTITUTION, AID_YEAR, EFFDT, EFFSEQ
+   from CSSTG_OWNER.PS_ISIR_CONTROL T2
+  where (select DELETE_FLG from CSSTG_OWNER.UM_STAGE_JOBS where TABLE_NAME = 'PS_ISIR_CONTROL') = 'Y'
+  minus
+ select EMPLID, INSTITUTION, AID_YEAR, EFFDT, EFFSEQ
+   from SYSADM.PS_ISIR_CONTROL@SASOURCE S2
+  where (select DELETE_FLG from CSSTG_OWNER.UM_STAGE_JOBS where TABLE_NAME = 'PS_ISIR_CONTROL') = 'Y'
+   ) S
+ where T.EMPLID = S.EMPLID
+   and T.INSTITUTION = S.INSTITUTION
+   and T.AID_YEAR = S.AID_YEAR
+   and T.EFFDT = S.EFFDT
+   and T.EFFSEQ = S.EFFSEQ
+   and T.SRC_SYS_ID = 'CS90' 
+   ) 
+;
+
+strSqlCommand   := 'SET intRowCount';
+intRowCount     := SQL%ROWCOUNT;
+
+strSqlCommand := 'commit';
+commit;
+
+strMessage01    := '# of PS_ISIR_CONTROL rows updated: ' || TO_CHAR(intRowCount,'999,999,999,999');
+COMMON_OWNER.SMT_LOG.PUT_MESSAGE(i_Message => strMessage01);
+
+strSqlCommand := 'SMT_PROCESS_LOG.PROCESS_DETAIL';
+COMMON_OWNER.SMT_PROCESS_LOG.PROCESS_DETAIL
+        (
+                i_TargetTableName   => 'PS_ISIR_CONTROL',
+                i_Action            => 'UPDATE',
+                i_RowCount          => intRowCount
+        );
+
+
+strMessage01    := 'Updating CSSTG_OWNER.UM_STAGE_JOBS';
+COMMON_OWNER.SMT_LOG.PUT_MESSAGE(i_Message => strMessage01);
+
+strSqlCommand   := 'update END_DT on CSSTG_OWNER.UM_STAGE_JOBS';
+
+update CSSTG_OWNER.UM_STAGE_JOBS
+   set TABLE_STATUS = 'Complete',
+       END_DT = SYSDATE
+ where TABLE_NAME = 'PS_ISIR_CONTROL'
+;
+
+strSqlCommand := 'commit';
+commit;
+
+
+strSqlCommand := 'SMT_PROCESS_LOG.PROCESS_SUCCESS';
+COMMON_OWNER.SMT_PROCESS_LOG.PROCESS_SUCCESS;
+
+strMessage01    := strProcessName || ' is complete.';
+COMMON_OWNER.SMT_LOG.PUT_MESSAGE(i_Message => strMessage01);
+
+
+EXCEPTION
+    WHEN OTHERS THEN
+        numSqlCode := SQLCODE;
+        strSqlErrm := SQLERRM;
+
+        ROLLBACK;
+  
+        strMessage01 := 'Error code: ' || TO_CHAR(SQLCODE) || ' Error Message: ' || SQLERRM;
+        strMessage02 := TO_CHAR(SQLCODE);
+  
+        COMMON_OWNER.SMT_PROCESS_LOG.PROCESS_FAILURE
+                       (i_SqlCommand    => strSqlCommand,
+                        i_ErrorText     => strMessage01,
+                        i_ErrorCode     => strMessage02,
+                        i_ErrorMessage  => strSqlErrm
+                       );
+               
+        strMessage01 := 'Error...'
+                        || strNewLine   || 'SQL Command:   ' || strSqlCommand
+                        || strNewLine   || 'Error code:    ' || numSqlCode
+                        || strNewLine   || 'Error Message: ' || strSqlErrm;
+
+        COMMON_OWNER.SMT_LOG.PUT_MESSAGE(i_Message => strMessage01);
+        RAISE_APPLICATION_ERROR( -20001, strMessage01);
+
+END PS_ISIR_CONTROL_P;
+/
