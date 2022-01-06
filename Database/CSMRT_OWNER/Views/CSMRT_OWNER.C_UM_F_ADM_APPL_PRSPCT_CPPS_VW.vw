@@ -1,0 +1,20 @@
+CREATE OR REPLACE VIEW C_UM_F_ADM_APPL_PRSPCT_CPPS_VW
+BEQUEATH DEFINER
+AS 
+SELECT ADM_APPL_SID,
+           PRSPCT_CAR_SID,
+           SRC_SYS_ID,
+           INSTITUTION_CD,
+           ACAD_CAR_CD,
+           CAR_ADMIT_TERM_SID,
+           ADMIT_TERM,
+           EMPLID,
+           INSTITUTION_SID,
+           ACAD_CAR_SID,
+           ADMIT_TERM_SID,
+           PERSON_SID,
+           ACAD_PROG_SID,
+           ACAD_PLAN_SID,
+           ACAD_SPLAN_SID,
+           PRSPCT_DSP_CNT
+      FROM CSMRT_OWNER.UM_F_ADM_APPL_PRSPCT_CPPS;

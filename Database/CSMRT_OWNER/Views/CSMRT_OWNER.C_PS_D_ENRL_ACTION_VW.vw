@@ -1,0 +1,18 @@
+CREATE OR REPLACE VIEW C_PS_D_ENRL_ACTION_VW
+BEQUEATH DEFINER
+AS 
+SELECT CAST(ENRL_REQ_ACTN_SID AS NUMBER(10))       ENRL_REQ_ACTN_SID,           
+		   ENRL_REQ_ACTION, 
+           ENRL_REQ_ACTION_SD, 
+           ENRL_REQ_ACTION_LD, 
+           SRC_SYS_ID, 
+           TO_DATE ('1/1/1753', 'MM/DD/YYYY')       EFF_START_DT,
+           TO_DATE ('12/31/9999', 'MM/DD/YYYY')     EFF_END_DT,
+           CAST('Y' AS VARCHAR2(1))                 CURRENT_IND,
+           CAST('Y' AS VARCHAR2(1))                 LOAD_ERROR,
+           DATA_ORIGIN,
+           CREATED_EW_DTTM,
+           LASTUPD_EW_DTTM,
+           CAST(1234 AS NUMBER(10))                 BATCH_SID
+	  FROM CSMRT_OWNER.PS_D_ENRL_ACTION
+	 WHERE DATA_ORIGIN <> 'D';

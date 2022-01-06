@@ -1,0 +1,19 @@
+CREATE OR REPLACE VIEW UM_D_PERSON_CS_EMAIL_VW
+BEQUEATH DEFINER
+AS 
+SELECT INSTITUTION_CD,
+           PERSON_SID,
+           E_ADDR_TYPE,
+           SRC_SYS_ID,
+           PERSON_ID,
+           PERSON_ID EMPLID,
+           EMAIL_ADDR,
+           PREF_EMAIL_FLAG,
+           PS_EMAIL_ORDER,
+           SP_EMAIL_ORDER,
+           'N' LOAD_ERROR,
+           DATA_ORIGIN,
+           CREATED_EW_DTTM,
+           LASTUPD_EW_DTTM,
+           1234 BATCH_SID
+      FROM UM_D_PERSON_EMAIL;

@@ -1,0 +1,20 @@
+CREATE OR REPLACE VIEW UM_F_HOUSING_VW
+BEQUEATH DEFINER
+AS 
+SELECT INSTITUTION_CD,
+           PERSON_ID,
+           ACAD_YEAR_LD,
+           HOUSING_TERM_CD,
+           SRC_SYS_ID,
+           INSTITUTION_SID,
+           TERM_SID,
+           PERSON_SID,
+           APPLIED_DT,
+           COMPLETED_DT,
+           AGREEMENT_DT,
+           HOUSING_TERM_LD,
+           HOUSING_LOAD_DT,
+           DATA_ORIGIN,
+           CREATED_EW_DTTM,
+           LASTUPD_EW_DTTM
+      FROM CSMRT_OWNER.UM_F_HOUSING;

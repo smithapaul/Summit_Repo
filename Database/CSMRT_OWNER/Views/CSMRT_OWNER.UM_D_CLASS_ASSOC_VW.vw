@@ -1,0 +1,38 @@
+CREATE OR REPLACE VIEW UM_D_CLASS_ASSOC_VW
+BEQUEATH DEFINER
+AS 
+SELECT CLASS_ASSOC_SID,
+           CRSE_CD,
+           CRSE_OFFER_NUM,
+           TERM_CD,
+           SESSION_CD,
+           ASSOCIATED_CLASS,
+           SRC_SYS_ID,
+           RQRMNT_GROUP_SID,
+           SSR_COMP_SID,
+           SSR_COMP_PRIM_SID,
+           BLIND_GRADING_FLG,
+           CATLOG_RQS_FLG,
+           GRADING_BASIS,
+           GRADING_BASIS GRADE_BASIS_CD,    -- Jan 2020 
+           GRADE_BASIS_SD,
+           GRADE_BASIS_LD,
+           GRADE_ROSTER_PRINT,
+           GRADE_ROSTER_PRINT_SD,
+           GRADE_ROSTER_PRINT_LD,
+           INSTRUCTOR_EDIT,
+           INSTRUCTOR_EDIT_SD,
+           INSTRUCTOR_EDIT_LD,
+           RQMNT_DESIGNTN,
+           UPD_STDNT_ENRL_FLG,
+           BILLING_FACTOR,
+           CRSE_CNT,
+           CRSE_CONTACT_HRS,
+           MIN_UNITS,
+           MAX_UNITS,
+           ACAD_PRGRS_UNITS,
+           FINAID_PRGRS_UNITS,
+           DATA_ORIGIN,
+           CREATED_EW_DTTM,
+           LASTUPD_EW_DTTM
+      FROM UM_D_CLASS_ASSOC;

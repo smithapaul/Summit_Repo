@@ -1,0 +1,35 @@
+CREATE OR REPLACE VIEW UM_F_FA_STDNT_RTN_TIV_VW
+BEQUEATH DEFINER
+AS 
+SELECT INSTITUTION_CD,
+          AID_YEAR,
+          TERM_CD,
+          PERSON_ID,
+          SRC_SYS_ID,
+          INSTITUTION_SID,
+          PERSON_SID,
+          RTRN_TIV_STATUS,
+          RTRN_TIV_STATUS_SD,
+          RTRN_TIV_WSTAT_DT,
+          RTRN_TIV_PERIOD_TP,
+          RTRN_TIV_PERIOD_TP_SD,
+          RTRN_TIV_FORM_DT,
+          WITHDRAW_DATE,
+          PERIOD_START_DT,
+          PERIOD_END_DT,
+          RTRN_TIV_COMP_DAYS,
+          RTRN_TIV_TOT_DAYS,
+          RTRN_TIV_CAL_PCT,
+          TIV_AID_UNEARN_PCT,
+          RTRN_TIV_DAYS_PAST,
+          LAST_UPDATE_DTTM,
+          OPRID,
+          SFA_HERA_FLG,
+          SFA_RTIV_CHD_OVRDE,
+          LOAD_ERROR,
+          DATA_ORIGIN,
+          CREATED_EW_DTTM,
+          LASTUPD_EW_DTTM,
+          BATCH_SID
+     FROM CSMRT_OWNER.UM_F_FA_STDNT_RTN_TIV
+    WHERE ROWNUM < 100000000;

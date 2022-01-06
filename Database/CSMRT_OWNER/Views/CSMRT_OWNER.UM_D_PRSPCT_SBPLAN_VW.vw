@@ -1,0 +1,38 @@
+CREATE OR REPLACE VIEW UM_D_PRSPCT_SBPLAN_VW
+BEQUEATH DEFINER
+AS 
+SELECT /*+ OPT_ESTIMATE(TABLE UM_D_PRSPCT_SBPLAN MIN=1000000) */
+          PRSPCT_SPLAN_SID,
+          INSTITUTION_CD,
+          ACAD_CAR_CD,
+          EMPLID,
+          ACAD_PROG_CD,
+          ACAD_PLAN_CD,
+          ACAD_SUB_PLAN_CD,
+          SRC_SYS_ID,
+          PRSPCT_PLAN_SID,
+          ACAD_SPLAN_SID,
+          LOAD_ERROR,
+          DATA_ORIGIN,
+          CREATED_EW_DTTM,
+          LASTUPD_EW_DTTM,
+          BATCH_SID
+     FROM UM_D_PRSPCT_SBPLAN
+    where ROWNUM < 10000000
+   UNION ALL
+   SELECT 2147483646 PRSPCT_SPLAN_SID,
+          '-' INSTITUTION_CD,
+          '-' ACAD_CAR_CD,
+          '-' EMPLID,
+          '-' ACAD_PROG_CD,
+          '-' ACAD_PLAN_CD,
+          '-' ACAD_SUB_PLAN_CD,
+          'CS90' SRC_SYS_ID,
+          2147483646 PRSPCT_PLAN_SID,
+          2147483646 ACAD_SPLAN_SID,
+          'N' LOAD_ERROR,
+          'Script' DATA_ORIGIN,
+          SYSDATE CREATED_EW_DTTM,
+          SYSDATE LASTUPD_EW_DTTM,
+          2147483646 BATCH_SID
+     FROM DUAL;

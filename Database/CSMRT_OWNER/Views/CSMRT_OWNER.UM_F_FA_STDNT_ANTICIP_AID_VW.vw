@@ -1,0 +1,29 @@
+CREATE OR REPLACE VIEW UM_F_FA_STDNT_ANTICIP_AID_VW
+BEQUEATH DEFINER
+AS 
+SELECT /*+ OPT_ESTIMATE(TABLE UM_F_FA_STDNT_ANTICIP_AID MIN=100000) */
+          INSTITUTION_CD,
+          ACAD_CAR_CD,
+          AID_YEAR,
+          PERSON_ID,
+          ITEM_TYPE,
+          DISBURSEMENT_PLAN,
+          DISBURSEMENT_ID,
+          AS_OF_DTTM,
+          SRC_SYS_ID,
+          INSTITUTION_SID,
+          ACAD_CAR_SID,
+          PERSON_SID,
+          ITEM_TYPE_SID,
+          TERM_SID,
+          DISBURSEMENT_PLAN_LD,
+          NET_AWARD_AMT,
+          DISB_APPLY_DT,
+          DISB_EXPIRE_DT,
+          CURRENCY_CD,
+          LOAD_ERROR,
+          DATA_ORIGIN,
+          CREATED_EW_DTTM,
+          LASTUPD_EW_DTTM,
+          BATCH_SID
+     FROM UM_F_FA_STDNT_ANTICIP_AID;

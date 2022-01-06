@@ -1,0 +1,16 @@
+CREATE OR REPLACE VIEW C_UM_F_ADM_APPL_ENRL_VW
+BEQUEATH DEFINER
+AS 
+SELECT ADM_APPL_SID,
+           INSTITUTION_CD,
+           ACAD_CAR_CD,
+           ADMIT_TERM_CD,
+           SRC_SYS_ID,
+           PREV_TERM_CD,
+           PREV_TERM_SID,
+           NEXT_TERM_CD,
+           NEXT_TERM_SID,
+           ENROLL_CNT,
+           PREV_ENROLL_CNT,
+           NEXT_ENROLL_CNT
+      FROM CSMRT_OWNER.UM_F_ADM_APPL_ENRL;

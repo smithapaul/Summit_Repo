@@ -1,0 +1,31 @@
+CREATE OR REPLACE VIEW C_UM_D_CLASS_INSTRCTR_VW
+BEQUEATH DEFINER
+AS 
+SELECT CAST (CLASS_SID AS NUMBER (10))     CLASS_SID,
+           CLASS_MTG_NUM,
+           INSTRCTR_ASGN_NUM,
+           SRC_SYS_ID,
+           CLASS_MTG_PAT_ORDER,
+           CLASS_INSTRCTR_ORDER,
+           CRSE_CD,
+           CRSE_OFFER_NUM,
+           TERM_CD,
+           SESSION_CD,
+           CLASS_SECTION_CD,
+           CLASS_MTG_PAT_SID,
+           CLASS_INSTRCTR_SID,
+           PERSON_SID,
+           INSTRCTR_ROLE_SID,
+           GRADE_RSTR_ACCESS,
+           GRADE_RSTR_ACCESS_SD,
+           GRADE_RSTR_ACCESS_LD,
+           CONTACT_MINUTES,
+           SCHED_PRINT_INSTR,
+           INSTR_LOAD_FACTOR,
+           AUTOCALC_WRKLD_FLG,
+           CAST ('N' AS VARCHAR2 (1))          LOAD_ERROR,
+           DATA_ORIGIN,
+           CREATED_EW_DTTM,
+           LASTUPD_EW_DTTM,
+           CAST (1234 AS NUMBER (10))          BATCH_SID
+      FROM CSMRT_OWNER.UM_D_CLASS_INSTRCTR;
