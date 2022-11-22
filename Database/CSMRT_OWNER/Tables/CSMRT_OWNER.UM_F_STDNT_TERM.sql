@@ -1,14 +1,20 @@
-CREATE TABLE UM_F_STDNT_TERM
+DROP TABLE CSMRT_OWNER.UM_F_STDNT_TERM CASCADE CONSTRAINTS
+/
+
+--
+-- UM_F_STDNT_TERM  (Table) 
+--
+CREATE TABLE CSMRT_OWNER.UM_F_STDNT_TERM
 (
-  TERM_SID                       INTEGER,
-  PERSON_SID                     INTEGER,
-  SRC_SYS_ID                     VARCHAR2(5 BYTE),
-  INSTITUTION_CD                 VARCHAR2(5 BYTE),
-  ACAD_CAR_CD                    VARCHAR2(5 BYTE),
-  TERM_CD                        VARCHAR2(4 BYTE),
-  PERSON_ID                      VARCHAR2(11 BYTE),
-  INSTITUTION_SID                INTEGER,
-  ACAD_CAR_SID                   INTEGER,
+  TERM_SID                       INTEGER        NOT NULL,
+  PERSON_SID                     INTEGER        NOT NULL,
+  SRC_SYS_ID                     VARCHAR2(5 BYTE) NOT NULL,
+  INSTITUTION_CD                 VARCHAR2(5 BYTE) NOT NULL,
+  ACAD_CAR_CD                    VARCHAR2(5 BYTE) NOT NULL,
+  TERM_CD                        VARCHAR2(4 BYTE) NOT NULL,
+  PERSON_ID                      VARCHAR2(11 BYTE) NOT NULL,
+  INSTITUTION_SID                INTEGER        NOT NULL,
+  ACAD_CAR_SID                   INTEGER        NOT NULL,
   STDNT_TERM_KEY                 VARCHAR2(100 BYTE),
   PS_STDNT_CAR_NUM               INTEGER,
   PS_PROG_SID                    INTEGER,
@@ -110,7 +116,7 @@ CREATE TABLE UM_F_STDNT_TERM
   STUDY_AGREEMENT                VARCHAR2(10 BYTE),
   TERM_ACTV_FLG                  VARCHAR2(1 BYTE),
   TERM_ACTV_MAX_TERM_CD          VARCHAR2(4 BYTE),
-  TERM_ACTV_MAX_TERM_SID         INTEGER,
+  TERM_ACTV_MAX_TERM_SID         INTEGER        NOT NULL,
   TERM_BEGIN_DT                  DATE,
   TERM_END_DT                    DATE,
   TERM_TYPE                      VARCHAR2(1 BYTE),
@@ -197,15 +203,20 @@ CREATE TABLE UM_F_STDNT_TERM
   MAX_UNIT_NOGPA                 NUMBER(5,2),
   MAX_UNIT_TOT                   NUMBER(5,2),
   MAX_UNIT_WAIT                  NUMBER(8,3),
-  LOAD_ERROR                     VARCHAR2(1 BYTE),
-  DATA_ORIGIN                    VARCHAR2(1 BYTE),
+  LOAD_ERROR                     VARCHAR2(1 BYTE) NOT NULL,
+  DATA_ORIGIN                    VARCHAR2(1 BYTE) NOT NULL,
   CREATED_EW_DTTM                DATE,
   LASTUPD_EW_DTTM                DATE,
-  BATCH_SID                      INTEGER
+  BATCH_SID                      INTEGER        NOT NULL
 )
-NOLOGGING 
 COMPRESS BASIC
-NO INMEMORY
-NOCACHE
-RESULT_CACHE (MODE DEFAULT)
-NOPARALLEL;
+/
+
+
+ALTER TABLE CSMRT_OWNER.UM_F_STDNT_TERM ADD (
+  CONSTRAINT PK_UM_F_STDNT_TERM
+  PRIMARY KEY
+  (TERM_SID, PERSON_SID, SRC_SYS_ID)
+  RELY
+  ENABLE VALIDATE)
+/

@@ -1,39 +1,45 @@
-CREATE TABLE UM_F_STDNT_ACAD_STRUCT
+DROP TABLE CSMRT_OWNER.UM_F_STDNT_ACAD_STRUCT CASCADE CONSTRAINTS
+/
+
+--
+-- UM_F_STDNT_ACAD_STRUCT  (Table) 
+--
+CREATE TABLE CSMRT_OWNER.UM_F_STDNT_ACAD_STRUCT
 (
-  TERM_SID                      INTEGER,
-  PERSON_SID                    INTEGER,
-  STDNT_CAR_NUM                 INTEGER,
-  ACAD_PLAN_SID                 INTEGER,
-  ACAD_SPLAN_SID                INTEGER,
-  SRC_SYS_ID                    VARCHAR2(5 BYTE),
-  INSTITUTION_CD                VARCHAR2(5 BYTE),
-  ACAD_CAR_CD                   VARCHAR2(4 BYTE),
-  TERM_CD                       VARCHAR2(4 BYTE),
-  PERSON_ID                     VARCHAR2(11 BYTE),
-  ACAD_PROG_CD                  VARCHAR2(5 BYTE),
-  ACAD_PLAN_CD                  VARCHAR2(10 BYTE),
-  ACAD_SPLAN_CD                 VARCHAR2(10 BYTE),
+  TERM_SID                      INTEGER         NOT NULL,
+  PERSON_SID                    INTEGER         NOT NULL,
+  STDNT_CAR_NUM                 INTEGER         NOT NULL,
+  ACAD_PLAN_SID                 INTEGER         NOT NULL,
+  ACAD_SPLAN_SID                INTEGER         NOT NULL,
+  SRC_SYS_ID                    VARCHAR2(5 BYTE) NOT NULL,
+  INSTITUTION_CD                VARCHAR2(5 BYTE) NOT NULL,
+  ACAD_CAR_CD                   VARCHAR2(4 BYTE) NOT NULL,
+  TERM_CD                       VARCHAR2(4 BYTE) NOT NULL,
+  PERSON_ID                     VARCHAR2(11 BYTE) NOT NULL,
+  ACAD_PROG_CD                  VARCHAR2(5 BYTE) NOT NULL,
+  ACAD_PLAN_CD                  VARCHAR2(10 BYTE) NOT NULL,
+  ACAD_SPLAN_CD                 VARCHAR2(10 BYTE) NOT NULL,
   EFFDT                         DATE,
-  EFFSEQ                        INTEGER,
+  EFFSEQ                        INTEGER         NOT NULL,
   ACTION_DT                     DATE,
-  ACAD_CAR_SID                  INTEGER,
-  ACAD_PROG_SID                 INTEGER,
-  ADMIT_TERM_SID                INTEGER,
-  CAMPUS_SID                    INTEGER,
-  COMPL_TERM_SID                INTEGER,
-  EXP_GRAD_TERM_SID             INTEGER,
-  INSTITUTION_SID               INTEGER,
-  REQ_TERM_SID                  INTEGER,
-  PROG_STAT_SID                 INTEGER,
-  PROG_ACN_SID                  INTEGER,
-  PROG_ACN_RSN_SID              INTEGER,
-  STACK_BEGIN_TERM_SID          INTEGER,
-  STACK_READMIT_TERM_SID        INTEGER,
-  CALC_TERM_LIMIT_SID           INTEGER,
-  NEW_TERM_LIMIT_SID            INTEGER,
-  PLAN_COMPL_TERM_SID           INTEGER,
-  PLAN_REQ_TERM_SID             INTEGER,
-  SPLAN_REQ_TERM_SID            INTEGER,
+  ACAD_CAR_SID                  INTEGER         NOT NULL,
+  ACAD_PROG_SID                 INTEGER         NOT NULL,
+  ADMIT_TERM_SID                INTEGER         NOT NULL,
+  CAMPUS_SID                    INTEGER         NOT NULL,
+  COMPL_TERM_SID                INTEGER         NOT NULL,
+  EXP_GRAD_TERM_SID             INTEGER         NOT NULL,
+  INSTITUTION_SID               INTEGER         NOT NULL,
+  REQ_TERM_SID                  INTEGER         NOT NULL,
+  PROG_STAT_SID                 INTEGER         NOT NULL,
+  PROG_ACN_SID                  INTEGER         NOT NULL,
+  PROG_ACN_RSN_SID              INTEGER         NOT NULL,
+  STACK_BEGIN_TERM_SID          INTEGER         NOT NULL,
+  STACK_READMIT_TERM_SID        INTEGER         NOT NULL,
+  CALC_TERM_LIMIT_SID           INTEGER         NOT NULL,
+  NEW_TERM_LIMIT_SID            INTEGER         NOT NULL,
+  PLAN_COMPL_TERM_SID           INTEGER         NOT NULL,
+  PLAN_REQ_TERM_SID             INTEGER         NOT NULL,
+  SPLAN_REQ_TERM_SID            INTEGER         NOT NULL,
   ADM_APPL_NBR                  VARCHAR2(8 BYTE),
   CERTIFICATE_ONLY_FLG          VARCHAR2(1 BYTE),
   D_RANK                        INTEGER,
@@ -75,7 +81,7 @@ CREATE TABLE UM_F_STDNT_ACAD_STRUCT
   STACK_READMIT_EFFDT           DATE,
   STACK_READMIT_FLG             VARCHAR2(1 BYTE),
   STACK_LAST_UPD_TERM_CD        VARCHAR2(4 BYTE),
-  STACK_LAST_UPD_TERM_SID       INTEGER,
+  STACK_LAST_UPD_TERM_SID       INTEGER         NOT NULL,
   TERM_BEGIN_DT                 DATE,
   TERM_END_DT                   DATE,
   DEG_LIMIT_EFFDT               DATE,
@@ -106,17 +112,22 @@ CREATE TABLE UM_F_STDNT_ACAD_STRUCT
   SP_SUB_PLAN_12_CNT            NUMBER(1),
   SP_SUB_PLAN_21_CNT            NUMBER(1),
   SP_SUB_PLAN_22_CNT            NUMBER(1),
-  UNDUP_STDNT_CNT               INTEGER,
-  PRIM_PROG_MAJOR1_ORDER        INTEGER,
+  UNDUP_STDNT_CNT               INTEGER         NOT NULL,
+  PRIM_PROG_MAJOR1_ORDER        INTEGER         NOT NULL,
   LOAD_ERROR                    VARCHAR2(1 BYTE),
   DATA_ORIGIN                   VARCHAR2(1 BYTE),
   CREATED_EW_DTTM               DATE,
   LASTUPD_EW_DTTM               DATE,
   BATCH_SID                     INTEGER
 )
-NOLOGGING 
 COMPRESS BASIC
-NO INMEMORY
-NOCACHE
-RESULT_CACHE (MODE DEFAULT)
-NOPARALLEL;
+/
+
+
+ALTER TABLE CSMRT_OWNER.UM_F_STDNT_ACAD_STRUCT ADD (
+  CONSTRAINT PK_UM_F_STDNT_ACAD_STRUCT
+  PRIMARY KEY
+  (TERM_SID, PERSON_SID, STDNT_CAR_NUM, ACAD_PLAN_SID, ACAD_SPLAN_SID, SRC_SYS_ID)
+  RELY
+  ENABLE VALIDATE)
+/

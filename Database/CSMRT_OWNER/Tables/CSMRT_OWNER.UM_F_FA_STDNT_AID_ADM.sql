@@ -1,19 +1,25 @@
-CREATE TABLE UM_F_FA_STDNT_AID_ADM
+DROP TABLE CSMRT_OWNER.UM_F_FA_STDNT_AID_ADM CASCADE CONSTRAINTS
+/
+
+--
+-- UM_F_FA_STDNT_AID_ADM  (Table) 
+--
+CREATE TABLE CSMRT_OWNER.UM_F_FA_STDNT_AID_ADM
 (
-  INSTITUTION_CD             VARCHAR2(5 BYTE),
-  PERSON_ID                  VARCHAR2(11 BYTE),
-  INSTITUTION_SID            INTEGER,
-  PERSON_SID                 INTEGER,
-  ACAD_CAR_SID               NUMBER,
-  STU_CAR_NBR                NUMBER,
-  ADM_APPL_NBR               VARCHAR2(8 BYTE),
-  APPL_PROG_NBR              NUMBER,
-  ACAD_PROG_SID              NUMBER,
-  ACAD_PLAN_SID              NUMBER,
-  ACAD_SPLAN_SID             NUMBER,
+  INSTITUTION_CD             VARCHAR2(5 BYTE)   NOT NULL,
+  PERSON_ID                  VARCHAR2(11 BYTE)  NOT NULL,
+  INSTITUTION_SID            INTEGER            NOT NULL,
+  PERSON_SID                 INTEGER            NOT NULL,
+  ACAD_CAR_SID               NUMBER             NOT NULL,
+  STU_CAR_NBR                NUMBER             NOT NULL,
+  ADM_APPL_NBR               VARCHAR2(8 BYTE)   NOT NULL,
+  APPL_PROG_NBR              NUMBER             NOT NULL,
+  ACAD_PROG_SID              NUMBER             NOT NULL,
+  ACAD_PLAN_SID              NUMBER             NOT NULL,
+  ACAD_SPLAN_SID             NUMBER             NOT NULL,
   EFFDT                      DATE,
   EFFSEQ                     INTEGER,
-  SRC_SYS_ID                 VARCHAR2(5 BYTE),
+  SRC_SYS_ID                 VARCHAR2(5 BYTE)   NOT NULL,
   ADMIT_TERM_SID             NUMBER,
   ADMIT_TYPE_SID             NUMBER,
   ACAD_LVL_SID               NUMBER,
@@ -69,6 +75,9 @@ CREATE TABLE UM_F_FA_STDNT_AID_ADM
   UM_CUM_CREDIT              NUMBER,
   UM_CUM_GPA                 NUMBER,
   UM_CUM_QP                  NUMBER,
+  UM_CUM_CREDIT_AGG          NUMBER,
+  UM_CUM_GPA_AGG             NUMBER,
+  UM_CUM_QP_AGG              NUMBER,
   UM_GPA_EXCLUDE_FLG         VARCHAR2(1 BYTE),
   UM_EXT_ORG_CR              NUMBER,
   UM_EXT_ORG_QP              NUMBER,
@@ -82,15 +91,14 @@ CREATE TABLE UM_F_FA_STDNT_AID_ADM
   SAT_TOTAL_UM_SCORE         NUMBER,
   SAT_TOTAL_1600_CONV_SCORE  NUMBER,
   SAT_CONV_2016_SCORE        NUMBER,
-  UM_EXT_OR_MTSC_GPA         NUMBER(6,3),
-  MS_CONVERT_GPA             NUMBER(6,3),
+  UM_EXT_OR_MTSC_GPA         NUMBER,
+  MS_CONVERT_GPA             NUMBER,
+  MAX_DATA_ROW               VARCHAR2(1 BYTE),
   DATA_ORIGIN                VARCHAR2(1 BYTE),
   CREATED_EW_DTTM            DATE,
-  LASTUPD_EW_DTTM            DATE
+  LASTUPD_EW_DTTM            DATE,
+  ABTS_FLAG                  VARCHAR2(1 BYTE),
+  BSMS_FLAG                  VARCHAR2(1 BYTE)
 )
-NOLOGGING 
 COMPRESS BASIC
-NO INMEMORY
-NOCACHE
-RESULT_CACHE (MODE DEFAULT)
-NOPARALLEL;
+/

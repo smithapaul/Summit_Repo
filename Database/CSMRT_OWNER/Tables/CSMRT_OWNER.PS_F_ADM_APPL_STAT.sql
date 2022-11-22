@@ -1,41 +1,47 @@
-CREATE TABLE PS_F_ADM_APPL_STAT
+DROP TABLE CSMRT_OWNER.PS_F_ADM_APPL_STAT CASCADE CONSTRAINTS
+/
+
+--
+-- PS_F_ADM_APPL_STAT  (Table) 
+--
+CREATE TABLE CSMRT_OWNER.PS_F_ADM_APPL_STAT
 (
-  ACAD_CAR_CD             VARCHAR2(5 BYTE),
-  STU_CAR_NBR             INTEGER,
-  PERSON_ID               VARCHAR2(11 BYTE),
-  ADM_APPL_NBR            VARCHAR2(8 BYTE),
-  APPL_PROG_NBR           INTEGER,
-  ACAD_PLAN_CD            VARCHAR2(10 BYTE),
-  ACAD_SPLAN_CD           VARCHAR2(10 BYTE),
-  EFFDT                   DATE,
-  EFFSEQ                  INTEGER,
-  SRC_SYS_ID              VARCHAR2(5 BYTE),
-  INSTITUTION_CD          VARCHAR2(5 BYTE),
-  ACAD_PROG_CD            VARCHAR2(5 BYTE),
-  ACAD_CAR_SID            INTEGER,
-  ACAD_LOAD_SID           INTEGER,
-  ACAD_LVL_SID            INTEGER,
-  ACAD_PROG_SID           INTEGER,
-  ACAD_PLAN_SID           INTEGER,
-  ACAD_SPLAN_SID          INTEGER,
-  ACAD_PROG2_SID          INTEGER,
-  ACAD_PLAN2_SID          INTEGER,
-  ACAD_SPLAN2_SID         INTEGER,
-  ADMIT_TERM_SID          INTEGER,
-  ADMIT_TYPE_SID          INTEGER,
-  APPLCNT_SID             INTEGER,
-  APPL_CNTR_SID           INTEGER,
-  APPL_MTHD_SID           INTEGER,
-  AUDIT_OPRID_SID         INTEGER,
-  CAMPUS_SID              INTEGER,
-  DUAL_ACAD_PROG_SID      INTEGER,
-  EVAL_STAT_SID           INTEGER,
-  EXP_GRAD_TERM_SID       INTEGER,
-  INSTITUTION_SID         INTEGER,
-  LST_SCHL_ATTND_SID      INTEGER,
-  PROG_ACN_SID            INTEGER,
-  PROG_ACN_RSN_SID        INTEGER,
-  PROG_STAT_SID           INTEGER,
+  ACAD_CAR_CD             VARCHAR2(5 BYTE)      NOT NULL,
+  STU_CAR_NBR             INTEGER               NOT NULL,
+  PERSON_ID               VARCHAR2(11 BYTE)     NOT NULL,
+  ADM_APPL_NBR            VARCHAR2(8 BYTE)      NOT NULL,
+  APPL_PROG_NBR           INTEGER               NOT NULL,
+  ACAD_PLAN_CD            VARCHAR2(10 BYTE)     NOT NULL,
+  ACAD_SPLAN_CD           VARCHAR2(10 BYTE)     NOT NULL,
+  EFFDT                   DATE                  NOT NULL,
+  EFFSEQ                  INTEGER               NOT NULL,
+  SRC_SYS_ID              VARCHAR2(5 BYTE)      NOT NULL,
+  INSTITUTION_CD          VARCHAR2(5 BYTE)      NOT NULL,
+  ACAD_PROG_CD            VARCHAR2(5 BYTE)      NOT NULL,
+  ACAD_CAR_SID            INTEGER               NOT NULL,
+  ACAD_LOAD_SID           INTEGER               NOT NULL,
+  ACAD_LVL_SID            INTEGER               NOT NULL,
+  ACAD_PROG_SID           INTEGER               NOT NULL,
+  ACAD_PLAN_SID           INTEGER               NOT NULL,
+  ACAD_SPLAN_SID          INTEGER               NOT NULL,
+  ACAD_PROG2_SID          INTEGER               NOT NULL,
+  ACAD_PLAN2_SID          INTEGER               NOT NULL,
+  ACAD_SPLAN2_SID         INTEGER               NOT NULL,
+  ADMIT_TERM_SID          INTEGER               NOT NULL,
+  ADMIT_TYPE_SID          INTEGER               NOT NULL,
+  APPLCNT_SID             INTEGER               NOT NULL,
+  APPL_CNTR_SID           INTEGER               NOT NULL,
+  APPL_MTHD_SID           INTEGER               NOT NULL,
+  AUDIT_OPRID_SID         INTEGER               NOT NULL,
+  CAMPUS_SID              INTEGER               NOT NULL,
+  DUAL_ACAD_PROG_SID      INTEGER               NOT NULL,
+  EVAL_STAT_SID           INTEGER               NOT NULL,
+  EXP_GRAD_TERM_SID       INTEGER               NOT NULL,
+  INSTITUTION_SID         INTEGER               NOT NULL,
+  LST_SCHL_ATTND_SID      INTEGER               NOT NULL,
+  PROG_ACN_SID            INTEGER               NOT NULL,
+  PROG_ACN_RSN_SID        INTEGER               NOT NULL,
+  PROG_STAT_SID           INTEGER               NOT NULL,
   ACTION_DT               DATE,
   APPL_CMPLTN_DT          DATE,
   APPL_CMPLTN_FLG         VARCHAR2(1 BYTE),
@@ -87,14 +93,19 @@ CREATE TABLE PS_F_ADM_APPL_STAT
   UM_TCA_CREDITS          NUMBER(5,2),
   WAIVE_AMT               NUMBER(16,2),
   LOAD_ERROR              VARCHAR2(1 BYTE),
-  DATA_ORIGIN             VARCHAR2(1 BYTE),
+  DATA_ORIGIN             VARCHAR2(1 BYTE)      NOT NULL,
   CREATED_EW_DTTM         DATE,
   LASTUPD_EW_DTTM         DATE,
-  BATCH_SID               INTEGER
+  BATCH_SID               INTEGER               NOT NULL
 )
-NOLOGGING 
 COMPRESS BASIC
-NO INMEMORY
-NOCACHE
-RESULT_CACHE (MODE DEFAULT)
-NOPARALLEL;
+/
+
+
+ALTER TABLE CSMRT_OWNER.PS_F_ADM_APPL_STAT ADD (
+  CONSTRAINT PK_PS_F_ADM_APPL_STAT
+  PRIMARY KEY
+  (ACAD_CAR_CD, STU_CAR_NBR, PERSON_ID, ADM_APPL_NBR, APPL_PROG_NBR, ACAD_PLAN_CD, ACAD_SPLAN_CD, EFFDT, EFFSEQ, SRC_SYS_ID)
+  RELY
+  ENABLE VALIDATE)
+/

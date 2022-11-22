@@ -1,30 +1,36 @@
-CREATE TABLE UM_F_STDNT_ENRL
+DROP TABLE CSMRT_OWNER.UM_F_STDNT_ENRL CASCADE CONSTRAINTS
+/
+
+--
+-- UM_F_STDNT_ENRL  (Table) 
+--
+CREATE TABLE CSMRT_OWNER.UM_F_STDNT_ENRL
 (
-  TERM_SID                    INTEGER,
-  PERSON_SID                  INTEGER,
-  CLASS_NUM                   INTEGER,
-  SRC_SYS_ID                  VARCHAR2(5 BYTE),
-  INSTITUTION_CD              VARCHAR2(5 BYTE),
-  ACAD_CAR_CD                 VARCHAR2(4 BYTE),
-  TERM_CD                     VARCHAR2(4 BYTE),
-  SESSION_CD                  VARCHAR2(3 BYTE),
-  PERSON_ID                   VARCHAR2(11 BYTE),
-  INSTITUTION_SID             INTEGER,
-  ACAD_CAR_SID                INTEGER,
-  SESSION_SID                 INTEGER,
-  CLASS_SID                   INTEGER,
-  ENRLMT_MAX_TERM_SID         INTEGER,
-  ENRLMT_MIN_TERM_SID         INTEGER,
-  ENRLMT_MIN_PERSON_TERM_SID  INTEGER,
-  ENRLMT_PREV_TERM_SID        INTEGER,
-  ENRLMT_STAT_SID             INTEGER,
-  ENRLMT_REAS_SID             INTEGER,
-  ENRL_ACN_LAST_SID           INTEGER,
-  ENRL_ACN_RSN_LAST_SID       INTEGER,
-  GRADE_SID                   INTEGER,
-  GRADE_INPUT_SID             INTEGER,
-  MID_TERM_GRADE_SID          INTEGER,
-  REPEAT_SID                  INTEGER,
+  TERM_SID                    INTEGER           NOT NULL,
+  PERSON_SID                  INTEGER           NOT NULL,
+  CLASS_NUM                   INTEGER           NOT NULL,
+  SRC_SYS_ID                  VARCHAR2(5 BYTE)  NOT NULL,
+  INSTITUTION_CD              VARCHAR2(5 BYTE)  NOT NULL,
+  ACAD_CAR_CD                 VARCHAR2(4 BYTE)  NOT NULL,
+  TERM_CD                     VARCHAR2(4 BYTE)  NOT NULL,
+  SESSION_CD                  VARCHAR2(3 BYTE)  NOT NULL,
+  PERSON_ID                   VARCHAR2(11 BYTE) NOT NULL,
+  INSTITUTION_SID             INTEGER           NOT NULL,
+  ACAD_CAR_SID                INTEGER           NOT NULL,
+  SESSION_SID                 INTEGER           NOT NULL,
+  CLASS_SID                   INTEGER           NOT NULL,
+  ENRLMT_MAX_TERM_SID         INTEGER           NOT NULL,
+  ENRLMT_MIN_TERM_SID         INTEGER           NOT NULL,
+  ENRLMT_MIN_PERSON_TERM_SID  INTEGER           NOT NULL,
+  ENRLMT_PREV_TERM_SID        INTEGER           NOT NULL,
+  ENRLMT_STAT_SID             INTEGER           NOT NULL,
+  ENRLMT_REAS_SID             INTEGER           NOT NULL,
+  ENRL_ACN_LAST_SID           INTEGER           NOT NULL,
+  ENRL_ACN_RSN_LAST_SID       INTEGER           NOT NULL,
+  GRADE_SID                   INTEGER           NOT NULL,
+  GRADE_INPUT_SID             INTEGER           NOT NULL,
+  MID_TERM_GRADE_SID          INTEGER           NOT NULL,
+  REPEAT_SID                  INTEGER           NOT NULL,
   ASSOCIATED_CLASS            INTEGER,
   CLASS_CD                    VARCHAR2(10 BYTE),
   CLASS_PRMSN_NBR             INTEGER,
@@ -104,9 +110,14 @@ CREATE TABLE UM_F_STDNT_ENRL
   LASTUPD_EW_DTTM             DATE,
   APPROVAL_DATE               DATE
 )
-NOLOGGING 
 COMPRESS BASIC
-NO INMEMORY
-NOCACHE
-RESULT_CACHE (MODE DEFAULT)
-NOPARALLEL;
+/
+
+
+ALTER TABLE CSMRT_OWNER.UM_F_STDNT_ENRL ADD (
+  CONSTRAINT PK_UM_F_STDNT_ENRL
+  PRIMARY KEY
+  (TERM_SID, PERSON_SID, CLASS_NUM, SRC_SYS_ID)
+  RELY
+  ENABLE VALIDATE)
+/
