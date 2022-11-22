@@ -1,4 +1,10 @@
-CREATE OR REPLACE VIEW C_UM_D_SRVC_IND_RSN_VW
+DROP VIEW CSMRT_OWNER.C_UM_D_SRVC_IND_RSN_VW
+/
+
+--
+-- C_UM_D_SRVC_IND_RSN_VW  (View) 
+--
+CREATE OR REPLACE VIEW CSMRT_OWNER.C_UM_D_SRVC_IND_RSN_VW
 BEQUEATH DEFINER
 AS 
 WITH
@@ -102,4 +108,5 @@ WITH
            SYSDATE                     CREATED_EW_DTTM,
            SYSDATE                     LASTUPD_EW_DTTM,
            1234                        BATCH_SID
-      FROM DUAL;
+      FROM DUAL
+/

@@ -1,4 +1,10 @@
-CREATE OR REPLACE VIEW UM_F_FA_STDNT_AID_ADM_VW
+DROP VIEW CSMRT_OWNER.UM_F_FA_STDNT_AID_ADM_VW
+/
+
+--
+-- UM_F_FA_STDNT_AID_ADM_VW  (View) 
+--
+CREATE OR REPLACE VIEW CSMRT_OWNER.UM_F_FA_STDNT_AID_ADM_VW
 BEQUEATH DEFINER
 AS 
 SELECT /*+ OPT_ESTIMATE(TABLE UM_F_FA_STDNT_AID_ADM MIN=100000) */
@@ -76,9 +82,15 @@ SELECT /*+ OPT_ESTIMATE(TABLE UM_F_FA_STDNT_AID_ADM MIN=100000) */
            EXT_SUMM_TYPE_ID,                                       -- Jan 2017
            EXT_GPA,
            CONVERTED_GPA,
-           UM_CUM_CREDIT,
-           UM_CUM_GPA,
-           UM_CUM_QP,
+--           UM_CUM_CREDIT,
+--           UM_CUM_GPA,
+--           UM_CUM_QP,
+case when INSTITUTION_CD = 'UMBOS' then UM_CUM_CREDIT else UM_CUM_CREDIT_AGG end UM_CUM_CREDIT,     -- Aug 2022 
+case when INSTITUTION_CD = 'UMBOS' then UM_CUM_GPA else UM_CUM_GPA_AGG end UM_CUM_GPA,              -- Aug 2022
+case when INSTITUTION_CD = 'UMBOS' then UM_CUM_QP else UM_CUM_QP_AGG end UM_CUM_QP,                 -- Aug 2022 
+           UM_CUM_CREDIT_AGG,           -- Aug 2022 
+           UM_CUM_GPA_AGG,              -- Aug 2022 
+           UM_CUM_QP_AGG,               -- Aug 2022 
            UM_GPA_EXCLUDE_FLG,
            UM_EXT_ORG_CR,
            UM_EXT_ORG_QP,
@@ -94,8 +106,11 @@ SELECT /*+ OPT_ESTIMATE(TABLE UM_F_FA_STDNT_AID_ADM MIN=100000) */
            SAT_CONV_2016_SCORE,                                    -- Jan 2017
            UM_EXT_OR_MTSC_GPA,                                     -- Sep 2019
            MS_CONVERT_GPA,                                         -- Sep 2019
+           MAX_DATA_ROW,                                           -- Aug 2022 
            DATA_ORIGIN,                                            -- Sep 2019
+           ABTS_FLAG,
+           BSMS_FLAG, 
            CREATED_EW_DTTM,                                        -- Sep 2019
            LASTUPD_EW_DTTM                                         -- Sep 2019
       FROM CSMRT_OWNER.UM_F_FA_STDNT_AID_ADM
-    WHERE ROWNUM < 100000000;
+/

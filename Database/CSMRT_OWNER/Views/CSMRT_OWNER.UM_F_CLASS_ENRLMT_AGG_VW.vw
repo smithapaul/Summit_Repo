@@ -1,4 +1,10 @@
-CREATE OR REPLACE VIEW UM_F_CLASS_ENRLMT_AGG_VW
+DROP VIEW CSMRT_OWNER.UM_F_CLASS_ENRLMT_AGG_VW
+/
+
+--
+-- UM_F_CLASS_ENRLMT_AGG_VW  (View) 
+--
+CREATE OR REPLACE VIEW CSMRT_OWNER.UM_F_CLASS_ENRLMT_AGG_VW
 BEQUEATH DEFINER
 AS 
 SELECT PERSON_SID,
@@ -90,4 +96,5 @@ SELECT PERSON_SID,
                                  ELSE
                                      0
                              END) <=
-                         0);
+                         0)
+/

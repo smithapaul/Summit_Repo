@@ -1,4 +1,10 @@
-CREATE OR REPLACE VIEW UM_F_EXT_ACAD_SUMM_VW
+DROP VIEW CSMRT_OWNER.UM_F_EXT_ACAD_SUMM_VW
+/
+
+--
+-- UM_F_EXT_ACAD_SUMM_VW  (View) 
+--
+CREATE OR REPLACE VIEW CSMRT_OWNER.UM_F_EXT_ACAD_SUMM_VW
 BEQUEATH DEFINER
 AS 
 SELECT INSTITUTION_CD,
@@ -38,9 +44,15 @@ SELECT INSTITUTION_CD,
            UNITS_ATTMPTD,
            UNITS_CMPLTD,
            UM_CONVERT_GPA,
-           UM_CUM_CREDIT,
-           UM_CUM_GPA,
-           UM_CUM_QP,
+--           UM_CUM_CREDIT,
+--           UM_CUM_GPA,
+--           UM_CUM_QP,
+case when INSTITUTION_CD = 'UMBOS' then UM_CUM_CREDIT else UM_CUM_CREDIT_AGG end UM_CUM_CREDIT,     -- Aug 2022
+case when INSTITUTION_CD = 'UMBOS' then UM_CUM_GPA else UM_CUM_GPA_AGG end UM_CUM_GPA,              -- Aug 2022
+case when INSTITUTION_CD = 'UMBOS' then UM_CUM_QP else UM_CUM_QP_AGG end UM_CUM_QP,                 -- Aug 2022
+           UM_CUM_CREDIT_AGG,   -- Aug 2022
+           UM_CUM_GPA_AGG,      -- Aug 2022
+           UM_CUM_QP_AGG,       -- Aug 2022
            UM_EXT_ORG_CR,
            UM_EXT_ORG_QP,
            UM_EXT_ORG_GPA,
@@ -50,11 +62,13 @@ SELECT INSTITUTION_CD,
            UM_GPA_EXCLUDE_FLG,
            UM_GPA_OVRD_FLG,
            UM_1_OVRD_HSGPA_FLG,
-		   UM_EXT_OR_MTSC_GPA, 
-		   MS_CONVERT_GPA,
+           UM_EXT_OR_MTSC_GPA,
+           MS_CONVERT_GPA,
+           MAX_DATA_ROW,        -- Aug 2022
            LOAD_ERROR,
            DATA_ORIGIN,
            CREATED_EW_DTTM,
            LASTUPD_EW_DTTM,
            BATCH_SID
-      FROM CSMRT_OWNER.PS_F_EXT_ACAD_SUMM;
+      FROM CSMRT_OWNER.PS_F_EXT_ACAD_SUMM
+/

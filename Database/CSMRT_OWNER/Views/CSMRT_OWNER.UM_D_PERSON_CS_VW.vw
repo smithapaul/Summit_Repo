@@ -1,7 +1,13 @@
-CREATE OR REPLACE VIEW UM_D_PERSON_CS_VW
+DROP VIEW CSMRT_OWNER.UM_D_PERSON_CS_VW
+/
+
+--
+-- UM_D_PERSON_CS_VW  (View) 
+--
+CREATE OR REPLACE VIEW CSMRT_OWNER.UM_D_PERSON_CS_VW
 BEQUEATH DEFINER
 AS 
-SELECT
+SELECT 
            P.PERSON_SID,
            PERSON_ID,
            SRC_SYS_ID,
@@ -11,7 +17,19 @@ SELECT
            LAST_NM,
            PREFIX,                                                 -- Mar 2019
            SUFFIX,
-           PREFERRED_NAME,
+           PRF_NAME as PREFERRED_NAME,
+           PRF_NAME,
+           PRF_FIRST_NAME,
+           PRF_MIDDLE_NAME,
+           PRF_LAST_NAME,
+           PRF_PREFIX,
+           PRF_SUFFIX,
+           CPS_NAME,        
+           CPS_FIRST_NAME,   
+           CPS_MIDDLE_NAME,  
+           CPS_LAST_NAME,     
+           CPS_PREFIX,              
+           CPS_SUFFIX,                
            AK1_NAME,
            AK1_FIRST_NAME,
            AK1_MIDDLE_NAME,
@@ -139,6 +157,10 @@ SELECT
            HR_PERSON_ID,
            UM_GUID,
            DATA_ORIGIN,
+           SCC_PRONOUNS_CD,
+           SCC_PRONOUNS_SD,
+           SCC_PRONOUNS_LD,
            CREATED_EW_DTTM,
            LASTUPD_EW_DTTM
-      FROM UM_D_PERSON_AGG P;
+      FROM UM_D_PERSON_AGG P
+/

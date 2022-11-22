@@ -1,4 +1,10 @@
-CREATE OR REPLACE VIEW UM_F_ADM_WEB_COMN_APP_INFO_VW
+DROP VIEW CSMRT_OWNER.UM_F_ADM_WEB_COMN_APP_INFO_VW
+/
+
+--
+-- UM_F_ADM_WEB_COMN_APP_INFO_VW  (View) 
+--
+CREATE OR REPLACE VIEW CSMRT_OWNER.UM_F_ADM_WEB_COMN_APP_INFO_VW
 BEQUEATH DEFINER
 AS 
 SELECT UM_ADM_REC_NBR,
@@ -309,5 +315,9 @@ SELECT UM_ADM_REC_NBR,
            UM_ACAD_SPLAN_CD_CHOICE3,                              -- Aug 2020,
            UM_CA_COVID19,                                         -- Aug 2020,
            UM_ENG_AS_SEC_LNG,                                     -- Nov 2020
-		   UM_CA_GENDER_IDENT                                     -- Jan 2021
-      FROM UM_F_ADM_WEB_COMN_APP_INFO;
+           UM_CA_GENDER_IDENT,                                    -- Jan 2021
+           UM_ADM_WAIVER_OPTN,                                    -- Jan 2022
+           ADM_WAIVER_DESCR,                                      -- Jan 2022
+           UM_ADM_ATTENDEE_CD                                     -- Jan 2022
+      FROM UM_F_ADM_WEB_COMN_APP_INFO
+/

@@ -1,4 +1,10 @@
-CREATE OR REPLACE VIEW C_UM_F_STDNT_TERM_VW
+DROP VIEW CSMRT_OWNER.C_UM_F_STDNT_TERM_VW
+/
+
+--
+-- C_UM_F_STDNT_TERM_VW  (View) 
+--
+CREATE OR REPLACE VIEW CSMRT_OWNER.C_UM_F_STDNT_TERM_VW
 BEQUEATH DEFINER
 AS 
 SELECT TERM_SID,
@@ -209,26 +215,26 @@ SELECT TERM_SID,
            ENRL_ADD_MAX_DT,
            ENRL_DROP_MAX_DT,
            AUDIT_CNT,
-           cast(AUDIT_ONLY_FLG as varchar2(1)) AS AUDIT_ONLY_FLG,
+           CAST (AUDIT_ONLY_FLG AS VARCHAR2 (1))      AS AUDIT_ONLY_FLG,
            BILLING_UNIT,
            CE_CREDITS,
            CE_FTE,
-           cast(CE_ONLY_FLG as varchar2(1)) AS CE_ONLY_FLG,
+           CAST (CE_ONLY_FLG AS VARCHAR2 (1))         AS CE_ONLY_FLG,
            DAY_CREDITS,
            DAY_FTE,
-           cast(DAY_ONLY_FLG as varchar2(1)) AS DAY_ONLY_FLG,
+           CAST (DAY_ONLY_FLG AS VARCHAR2 (1))        AS DAY_ONLY_FLG,
            CRSE_CNT,
            DROP_CNT,
            ENROLL_CNT,
            ENROLL_DT,
-           cast(ENROLL_FLG as varchar2(1)) AS ENROLL_FLG,
+           CAST (ENROLL_FLG AS VARCHAR2 (1))          AS ENROLL_FLG,
            ERN_UNIT,
            IFTE_CNT,
            ONLINE_CNT,
            ONLINE_CREDITS,
            CE_ONLINE_CREDITS,                              -- Added APRIL 2021
            CE_OTHER_CREDITS,                               -- Added APRIL 2021
-           cast(ONLINE_ONLY_FLG as varchar2(1)) AS ONLINE_ONLY_FLG,
+           CAST (ONLINE_ONLY_FLG AS VARCHAR2 (1))     AS ONLINE_ONLY_FLG,
            PRGRS_UNIT,
            PRGRS_FA_UNIT,
            TAKEN_UNIT,
@@ -980,4 +986,5 @@ SELECT TERM_SID,
                      UM_F_STDNT_TERM.MAX_UNIT_AUDIT,
                      UM_F_STDNT_TERM.MAX_UNIT_NOGPA,
                      UM_F_STDNT_TERM.MAX_UNIT_TOT,
-                     UM_F_STDNT_TERM.MAX_UNIT_WAIT);
+                     UM_F_STDNT_TERM.MAX_UNIT_WAIT)
+/

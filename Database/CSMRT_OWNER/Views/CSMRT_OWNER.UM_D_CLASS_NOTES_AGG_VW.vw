@@ -1,4 +1,10 @@
-CREATE OR REPLACE VIEW UM_D_CLASS_NOTES_AGG_VW
+DROP VIEW CSMRT_OWNER.UM_D_CLASS_NOTES_AGG_VW
+/
+
+--
+-- UM_D_CLASS_NOTES_AGG_VW  (View) 
+--
+CREATE OR REPLACE VIEW CSMRT_OWNER.UM_D_CLASS_NOTES_AGG_VW
 BEQUEATH DEFINER
 AS 
 with N1 as (
@@ -23,4 +29,5 @@ select CLASS_SID,
        min(case when NOTE_ORDER = 4 then to_char(DESCRLONG) else '' end) NOTE4, 
        min(case when NOTE_ORDER = 5 then to_char(DESCRLONG) else '' end) NOTE5
   from N1 
-    GROUP BY CLASS_SID;
+    GROUP BY CLASS_SID
+/
