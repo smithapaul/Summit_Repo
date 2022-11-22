@@ -1,4 +1,10 @@
-CREATE OR REPLACE PROCEDURE             "UM_F_SF_ITEM_LINE_P" AUTHID CURRENT_USER IS
+DROP PROCEDURE CSMRT_OWNER.UM_F_SF_ITEM_LINE_P
+/
+
+--
+-- UM_F_SF_ITEM_LINE_P  (Procedure) 
+--
+CREATE OR REPLACE PROCEDURE CSMRT_OWNER."UM_F_SF_ITEM_LINE_P" AUTHID CURRENT_USER IS
 
 ------------------------------------------------------------------------
 -- George Adams
@@ -58,15 +64,15 @@ strMessage01    := 'Disabling Indexes for table CSMRT_OWNER.UM_F_SF_ITEM_LINE';
 COMMON_OWNER.SMT_LOG.PUT_MESSAGE(i_Message => strMessage01);
 COMMON_OWNER.SMT_INDEX.ALL_UNUSABLE('CSMRT_OWNER','UM_F_SF_ITEM_LINE');
 
-strSqlDynamic   := 'alter table CSMRT_OWNER.UM_F_SF_ITEM_LINE disable constraint PK_UM_F_SF_ITEM_LINE';
-strSqlCommand   := 'SMT_UTILITY.EXECUTE_IMMEDIATE: ' || strSqlDynamic;
-COMMON_OWNER.SMT_UTILITY.EXECUTE_IMMEDIATE
-                (
-                i_SqlStatement          => strSqlDynamic,
-                i_MaxTries              => 10,
-                i_WaitSeconds           => 10,
-                o_Tries                 => intTries
-                );
+--strSqlDynamic   := 'alter table CSMRT_OWNER.UM_F_SF_ITEM_LINE disable constraint PK_UM_F_SF_ITEM_LINE';
+--strSqlCommand   := 'SMT_UTILITY.EXECUTE_IMMEDIATE: ' || strSqlDynamic;
+--COMMON_OWNER.SMT_UTILITY.EXECUTE_IMMEDIATE
+--                (
+--                i_SqlStatement          => strSqlDynamic,
+--                i_MaxTries              => 10,
+--                i_WaitSeconds           => 10,
+--                o_Tries                 => intTries
+--                );
 
 strMessage01    := 'Inserting data into CSMRT_OWNER.UM_F_SF_ITEM_LINE';
 COMMON_OWNER.SMT_LOG.PUT_MESSAGE(i_Message => strMessage01);
@@ -74,7 +80,7 @@ COMMON_OWNER.SMT_LOG.PUT_MESSAGE(i_Message => strMessage01);
 strSqlCommand   := 'insert into CSMRT_OWNER.UM_F_SF_ITEM_LINE';
 insert /*+ append parallel(8) enable_parallel_dml */ into CSMRT_OWNER.UM_F_SF_ITEM_LINE
   with X as (
-select /*+ inline parallel(8) */
+select /*+ inline parallel(8) no_merge */
        FIELDNAME, FIELDVALUE, EFFDT, SRC_SYS_ID,
        XLATLONGNAME, XLATSHORTNAME, DATA_ORIGIN,
        row_number() over (partition by FIELDNAME, FIELDVALUE, SRC_SYS_ID
@@ -82,20 +88,20 @@ select /*+ inline parallel(8) */
   from CSSTG_OWNER.PSXLATITEM
  where DATA_ORIGIN <> 'D'),
        RSN as (
-select /*+ inline parallel(8) */
+select /*+ inline parallel(8) no_merge */
        SETID, LINE_REASON_CD, EFFDT, SRC_SYS_ID, EFF_STATUS, DESCR, DESCRSHORT,
        row_number() over (partition by SETID, LINE_REASON_CD, SRC_SYS_ID
                               order by EFFDT desc) RSN_ORDER
   from CSSTG_OWNER.PS_LINE_REASON_TBL
  where DATA_ORIGIN <> 'D'),
        I as (
-select /*+ inline parallel(8) */
+select /*+ inline parallel(8) no_merge */
        BUSINESS_UNIT, COMMON_ID, SA_ID_TYPE, ITEM_NBR, SRC_SYS_ID,
        ITEM_TYPE
   from CSSTG_OWNER.PS_ITEM_SF
  where DATA_ORIGIN <> 'D'),
        L as (
-select /*+ inline parallel(8) */
+select /*+ inline parallel(8) no_merge */
        L.BUSINESS_UNIT, L.COMMON_ID, L.SA_ID_TYPE, L.ITEM_NBR, L.LINE_SEQ_NBR, L.SRC_SYS_ID,
        L.EMPLID, L.ACCOUNT_NBR, L.ACCOUNT_TERM, L.POSTED_DATE, L.ITEM_EFFECTIVE_DT,
        L.GL_POSTING_DTTM, L.BILLING_DT, L.DUE_DT, L.REF1_DESCR, L.LINE_AMT, L.DUE_AMT,
@@ -118,7 +124,7 @@ select /*+ inline parallel(8) */
    and L.ITEM_NBR = I.ITEM_NBR
    and L.SRC_SYS_ID = I.SRC_SYS_ID
  where L.DATA_ORIGIN <> 'D')
-select /*+ inline parallel(8) */
+select /*+ inline parallel(8) no_merge */
 	I.BUSINESS_UNIT INSTITUTION_CD,
 	I.COMMON_ID PERSON_ID,
 	I.SA_ID_TYPE,
@@ -294,15 +300,15 @@ COMMON_OWNER.SMT_PROCESS_LOG.PROCESS_DETAIL
 strMessage01    := 'Enabling Indexes for table CSMRT_OWNER.UM_F_SF_ITEM_LINE';
 COMMON_OWNER.SMT_LOG.PUT_MESSAGE(i_Message => strMessage01);
 
-strSqlDynamic   := 'alter table CSMRT_OWNER.UM_F_SF_ITEM_LINE enable constraint PK_UM_F_SF_ITEM_LINE';
-strSqlCommand   := 'SMT_UTILITY.EXECUTE_IMMEDIATE: ' || strSqlDynamic;
-COMMON_OWNER.SMT_UTILITY.EXECUTE_IMMEDIATE
-                (
-                i_SqlStatement          => strSqlDynamic,
-                i_MaxTries              => 10,
-                i_WaitSeconds           => 10,
-                o_Tries                 => intTries
-                );
+--strSqlDynamic   := 'alter table CSMRT_OWNER.UM_F_SF_ITEM_LINE enable constraint PK_UM_F_SF_ITEM_LINE';
+--strSqlCommand   := 'SMT_UTILITY.EXECUTE_IMMEDIATE: ' || strSqlDynamic;
+--COMMON_OWNER.SMT_UTILITY.EXECUTE_IMMEDIATE
+--                (
+--                i_SqlStatement          => strSqlDynamic,
+--                i_MaxTries              => 10,
+--                i_WaitSeconds           => 10,
+--                o_Tries                 => intTries
+--                );
 
 COMMON_OWNER.SMT_INDEX.ALL_REBUILD('CSMRT_OWNER','UM_F_SF_ITEM_LINE');
 

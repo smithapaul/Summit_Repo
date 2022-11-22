@@ -1,4 +1,10 @@
-CREATE OR REPLACE PROCEDURE             "UM_F_STDNT_TRANSFER_P" AUTHID CURRENT_USER IS
+DROP PROCEDURE CSMRT_OWNER.UM_F_STDNT_TRANSFER_P
+/
+
+--
+-- UM_F_STDNT_TRANSFER_P  (Procedure) 
+--
+CREATE OR REPLACE PROCEDURE CSMRT_OWNER."UM_F_STDNT_TRANSFER_P" AUTHID CURRENT_USER IS
 
 ------------------------------------------------------------------------
 --George Adams
@@ -55,15 +61,15 @@ strMessage01    := 'Disabling Indexes for table CSMRT_OWNER.UM_F_STDNT_TRANSFER'
 COMMON_OWNER.SMT_LOG.PUT_MESSAGE(i_Message => strMessage01);
 COMMON_OWNER.SMT_INDEX.ALL_UNUSABLE('CSMRT_OWNER','UM_F_STDNT_TRANSFER');
 
-strSqlDynamic   := 'alter table CSMRT_OWNER.UM_F_STDNT_TRANSFER disable constraint PK_UM_F_STDNT_TRANSFER';
-strSqlCommand   := 'SMT_UTILITY.EXECUTE_IMMEDIATE: ' || strSqlDynamic;
-COMMON_OWNER.SMT_UTILITY.EXECUTE_IMMEDIATE
-                (
-                i_SqlStatement          => strSqlDynamic,
-                i_MaxTries              => 10,
-                i_WaitSeconds           => 10,
-                o_Tries                 => intTries
-                );
+--strSqlDynamic   := 'alter table CSMRT_OWNER.UM_F_STDNT_TRANSFER disable constraint PK_UM_F_STDNT_TRANSFER';
+--strSqlCommand   := 'SMT_UTILITY.EXECUTE_IMMEDIATE: ' || strSqlDynamic;
+--COMMON_OWNER.SMT_UTILITY.EXECUTE_IMMEDIATE
+--                (
+--                i_SqlStatement          => strSqlDynamic,
+--                i_MaxTries              => 10,
+--                i_WaitSeconds           => 10,
+--                o_Tries                 => intTries
+--                );
 
 strMessage01    := 'Inserting data into CSMRT_OWNER.UM_F_STDNT_TRANSFER';
 COMMON_OWNER.SMT_LOG.PUT_MESSAGE(i_Message => strMessage01);
@@ -276,15 +282,15 @@ COMMON_OWNER.SMT_PROCESS_LOG.PROCESS_DETAIL
 strMessage01    := 'Enabling Indexes for table CSMRT_OWNER.UM_F_STDNT_TRANSFER';
 COMMON_OWNER.SMT_LOG.PUT_MESSAGE(i_Message => strMessage01);
 
-strSqlDynamic   := 'alter table CSMRT_OWNER.UM_F_STDNT_TRANSFER enable constraint PK_UM_F_STDNT_TRANSFER';
-strSqlCommand   := 'SMT_UTILITY.EXECUTE_IMMEDIATE: ' || strSqlDynamic;
-COMMON_OWNER.SMT_UTILITY.EXECUTE_IMMEDIATE
-                (
-                i_SqlStatement          => strSqlDynamic,
-                i_MaxTries              => 10,
-                i_WaitSeconds           => 10,
-                o_Tries                 => intTries
-                );
+--strSqlDynamic   := 'alter table CSMRT_OWNER.UM_F_STDNT_TRANSFER enable constraint PK_UM_F_STDNT_TRANSFER';
+--strSqlCommand   := 'SMT_UTILITY.EXECUTE_IMMEDIATE: ' || strSqlDynamic;
+--COMMON_OWNER.SMT_UTILITY.EXECUTE_IMMEDIATE
+--                (
+--                i_SqlStatement          => strSqlDynamic,
+--                i_MaxTries              => 10,
+--                i_WaitSeconds           => 10,
+--                o_Tries                 => intTries
+--                );
 
 COMMON_OWNER.SMT_INDEX.ALL_REBUILD('CSMRT_OWNER','UM_F_STDNT_TRANSFER');
 

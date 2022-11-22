@@ -1,10 +1,15 @@
-CREATE OR REPLACE PROCEDURE             "UM_D_PERSON_AGG_P" AUTHID CURRENT_USER IS
+DROP PROCEDURE CSMRT_OWNER.UM_D_PERSON_AGG_P
+/
+
+--
+-- UM_D_PERSON_AGG_P  (Procedure) 
+--
+CREATE OR REPLACE PROCEDURE CSMRT_OWNER."UM_D_PERSON_AGG_P" AUTHID CURRENT_USER IS
 
 ------------------------------------------------------------------------
---George Adams
---Loads table                -- UM_D_PERSON_AGG
---V01 12/11/2018             -- srikanth ,pabbu converted to proc from sql scripts
-
+--
+-- Loads table                -- UM_D_PERSON_AGG
+--
 ------------------------------------------------------------------------
 
         strMartId                       Varchar2(50)    := 'CSW';
@@ -70,7 +75,7 @@ COMMON_OWNER.SMT_LOG.PUT_MESSAGE(i_Message => strMessage01);
 
 strSqlCommand   := 'insert into CSMRT_OWNER.UM_D_PERSON_AGG';				
 insert /*+ append */ into CSMRT_OWNER.UM_D_PERSON_AGG
-  with Q1 as (
+ with Q1 as (
 select /*+ inline parallel(8) */
        PERSON_SID, 
        max(case when CIT_ORDER = 1 then CITIZENSHIP_STATUS_USA else '-' end) CITZ_STAT_CD, 
@@ -97,30 +102,36 @@ select /*+ inline parallel(8) */
        Q2 as (
 select /*+ inline parallel(8) */
        PERSON_SID, 
-       max(case when AKA_ORDER = 1 and NAME_TYPE like 'AK1' then NAME else '' end) AK1_NAME,
-       max(case when AKA_ORDER = 1 and NAME_TYPE like 'AK1' then FIRST_NAME else '' end) AK1_FIRST_NAME,
-       max(case when AKA_ORDER = 1 and NAME_TYPE like 'AK1' then decode(trim(MIDDLE_NAME),'-','',MIDDLE_NAME) else '' end) AK1_MIDDLE_NAME,
-       max(case when AKA_ORDER = 1 and NAME_TYPE like 'AK1' then LAST_NAME else '' end) AK1_LAST_NAME,
-       max(case when AKA_ORDER = 1 and NAME_TYPE like 'AK1' then NAME_PREFIX else '' end) AK1_PREFIX,  
-       max(case when AKA_ORDER = 1 and NAME_TYPE like 'AK1' then NAME_SUFFIX else '' end) AK1_SUFFIX,
-       max(case when DEG_ORDER = 1 and NAME_TYPE = 'DEG' and EFF_STATUS <> 'I' then NAME else '' end) DEG_NAME,
-       max(case when DEG_ORDER = 1 and NAME_TYPE = 'DEG' and EFF_STATUS <> 'I' then FIRST_NAME else '' end) DEG_FIRST_NAME,
-       max(case when DEG_ORDER = 1 and NAME_TYPE = 'DEG' and EFF_STATUS <> 'I' then decode(trim(MIDDLE_NAME),'-','',MIDDLE_NAME) else '' end) DEG_MIDDLE_NAME,
-       max(case when DEG_ORDER = 1 and NAME_TYPE = 'DEG' and EFF_STATUS <> 'I' then LAST_NAME else '' end) DEG_LAST_NAME,
-       max(case when DEG_ORDER = 1 and NAME_TYPE = 'DEG' and EFF_STATUS <> 'I' then NAME_PREFIX else '' end) DEG_PREFIX,  
-       max(case when DEG_ORDER = 1 and NAME_TYPE = 'DEG' and EFF_STATUS <> 'I' then NAME_SUFFIX else '' end) DEG_SUFFIX,
-       max(case when PRF_ORDER = 1 and NAME_TYPE = 'PRF' then NAME else '' end) PRF_NAME,
-       max(case when PRF_ORDER = 1 and NAME_TYPE = 'PRF' then FIRST_NAME else '' end) PRF_FIRST_NAME,
-       max(case when PRF_ORDER = 1 and NAME_TYPE = 'PRF' then decode(trim(MIDDLE_NAME),'-','',MIDDLE_NAME) else '' end) PRF_MIDDLE_NAME,
-       max(case when PRF_ORDER = 1 and NAME_TYPE = 'PRF' then LAST_NAME else '' end) PRF_LAST_NAME,
-       max(case when PRF_ORDER = 1 and NAME_TYPE = 'PRF' then NAME_PREFIX else '' end) PRF_PREFIX,  
-       max(case when PRF_ORDER = 1 and NAME_TYPE = 'PRF' then NAME_SUFFIX else '' end) PRF_SUFFIX,
-       max(case when PRI_ORDER = 1 and NAME_TYPE = 'PRI' then NAME else '' end) PRI_NAME,
-       max(case when PRI_ORDER = 1 and NAME_TYPE = 'PRI' then FIRST_NAME else '' end) PRI_FIRST_NAME,
-       max(case when PRI_ORDER = 1 and NAME_TYPE = 'PRI' then decode(trim(MIDDLE_NAME),'-','',MIDDLE_NAME) else '' end) PRI_MIDDLE_NAME,
-       max(case when PRI_ORDER = 1 and NAME_TYPE = 'PRI' then LAST_NAME else '' end) PRI_LAST_NAME,
-       max(case when PRI_ORDER = 1 and NAME_TYPE = 'PRI' then NAME_PREFIX else '' end) PRI_PREFIX,  
-       max(case when PRI_ORDER = 1 and NAME_TYPE = 'PRI' then NAME_SUFFIX else '' end) PRI_SUFFIX
+       max(case when AKA_ORDER = 1  then NAME else '' end) AK1_NAME,
+       max(case when AKA_ORDER = 1  then FIRST_NAME else '' end) AK1_FIRST_NAME,
+       max(case when AKA_ORDER = 1  then MIDDLE_NAME else '' end) AK1_MIDDLE_NAME,
+       max(case when AKA_ORDER = 1  then LAST_NAME else '' end) AK1_LAST_NAME,
+       max(case when AKA_ORDER = 1  then NAME_PREFIX else '' end) AK1_PREFIX,  
+       max(case when AKA_ORDER = 1  then NAME_SUFFIX else '' end) AK1_SUFFIX,
+       max(case when DEG_ORDER = 1  then NAME else '' end) DEG_NAME,
+       max(case when DEG_ORDER = 1  then FIRST_NAME else '' end) DEG_FIRST_NAME,
+       max(case when DEG_ORDER = 1  then MIDDLE_NAME else '' end) DEG_MIDDLE_NAME,
+       max(case when DEG_ORDER = 1  then LAST_NAME else '' end) DEG_LAST_NAME,
+       max(case when DEG_ORDER = 1  then NAME_PREFIX else '' end) DEG_PREFIX,  
+       max(case when DEG_ORDER = 1  then NAME_SUFFIX else '' end) DEG_SUFFIX,
+       max(case when PRF_ORDER = 1  then NAME else '' end) PRF_NAME,
+       max(case when PRF_ORDER = 1  then FIRST_NAME else '' end) PRF_FIRST_NAME,
+       max(case when PRF_ORDER = 1  then MIDDLE_NAME else '' end) PRF_MIDDLE_NAME,
+       max(case when PRF_ORDER = 1  then LAST_NAME else '' end) PRF_LAST_NAME,
+       max(case when PRF_ORDER = 1  then NAME_PREFIX else '' end) PRF_PREFIX,  
+       max(case when PRF_ORDER = 1  then NAME_SUFFIX else '' end) PRF_SUFFIX,
+       max(case when PRI_ORDER = 1  then NAME else '' end) PRI_NAME,
+       max(case when PRI_ORDER = 1  then FIRST_NAME else '' end) PRI_FIRST_NAME,
+       max(case when PRI_ORDER = 1  then MIDDLE_NAME else '' end) PRI_MIDDLE_NAME,
+       max(case when PRI_ORDER = 1  then LAST_NAME else '' end) PRI_LAST_NAME,
+       max(case when PRI_ORDER = 1  then NAME_PREFIX else '' end) PRI_PREFIX,  
+       max(case when PRI_ORDER = 1  then NAME_SUFFIX else '' end) PRI_SUFFIX,
+       max(case when CPS_ORDER = 1  then NAME else '' end) CPS_NAME,
+       max(case when CPS_ORDER = 1  then FIRST_NAME else '' end) CPS_FIRST_NAME,
+       max(case when CPS_ORDER = 1  then MIDDLE_NAME else '' end) CPS_MIDDLE_NAME,
+       max(case when CPS_ORDER = 1  then LAST_NAME else '' end) CPS_LAST_NAME,
+       max(case when CPS_ORDER = 1  then NAME_PREFIX else '' end) CPS_PREFIX,  
+       max(case when CPS_ORDER = 1  then NAME_SUFFIX else '' end) CPS_SUFFIX
   from CSMRT_OWNER.UM_D_PERSON_NAME 
  where DATA_ORIGIN <> 'D'
  group by PERSON_SID),
@@ -203,7 +214,7 @@ select /*+ inline parallel(8) */
 -- where DATA_ORIGIN <> 'D' 
 --   and EXTERNAL_SYSTEM = 'HR') 
        Q8 as ( 
-select /*+ inline parallel(8) */ 
+select /*+ inline parallel(8)*/
        EMPLID, EXTERNAL_SYSTEM, EFFDT, SRC_SYS_ID, 
        EXTERNAL_SYSTEM_ID,
        row_number() over (partition by EMPLID, EXTERNAL_SYSTEM, SRC_SYS_ID
@@ -211,7 +222,8 @@ select /*+ inline parallel(8) */
   from CSSTG_OWNER.PS_EXTERNAL_SYSTEM 
  where DATA_ORIGIN <> 'D' 
    and EXTERNAL_SYSTEM in ('HR','IDM')) 
-select /*+ inline parallel(8) */
+select /*+ inline parallel(8) 
+            use_hash(P Q1 Q2 Q4 Q5 Q7 Q8 E1 E2 V A1 A2)*/
        P.PERSON_SID, 
        P.PERSON_ID, P.SRC_SYS_ID, 
        nvl(Q2.PRI_NAME,'-') PERSON_NM, 
@@ -220,7 +232,18 @@ select /*+ inline parallel(8) */
        nvl(Q2.PRI_LAST_NAME,'-') LAST_NM, 
        nvl(Q2.PRI_PREFIX,'-') PREFIX, 
        nvl(Q2.PRI_SUFFIX,'-') SUFFIX, 
-       nvl(Q2.PRF_NAME,'-') PREFERRED_NAME, 
+       nvl(Q2.PRF_NAME,'-') PRF_NAME, 
+       nvl(Q2.PRF_FIRST_NAME,'-') PRF_FIRST_NM, 
+       nvl(Q2.PRF_MIDDLE_NAME,'') PRF_MIDDLE_NM, 
+       nvl(Q2.PRF_LAST_NAME,'-') PRF_LAST_NM, 
+       nvl(Q2.PRF_PREFIX,'-') PRF_PREFIX, 
+       nvl(Q2.PRF_SUFFIX,'-') PRF_SUFFIX, 
+       nvl(Q2.CPS_NAME,'-') CPS_NAME, 
+       nvl(Q2.CPS_FIRST_NAME,'-') CPS_FIRST_NM, 
+       nvl(Q2.CPS_MIDDLE_NAME,'') CPS_MIDDLE_NM, 
+       nvl(Q2.CPS_LAST_NAME,'-') CPS_LAST_NM, 
+       nvl(Q2.CPS_PREFIX,'-') CPS_PREFIX, 
+       nvl(Q2.CPS_SUFFIX,'-') CPS_SUFFIX, 
        nvl(Q2.AK1_NAME,'-') AK1_NAME, 
        nvl(Q2.AK1_FIRST_NAME,'-') AK1_FIRST_NAME, 
        nvl(Q2.AK1_MIDDLE_NAME,'') AK1_MIDDLE_NAME, 
@@ -337,11 +360,16 @@ select /*+ inline parallel(8) */
        nvl(Q7.PREF_PHONE_NUM,'-') PREF_PHONE_NUM, 
        nvl(HR.EXTERNAL_SYSTEM_ID,'-') HR_PERSON_ID, 
        nvl(IDM.EXTERNAL_SYSTEM_ID,'-') UM_GUID,   
-       'S' DATA_ORIGIN, SYSDATE CREATED_EW_DTTM, SYSDATE LASTUPD_EW_DTTM
+       'S' DATA_ORIGIN,  
+       nvl(P.SCC_PRONOUNS_CD,'-') SCC_PRONOUNS_CD,
+       nvl(P.SCC_PRONOUNS_SD,'-') SCC_PRONOUNS_SD,
+       nvl(P.SCC_PRONOUNS_LD,'-') SCC_PRONOUNS_LD,
+       SYSDATE CREATED_EW_DTTM, SYSDATE LASTUPD_EW_DTTM
   from CSMRT_OWNER.PS_D_PERSON P  
   left outer join Q1 
     on P.PERSON_SID = Q1.PERSON_SID
-  left outer join Q2  
+  --left outer join Q2  
+  inner join Q2  
     on P.PERSON_SID = Q2.PERSON_SID
   left outer join Q4 
     on P.PERSON_SID = Q4.PERSON_SID

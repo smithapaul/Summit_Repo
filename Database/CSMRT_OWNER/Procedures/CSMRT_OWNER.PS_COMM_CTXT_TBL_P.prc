@@ -1,4 +1,10 @@
-CREATE OR REPLACE PROCEDURE             "PS_COMM_CTXT_TBL_P" AUTHID CURRENT_USER IS
+DROP PROCEDURE CSMRT_OWNER.PS_COMM_CTXT_TBL_P
+/
+
+--
+-- PS_COMM_CTXT_TBL_P  (Procedure) 
+--
+CREATE OR REPLACE PROCEDURE CSMRT_OWNER."PS_COMM_CTXT_TBL_P" AUTHID CURRENT_USER IS
 
 ------------------------------------------------------------------------
 --Preethi Lodha

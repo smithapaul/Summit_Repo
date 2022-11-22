@@ -1,4 +1,10 @@
-CREATE OR REPLACE PROCEDURE             "PS_UM_COM_PRNT_RPT_P" AUTHID CURRENT_USER IS
+DROP PROCEDURE CSMRT_OWNER.PS_UM_COM_PRNT_RPT_P
+/
+
+--
+-- PS_UM_COM_PRNT_RPT_P  (Procedure) 
+--
+CREATE OR REPLACE PROCEDURE CSMRT_OWNER."PS_UM_COM_PRNT_RPT_P" AUTHID CURRENT_USER IS
 
 ------------------------------------------------------------------------
 -- George Adams

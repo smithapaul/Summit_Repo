@@ -1,11 +1,14 @@
-CREATE OR REPLACE PROCEDURE             "UM_D_PERSON_NAME_P" AUTHID CURRENT_USER IS
+DROP PROCEDURE CSMRT_OWNER.UM_D_PERSON_NAME_P
+/
+
+--
+-- UM_D_PERSON_NAME_P  (Procedure) 
+--
+CREATE OR REPLACE PROCEDURE CSMRT_OWNER."UM_D_PERSON_NAME_P" AUTHID CURRENT_USER IS
 
 ------------------------------------------------------------------------
--- George Adams
--- Old Tables              --UM_D_PERSON_NAME_AGG / UM_D_PERSON_CS_NAME_VW
+-- 
 -- Loads target table      -- UM_D_PERSON_NAME
--- UM_D_PERSON_NAME    -- Dependent on PS_D_PERSON
--- V01 4/9/2018            -- srikanth ,pabbu converted to proc from sql
 --
 ------------------------------------------------------------------------
 
@@ -72,16 +75,29 @@ COMMON_OWNER.SMT_LOG.PUT_MESSAGE(i_Message => strMessage01);
 
 strSqlCommand   := 'insert into CSMRT_OWNER.UM_D_PERSON_NAME';
 insert /*+ append parallel(8) enable_parallel_dml */ into UM_D_PERSON_NAME
- with Q1 as (
+  with Q1 as (
 select /*+ inline parallel(8) */
-       EMPLID PERSON_ID, NAME_TYPE, SRC_SYS_ID, EFFDT, EFF_STATUS,
-       NAME, NAME_INITIALS, NAME_PREFIX, NAME_SUFFIX, NAME_TITLE,
-       LAST_NAME_SRCH, FIRST_NAME_SRCH, LAST_NAME, FIRST_NAME, MIDDLE_NAME, PREF_FIRST_NAME,
-       NAME_DISPLAY, NAME_FORMAL, LASTUPDDTTM, LASTUPDOPRID, DATA_ORIGIN,
-       row_number() over (partition by EMPLID, NAME_TYPE, SRC_SYS_ID
-                              order by DATA_ORIGIN desc, (case when EFFDT > trunc(SYSDATE) then to_date('01-JAN-1800') else EFFDT end) desc) Q_ORDER
-  from CSSTG_OWNER.PS_NAMES
- where DATA_ORIGIN <> 'D'),
+       N.EMPLID PERSON_ID, N.NAME_TYPE, N.SRC_SYS_ID, N.EFFDT, N.EFF_STATUS,
+       decode(NAME,'-','',NAME) NAME, 
+       decode(NAME_INITIALS,'-','',NAME_INITIALS) NAME_INITIALS, 
+       decode(NAME_PREFIX,'-','',NAME_PREFIX) NAME_PREFIX, 
+       decode(NAME_SUFFIX,'-','',NAME_SUFFIX) NAME_SUFFIX, 
+       decode(NAME_TITLE,'-','',NAME_TITLE) NAME_TITLE,
+       decode(LAST_NAME_SRCH,'-','',LAST_NAME_SRCH) LAST_NAME_SRCH, 
+       decode(FIRST_NAME_SRCH,'-','',FIRST_NAME_SRCH) FIRST_NAME_SRCH, 
+       decode(LAST_NAME,'-','',LAST_NAME) LAST_NAME, 
+       decode(FIRST_NAME,'-','',FIRST_NAME) FIRST_NAME, 
+       decode(MIDDLE_NAME,'-','',MIDDLE_NAME) MIDDLE_NAME, 
+       decode(PREF_FIRST_NAME,'-','',PREF_FIRST_NAME) PREF_FIRST_NAME, 
+       decode(NAME_DISPLAY,'-','',NAME_DISPLAY) NAME_DISPLAY, 
+       decode(NAME_FORMAL,'-','',NAME_FORMAL) NAME_FORMAL, 
+       LASTUPDDTTM, 
+       LASTUPDOPRID, 
+       DATA_ORIGIN,
+       row_number() over (partition by N.EMPLID, N.NAME_TYPE, N.SRC_SYS_ID
+                              order by (case when EFFDT > trunc(SYSDATE) then to_date('01-JAN-1800') else EFFDT end) desc) Q_ORDER
+  from CSSTG_OWNER.PS_NAMES N
+ where DATA_ORIGIN <> 'D'),    -- Sept 2022 
        Q2 as (
 select /*+ inline parallel(8) */
        PERSON_ID, NAME_TYPE, SRC_SYS_ID, EFFDT, EFF_STATUS,
@@ -89,71 +105,68 @@ select /*+ inline parallel(8) */
        LAST_NAME_SRCH, FIRST_NAME_SRCH, LAST_NAME, FIRST_NAME, MIDDLE_NAME, PREF_FIRST_NAME,
        NAME_DISPLAY, NAME_FORMAL, LASTUPDDTTM, LASTUPDOPRID,
        row_number() over (partition by PERSON_ID, SRC_SYS_ID
-                              order by (case when DATA_ORIGIN <> 'S' then 9
-                                             when NAME_TYPE  = 'PRF' then 0
+                              order by (case when NAME_TYPE  = 'PRF' then 0
                                              when NAME_TYPE  = 'PRI' then 1
                                              when NAME_TYPE  = 'LEG' then 2
                                              else 9 end), NAME_TYPE) NAME_ORDER,
        row_number() over (partition by PERSON_ID, SRC_SYS_ID
-                              order by (case when DATA_ORIGIN <> 'S' then 9
-                                             when NAME_TYPE  = 'AK1' then 0
+                              order by (case when NAME_TYPE  = 'AK1' then 0
                                              when NAME_TYPE  = 'AK2' then 1
                                              when NAME_TYPE  = 'AK3' then 2
                                              when NAME_TYPE  = 'AK4' then 3
                                              when NAME_TYPE  = 'PRF' then 4
                                              when NAME_TYPE  = 'PRI' then 5
-                                             when NAME_TYPE  = 'LEG' then 6
                                              else 9 end), NAME_TYPE) AKA_ORDER,
        row_number() over (partition by PERSON_ID, SRC_SYS_ID
-                              order by (case when DATA_ORIGIN <> 'S' then 9
-                                             when NAME_TYPE  = 'CPS' then 0
-                                             else 9 end), NAME_TYPE) CPS_ORDER,     -- Nov 2020
+                              order by (case when NAME_TYPE  = 'CPS' then 0
+                                             when NAME_TYPE  = 'PRF' then 1
+                                             when NAME_TYPE  = 'PRI' then 2
+                                             else 9 end), NAME_TYPE) CPS_ORDER, 
        row_number() over (partition by PERSON_ID, SRC_SYS_ID
-                              order by (case when DATA_ORIGIN <> 'S' then 9
-                                             when NAME_TYPE  = 'DEG' then 0
+                              order by (case when NAME_TYPE  = 'DEG' then 0
+                                             when NAME_TYPE  = 'PRI' then 1
                                              else 9 end), NAME_TYPE) DEG_ORDER,
        row_number() over (partition by PERSON_ID, SRC_SYS_ID
-                              order by (case when DATA_ORIGIN <> 'S' then 9
-                                             when NAME_TYPE  = 'PRF' then 0
+                              order by (case when NAME_TYPE  = 'PRF' then 0
+                                             when NAME_TYPE  = 'PRI' then 1
                                              else 9 end), NAME_TYPE) PRF_ORDER,
        row_number() over (partition by PERSON_ID, SRC_SYS_ID
-                              order by (case when DATA_ORIGIN <> 'S' then 9
-                                             when NAME_TYPE  = 'PRI' then 0
+                              order by (case when NAME_TYPE  = 'PRI' then 0
+                                             when NAME_TYPE  = 'PRF' then 1
                                              else 9 end), NAME_TYPE) PRI_ORDER
   from Q1
- where Q_ORDER = 1),
+ where Q_ORDER = 1
+   and EFF_STATUS = 'A'), 
        Q3 as (
 select /*+ inline parallel(8) */
        PERSON_ID, NAME_TYPE, SRC_SYS_ID, EFFDT, EFF_STATUS,
        NAME, NAME_INITIALS, NAME_PREFIX, NAME_SUFFIX, NAME_TITLE,
-       LAST_NAME_SRCH, FIRST_NAME_SRCH, LAST_NAME, FIRST_NAME, MIDDLE_NAME, PREF_FIRST_NAME,
-       NAME_DISPLAY, NAME_FORMAL,
-       max(case when AKA_ORDER = 1 and NAME_TYPE like 'AK%' then LAST_NAME else '-' end) over (partition by PERSON_ID, SRC_SYS_ID) LAST_NAME_FORMER,
-       max(case when AKA_ORDER = 1 and NAME_TYPE like 'AK%' then NAME else '-' end) over (partition by PERSON_ID, SRC_SYS_ID) NAME_FORMER,
+       LAST_NAME_SRCH, FIRST_NAME_SRCH, LAST_NAME, FIRST_NAME, MIDDLE_NAME, 
+       PREF_FIRST_NAME, NAME_DISPLAY, NAME_FORMAL,
+       max(case when AKA_ORDER = 1 and NAME_TYPE like 'AK%' then LAST_NAME else '' end) over (partition by PERSON_ID, SRC_SYS_ID) LAST_NAME_FORMER,
+       max(case when AKA_ORDER = 1 and NAME_TYPE like 'AK%' then NAME else '' end) over (partition by PERSON_ID, SRC_SYS_ID) NAME_FORMER,
+       max(case when PRI_ORDER = 1 and NAME_TYPE = 'PRI' and (upper(nvl(LAST_NAME,'-')) like 'X%DUP%' 
+                                                          or  upper(nvl(LAST_NAME,'-')) like '%XXX%') then 'Y' else 'N' end) over (partition by PERSON_ID, SRC_SYS_ID) DEL_FLAG,     -- Sept 2022 
        LASTUPDDTTM, LASTUPDOPRID,
        NAME_ORDER, AKA_ORDER, CPS_ORDER, DEG_ORDER, PRF_ORDER, PRI_ORDER
-  from Q2),
-       S as (
+  from Q2)
 select /*+ inline parallel(8) */
        P.PERSON_ID, nvl(Q3.NAME_TYPE,'-') NAME_TYPE, P.SRC_SYS_ID, Q3.EFFDT, nvl(Q3.EFF_STATUS,'-') EFF_STATUS,
        P.PERSON_SID,
-       nvl(Q3.NAME,'-') NAME, nvl(Q3.NAME_INITIALS,'-') NAME_INITIALS, nvl(Q3.NAME_PREFIX,'-') NAME_PREFIX, nvl(Q3.NAME_SUFFIX,'-') NAME_SUFFIX, nvl(Q3.NAME_TITLE,'-') NAME_TITLE,
-       nvl(Q3.LAST_NAME_SRCH,'-') LAST_NAME_SRCH, nvl(Q3.FIRST_NAME_SRCH,'-') FIRST_NAME_SRCH, nvl(Q3.LAST_NAME,'-') LAST_NAME, nvl(Q3.FIRST_NAME,'-') FIRST_NAME, nvl(Q3.MIDDLE_NAME,'-') MIDDLE_NAME,
-       nvl(Q3.PREF_FIRST_NAME,'-') PREF_FIRST_NAME, nvl(Q3.NAME_DISPLAY,'-') NAME_DISPLAY, nvl(Q3.NAME_FORMAL,'-') NAME_FORMAL, nvl(Q3.LAST_NAME_FORMER,'-') LAST_NAME_FORMER, nvl(Q3.NAME_FORMER,'-') NAME_FORMER,
-       Q3.LASTUPDDTTM, nvl(Q3.LASTUPDOPRID,'-') LASTUPDOPRID,
-       nvl(Q3.NAME_ORDER,1) NAME_ORDER, nvl(AKA_ORDER,1) AKA_ORDER, nvl(CPS_ORDER,1) CPS_ORDER, nvl(DEG_ORDER,1) DEG_ORDER, nvl(PRF_ORDER,1) PRF_ORDER, nvl(PRI_ORDER,1) PRI_ORDER
-  from PS_D_PERSON P
+       Q3.NAME, Q3.NAME_INITIALS, Q3.NAME_PREFIX, Q3.NAME_SUFFIX, Q3.NAME_TITLE, 
+       Q3.LAST_NAME_SRCH, Q3.FIRST_NAME_SRCH, Q3.LAST_NAME, Q3.FIRST_NAME, Q3.MIDDLE_NAME,
+       Q3.PREF_FIRST_NAME, Q3.NAME_DISPLAY, Q3.NAME_FORMAL, Q3.LAST_NAME_FORMER, Q3.NAME_FORMER, 
+       Q3.LASTUPDDTTM, Q3.LASTUPDOPRID,
+       nvl(Q3.NAME_ORDER,1) NAME_ORDER, nvl(Q3.AKA_ORDER,1) AKA_ORDER, nvl(Q3.CPS_ORDER,1) CPS_ORDER, nvl(Q3.DEG_ORDER,1) DEG_ORDER, nvl(Q3.PRF_ORDER,1) PRF_ORDER, nvl(Q3.PRI_ORDER,1) PRI_ORDER,
+       'S' DATA_ORIGIN, SYSDATE CREATED_EW_DTTM, SYSDATE LASTUPD_EW_DTTM
+         from PS_D_PERSON P
   left outer join Q3
     on P.PERSON_ID = Q3.PERSON_ID
-   and P.SRC_SYS_ID = Q3.SRC_SYS_ID)
-select /*+ inline parallel(8) */
-       PERSON_ID, NAME_TYPE, SRC_SYS_ID,
-       EFFDT, EFF_STATUS, PERSON_SID,
-       NAME, NAME_INITIALS, NAME_PREFIX, NAME_SUFFIX, NAME_TITLE, LAST_NAME_SRCH, FIRST_NAME_SRCH, LAST_NAME, FIRST_NAME, MIDDLE_NAME,
-       PREF_FIRST_NAME, NAME_DISPLAY, NAME_FORMAL, LAST_NAME_FORMER, NAME_FORMER, LASTUPDDTTM, LASTUPDOPRID,
-       NAME_ORDER, AKA_ORDER, CPS_ORDER, DEG_ORDER, PRF_ORDER, PRI_ORDER,
-       'S' DATA_ORIGIN, SYSDATE CREATED_EW_DTTM, SYSDATE LASTUPD_EW_DTTM
-  from S
+   and P.SRC_SYS_ID = Q3.SRC_SYS_ID
+ where P.DATA_ORIGIN <> 'D'
+   and nvl(Q3.DEL_FLAG,'N') <> 'Y'      -- Sept 2022   
+--   and not (upper(nvl(Q3.LAST_NAME,'-')) like 'X%DUP%' 
+--        or  upper(nvl(Q3.LAST_NAME,'-')) like '%XXX%') 
 ;
 
 strSqlCommand   := 'SET intRowCount';

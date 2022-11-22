@@ -1,4 +1,10 @@
-CREATE OR REPLACE PROCEDURE             "UM_F_STDNT_ENRL_APPT_P" AUTHID CURRENT_USER IS
+DROP PROCEDURE CSMRT_OWNER.UM_F_STDNT_ENRL_APPT_P
+/
+
+--
+-- UM_F_STDNT_ENRL_APPT_P  (Procedure) 
+--
+CREATE OR REPLACE PROCEDURE CSMRT_OWNER."UM_F_STDNT_ENRL_APPT_P" AUTHID CURRENT_USER IS
 
 
 ------------------------------------------------------------------------
@@ -41,22 +47,6 @@ COMMON_OWNER.SMT_PROCESS_LOG.PROCESS_INIT
                 o_ProcessSid            => intProcessSid
         );
 
-strMessage01    := 'Disabling Indexes for table CSMRT_OWNER.UM_F_STDNT_ENRL_APPT';
-COMMON_OWNER.SMT_LOG.PUT_MESSAGE(i_Message => strMessage01);
-COMMON_OWNER.SMT_INDEX.ALL_UNUSABLE('CSMRT_OWNER','UM_F_STDNT_ENRL_APPT');
-
---alter table UM_F_STDNT_ENRL_APPT disable constraint PK_UM_F_STDNT_ENRL_APPT;
-strSqlDynamic   := 'alter table CSMRT_OWNER.UM_F_STDNT_ENRL_APPT disable constraint PK_UM_F_STDNT_ENRL_APPT';
-strSqlCommand   := 'SMT_UTILITY.EXECUTE_IMMEDIATE: ' || strSqlDynamic;
-COMMON_OWNER.SMT_UTILITY.EXECUTE_IMMEDIATE
-                (
-                i_SqlStatement          => strSqlDynamic,
-                i_MaxTries              => 10,
-                i_WaitSeconds           => 10,
-                o_Tries                 => intTries
-                );
-				
-				
 strMessage01    := 'Truncating table CSMRT_OWNER.UM_F_STDNT_ENRL_APPT';
 COMMON_OWNER.SMT_LOG.PUT_MESSAGE(i_Message => strMessage01);
 
@@ -70,32 +60,46 @@ COMMON_OWNER.SMT_UTILITY.EXECUTE_IMMEDIATE
                 o_Tries                 => intTries
                 );
 
+strMessage01    := 'Disabling Indexes for table CSMRT_OWNER.UM_F_STDNT_ENRL_APPT';
+COMMON_OWNER.SMT_LOG.PUT_MESSAGE(i_Message => strMessage01);
+COMMON_OWNER.SMT_INDEX.ALL_UNUSABLE('CSMRT_OWNER','UM_F_STDNT_ENRL_APPT');
+
+----alter table UM_F_STDNT_ENRL_APPT disable constraint PK_UM_F_STDNT_ENRL_APPT;
+--strSqlDynamic   := 'alter table CSMRT_OWNER.UM_F_STDNT_ENRL_APPT disable constraint PK_UM_F_STDNT_ENRL_APPT';
+--strSqlCommand   := 'SMT_UTILITY.EXECUTE_IMMEDIATE: ' || strSqlDynamic;
+--COMMON_OWNER.SMT_UTILITY.EXECUTE_IMMEDIATE
+--                (
+--                i_SqlStatement          => strSqlDynamic,
+--                i_MaxTries              => 10,
+--                i_WaitSeconds           => 10,
+--                o_Tries                 => intTries
+--                );
 
 strMessage01    := 'Inserting data into CSMRT_OWNER.UM_F_STDNT_ENRL_APPT';
 COMMON_OWNER.SMT_LOG.PUT_MESSAGE(i_Message => strMessage01);
 
-strSqlCommand   := 'insert into CSMRT_OWNER.UM_F_STDNT_ENRL_APPT';				
-insert into CSMRT_OWNER.UM_F_STDNT_ENRL_APPT
+strSqlCommand   := 'insert into CSMRT_OWNER.UM_F_STDNT_ENRL_APPT';
+insert /*+ append enable_parallel_dml parallel(8) */ into CSMRT_OWNER.UM_F_STDNT_ENRL_APPT
 with APPT as (
-select INSTITUTION, ACAD_CAREER, STRM, SESSION_CODE, SSR_APPT_BLOCK, APPOINTMENT_NBR, SRC_SYS_ID, 
-       to_date(to_char(APPT_START_DATE,'YYYYMMDD')||to_char(APPT_START_TIME,'HH24MISS'),'YYYYMMDDHH24MISS') APPT_START_DTTM, 
-       to_date(to_char(APPT_END_DATE,'YYYYMMDD')||to_char(APPT_END_TIME,'HH24MISS'),'YYYYMMDDHH24MISS') APPT_END_DTTM 
+select INSTITUTION, ACAD_CAREER, STRM, SESSION_CODE, SSR_APPT_BLOCK, APPOINTMENT_NBR, SRC_SYS_ID,
+       to_date(to_char(APPT_START_DATE,'YYYYMMDD')||to_char(APPT_START_TIME,'HH24MISS'),'YYYYMMDDHH24MISS') APPT_START_DTTM,
+       to_date(to_char(APPT_END_DATE,'YYYYMMDD')||to_char(APPT_END_TIME,'HH24MISS'),'YYYYMMDDHH24MISS') APPT_END_DTTM
   from CSSTG_OWNER.PS_APPOINTMENT_TBL
  where DATA_ORIGIN <> 'D'
 )
-select E.INSTITUTION INSTITUTION_CD, E.ACAD_CAREER ACAD_CAR_CD, E.STRM TERM_CD, E.EMPLID PERSON_ID, E.SESSION_CODE, E.SSR_APPT_BLOCK, E.APPOINTMENT_NBR, E.SRC_SYS_ID, 
-       nvl(I.INSTITUTION_SID, 2147483646) INSTITUTION_SID, 
-       nvl(C.ACAD_CAR_SID, 2147483646) ACAD_CAR_SID, 
-       nvl(T.TERM_SID, 2147483646) TERM_SID, 
-       nvl(P.PERSON_SID, 2147483646) PERSON_SID, 
-       nvl(S.SESSION_SID, 2147483646) SESSION_SID, 
+select E.INSTITUTION INSTITUTION_CD, E.ACAD_CAREER ACAD_CAR_CD, E.STRM TERM_CD, E.EMPLID PERSON_ID, E.SESSION_CODE, E.SSR_APPT_BLOCK, E.APPOINTMENT_NBR, E.SRC_SYS_ID,
+       nvl(I.INSTITUTION_SID, 2147483646) INSTITUTION_SID,
+       nvl(C.ACAD_CAR_SID, 2147483646) ACAD_CAR_SID,
+       nvl(T.TERM_SID, 2147483646) TERM_SID,
+       nvl(P.PERSON_SID, 2147483646) PERSON_SID,
+       nvl(S.SESSION_SID, 2147483646) SESSION_SID,
        A.APPT_START_DTTM,
-       A.APPT_END_DTTM, 
-       E.SSR_SELECT_LIMIT, E.APPT_LIMIT_ID, E.MAX_TOTAL_UNIT, E.MAX_NOGPA_UNIT, E.MAX_AUDIT_UNIT, E.MAX_WAIT_UNIT, E.SSR_APPT_STDT_BLCK, E.INCL_WAIT_IN_TOT, 
-       'N' LOAD_ERROR, 
-       'S' DATA_ORIGIN, 
-       SYSDATE CREATED_EW_DTTM, 
-       SYSDATE LASTUPD_EW_DTTM, 
+       A.APPT_END_DTTM,
+       E.SSR_SELECT_LIMIT, E.APPT_LIMIT_ID, E.MAX_TOTAL_UNIT, E.MAX_NOGPA_UNIT, E.MAX_AUDIT_UNIT, E.MAX_WAIT_UNIT, E.SSR_APPT_STDT_BLCK, E.INCL_WAIT_IN_TOT,
+       'N' LOAD_ERROR,
+       'S' DATA_ORIGIN,
+       SYSDATE CREATED_EW_DTTM,
+       SYSDATE LASTUPD_EW_DTTM,
        1234 BATCH_SID
   from CSSTG_OWNER.PS_STDNT_ENRL_APPT E
   left outer join APPT A
@@ -166,16 +170,16 @@ strMessage01    := 'Enabling Indexes for table CSMRT_OWNER.UM_F_STDNT_ENRL_APPT'
 COMMON_OWNER.SMT_LOG.PUT_MESSAGE(i_Message => strMessage01);
 --alter table UM_F_STDNT_ENRL_APPT enable constraint PK_UM_F_STDNT_ENRL_APPT;
 
-strSqlDynamic   := 'alter table CSMRT_OWNER.UM_F_STDNT_ENRL_APPT enable constraint PK_UM_F_STDNT_ENRL_APPT';
-strSqlCommand   := 'SMT_UTILITY.EXECUTE_IMMEDIATE: ' || strSqlDynamic;
-COMMON_OWNER.SMT_UTILITY.EXECUTE_IMMEDIATE
-                (
-                i_SqlStatement          => strSqlDynamic,
-                i_MaxTries              => 10,
-                i_WaitSeconds           => 10,
-                o_Tries                 => intTries
-                );
-				
+--strSqlDynamic   := 'alter table CSMRT_OWNER.UM_F_STDNT_ENRL_APPT enable constraint PK_UM_F_STDNT_ENRL_APPT';
+--strSqlCommand   := 'SMT_UTILITY.EXECUTE_IMMEDIATE: ' || strSqlDynamic;
+--COMMON_OWNER.SMT_UTILITY.EXECUTE_IMMEDIATE
+--                (
+--                i_SqlStatement          => strSqlDynamic,
+--                i_MaxTries              => 10,
+--                i_WaitSeconds           => 10,
+--                o_Tries                 => intTries
+--                );
+
 COMMON_OWNER.SMT_INDEX.ALL_REBUILD('CSMRT_OWNER','UM_F_STDNT_ENRL_APPT');
 
 strSqlCommand := 'SMT_PROCESS_LOG.PROCESS_SUCCESS';

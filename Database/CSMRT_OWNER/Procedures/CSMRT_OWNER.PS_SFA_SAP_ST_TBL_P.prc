@@ -1,4 +1,10 @@
-CREATE OR REPLACE PROCEDURE             "PS_SFA_SAP_ST_TBL_P" AUTHID CURRENT_USER IS
+DROP PROCEDURE CSMRT_OWNER.PS_SFA_SAP_ST_TBL_P
+/
+
+--
+-- PS_SFA_SAP_ST_TBL_P  (Procedure) 
+--
+CREATE OR REPLACE PROCEDURE CSMRT_OWNER."PS_SFA_SAP_ST_TBL_P" AUTHID CURRENT_USER IS
 
 ------------------------------------------------------------------------
 -- George Adams

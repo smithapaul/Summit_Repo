@@ -1,4 +1,10 @@
-CREATE OR REPLACE PROCEDURE             "PS_UM_TCA_REVIEW_P" AUTHID CURRENT_USER IS
+DROP PROCEDURE CSMRT_OWNER.PS_UM_TCA_REVIEW_P
+/
+
+--
+-- PS_UM_TCA_REVIEW_P  (Procedure) 
+--
+CREATE OR REPLACE PROCEDURE CSMRT_OWNER."PS_UM_TCA_REVIEW_P" AUTHID CURRENT_USER IS
 
 
 ------------------------------------------------------------------------

@@ -1,4 +1,10 @@
-CREATE OR REPLACE PROCEDURE             "PS_ORG_CONTACT_P" AUTHID CURRENT_USER IS
+DROP PROCEDURE CSMRT_OWNER.PS_ORG_CONTACT_P
+/
+
+--
+-- PS_ORG_CONTACT_P  (Procedure) 
+--
+CREATE OR REPLACE PROCEDURE CSMRT_OWNER."PS_ORG_CONTACT_P" AUTHID CURRENT_USER IS
 
 ------------------------------------------------------------------------
 -- George Adams

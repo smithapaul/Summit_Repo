@@ -1,4 +1,10 @@
-CREATE OR REPLACE PROCEDURE             UM_S_RA_DATA_P AUTHID CURRENT_USER IS
+DROP PROCEDURE CSMRT_OWNER.UM_S_RA_DATA_P
+/
+
+--
+-- UM_S_RA_DATA_P  (Procedure) 
+--
+CREATE OR REPLACE PROCEDURE CSMRT_OWNER.UM_S_RA_DATA_P AUTHID CURRENT_USER IS
 
 ------------------------------------------------------------------------
 -- James Doucette
@@ -125,7 +131,9 @@ SELECT /* parallel(16) */ DISTINCT
        T718025.ETHNIC_GRP_CD ETHNIC_GRP_ST_CD,
        T993278.RSDNCY_ID,
        T992902.RSDNCY_ID TUITION_RSDNCY_ID,
-       T575631.ACAD_GRP_CD          -- June 2019 
+       T575631.ACAD_GRP_CD,          -- June 2019 
+       T575314.ABTS_FLAG,
+       T575314.BSMS_FLAG
   FROM CSMRT_OWNER.UM_D_RSDNCY_VW T992902             /* D_RSDNCY - Tuition */
                                          ,
        CSMRT_OWNER.UM_D_RSDNCY_VW T993278                       /* D_RSDNCY */

@@ -1,4 +1,10 @@
-CREATE OR REPLACE PROCEDURE             PS_SF_ACCTG_LN_P AUTHID CURRENT_USER IS
+DROP PROCEDURE CSMRT_OWNER.PS_SF_ACCTG_LN_P
+/
+
+--
+-- PS_SF_ACCTG_LN_P  (Procedure) 
+--
+CREATE OR REPLACE PROCEDURE CSMRT_OWNER.PS_SF_ACCTG_LN_P AUTHID CURRENT_USER IS
 
 ------------------------------------------------------------------------
 -- George Adams

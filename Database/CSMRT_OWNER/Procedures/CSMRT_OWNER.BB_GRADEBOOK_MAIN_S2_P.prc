@@ -1,0 +1,310 @@
+DROP PROCEDURE CSMRT_OWNER.BB_GRADEBOOK_MAIN_S2_P
+/
+
+--
+-- BB_GRADEBOOK_MAIN_S2_P  (Procedure) 
+--
+CREATE OR REPLACE PROCEDURE CSMRT_OWNER."BB_GRADEBOOK_MAIN_S2_P" AUTHID CURRENT_USER IS
+
+------------------------------------------------------------------------
+-- Jim Doucette
+--
+-- Loads S2 table BB_GRADEBOOK_MAIN_S2 from S1 table BB_GRADEBOOK_MAIN_S1.
+--
+------------------------------------------------------------------------
+
+        strMartId                       Varchar2(50)    := 'CSW';
+        strProcessName                  Varchar2(100)   := 'BB_GRADEBOOK_MAIN_S2';
+        intProcessSid                   Integer;
+        dtProcessStart                  Date            := SYSDATE;
+        strMessage01                    Varchar2(4000);
+        strMessage02                    Varchar2(512);
+        strMessage03                    Varchar2(512)   :='';
+        strNewLine                      Varchar2(2)     := chr(13) || chr(10);
+        strSqlCommand                   Varchar2(32767) :='';
+        strSqlDynamic                   Varchar2(32767) :='';
+        strClientInfo                   Varchar2(100);
+        intRowCount                     Integer;
+        intTotalRowCount                Integer         := 0;
+        numSqlCode                      Number;
+        strSqlErrm                      Varchar2(4000);
+        intTries                        Integer;
+
+BEGIN
+
+strSqlCommand := 'DBMS_APPLICATION_INFO.SET_CLIENT_INFO';
+DBMS_APPLICATION_INFO.SET_CLIENT_INFO (strProcessName);
+
+strSqlCommand := 'SMT_PROCESS_LOG.PROCESS_INIT';
+COMMON_OWNER.SMT_PROCESS_LOG.PROCESS_INIT
+        (
+                i_MartId                => strMartId,
+                i_ProcessName           => strProcessName,
+                i_ProcessStartTime      => dtProcessStart,
+                o_ProcessSid            => intProcessSid
+        );
+
+strMessage01    := 'Merging data into CSSTG_OWNER.BB_GRADEBOOK_MAIN_S2';
+COMMON_OWNER.SMT_LOG.PUT_MESSAGE(i_Message => strMessage01);
+
+strSqlCommand   := 'merge into CSSTG_OWNER.BB_GRADEBOOK_MAIN_S2';
+merge /*+ use_hash(S,T) */ into CSSTG_OWNER.BB_GRADEBOOK_MAIN_S2 T
+using (select /*+ full(S) */
+        BB_SOURCE,
+		PK1,
+        POSITION, GRADEBOOK_TRANSLATOR_PK1, SECONDARY_TRANSLATOR_PK1, GRADING_TERM_PK1, QTI_ASI_DATA_PK1, CRSMAIN_PK1, BATCH_UID, COURSE_CONTENTS_PK1, LINKREFID, TITLE, DISPLAY_TITLE, GRADEBOOK_TYPE_PK1, DESCRIPTION, DESCRIPTION_TYPE, DUE_DATE, POSSIBLE, VISIBLE_IND, VISIBLE_IN_BOOK_IND, VISIBLE_IN_ALL_TERMS_IND, STAT_VISIBLE_TO_STU_IND, HIDE_ATTEMPT_IND, WEIGHT, DATE_ADDED, DATE_MODIFIED, AGGREGATION_MODEL, CALCULATED_IND, SCORABLE_IND, USER_CREATED_IND, SINGLE_ATTEMPT_IND, EXT_ASMT_ANALYSIS_URL, EXT_ATMPT_HANDLER_URL, SCORE_PROVIDER_HANDLE, IGNORE_UNSCORED_IND, LIMITED_ATTENDANCE_IND, VERSION, DELETED_IND, MULTIPLE_ATTEMPTS, TOOL_COMPUTED_POINTS, GRADING_DECIMAL_PLACES, DELEGATED_GRADING_IND, PEER_GRADING_IND, PEER_REVIEWS_PER_STUDENT, ANONYMOUS_GRADING_IND, PEER_ALLOW_LATE_REVIEWS_IND, ANON_GRADING_RELEASE_DATE, ANON_GRADING_REL_CRIT, LTI_DOMAIN_PK1, LTI_TAG, LTI_RES_ID, 
+        DELETE_FLAG, INSERT_TIME, UPDATE_TIME
+       from CSSTG_OWNER.BB_GRADEBOOK_MAIN_S1) S
+ on (
+    T.BB_SOURCE = S.BB_SOURCE and
+    T.PK1 = S.PK1)
+ when matched then update set
+       T.POSITION = S.POSITION,
+       T.GRADEBOOK_TRANSLATOR_PK1 = S.GRADEBOOK_TRANSLATOR_PK1,
+       T.SECONDARY_TRANSLATOR_PK1 = S.SECONDARY_TRANSLATOR_PK1,
+       T.GRADING_TERM_PK1 = S.GRADING_TERM_PK1,
+       T.QTI_ASI_DATA_PK1 = S.QTI_ASI_DATA_PK1,
+       T.CRSMAIN_PK1 = S.CRSMAIN_PK1,
+       T.BATCH_UID = S.BATCH_UID,
+       T.COURSE_CONTENTS_PK1 = S.COURSE_CONTENTS_PK1,
+       T.LINKREFID = S.LINKREFID,
+       T.TITLE = S.TITLE,
+       T.DISPLAY_TITLE = S.DISPLAY_TITLE,
+       T.GRADEBOOK_TYPE_PK1 = S.GRADEBOOK_TYPE_PK1,
+       T.DESCRIPTION = S.DESCRIPTION,
+       T.DESCRIPTION_TYPE = S.DESCRIPTION_TYPE,
+       T.DUE_DATE = S.DUE_DATE,
+       T.POSSIBLE = S.POSSIBLE,
+       T.VISIBLE_IND = S.VISIBLE_IND,
+       T.VISIBLE_IN_BOOK_IND = S.VISIBLE_IN_BOOK_IND,
+       T.VISIBLE_IN_ALL_TERMS_IND = S.VISIBLE_IN_ALL_TERMS_IND,
+       T.STAT_VISIBLE_TO_STU_IND = S.STAT_VISIBLE_TO_STU_IND,
+       T.HIDE_ATTEMPT_IND = S.HIDE_ATTEMPT_IND,
+       T.WEIGHT = S.WEIGHT,
+       T.DATE_ADDED = S.DATE_ADDED,
+       T.DATE_MODIFIED = S.DATE_MODIFIED,
+       T.AGGREGATION_MODEL = S.AGGREGATION_MODEL,
+       T.CALCULATED_IND = S.CALCULATED_IND,
+       T.SCORABLE_IND = S.SCORABLE_IND,
+       T.USER_CREATED_IND = S.USER_CREATED_IND,
+       T.SINGLE_ATTEMPT_IND = S.SINGLE_ATTEMPT_IND,
+       T.EXT_ASMT_ANALYSIS_URL = S.EXT_ASMT_ANALYSIS_URL,
+       T.EXT_ATMPT_HANDLER_URL = S.EXT_ATMPT_HANDLER_URL,
+       T.SCORE_PROVIDER_HANDLE = S.SCORE_PROVIDER_HANDLE,
+       T.IGNORE_UNSCORED_IND = S.IGNORE_UNSCORED_IND,
+       T.LIMITED_ATTENDANCE_IND = S.LIMITED_ATTENDANCE_IND,
+       T.VERSION = S.VERSION,
+       T.DELETED_IND = S.DELETED_IND,
+       T.MULTIPLE_ATTEMPTS = S.MULTIPLE_ATTEMPTS,
+       T.TOOL_COMPUTED_POINTS = S.TOOL_COMPUTED_POINTS,
+       T.GRADING_DECIMAL_PLACES = S.GRADING_DECIMAL_PLACES,
+       T.DELEGATED_GRADING_IND = S.DELEGATED_GRADING_IND,
+       T.PEER_GRADING_IND = S.PEER_GRADING_IND,
+       T.PEER_REVIEWS_PER_STUDENT = S.PEER_REVIEWS_PER_STUDENT,
+       T.ANONYMOUS_GRADING_IND = S.ANONYMOUS_GRADING_IND,
+       T.PEER_ALLOW_LATE_REVIEWS_IND = S.PEER_ALLOW_LATE_REVIEWS_IND,
+       T.ANON_GRADING_RELEASE_DATE = S.ANON_GRADING_RELEASE_DATE,
+       T.ANON_GRADING_REL_CRIT = S.ANON_GRADING_REL_CRIT,
+       T.LTI_DOMAIN_PK1 = S.LTI_DOMAIN_PK1,
+       T.LTI_TAG = S.LTI_TAG,
+       T.LTI_RES_ID = S.LTI_RES_ID,
+       T.DELETE_FLAG = 'N',
+       T.UPDATE_TIME = SYSDATE
+where
+       decode(T.POSITION,S.POSITION,0,1) = 1 or
+       decode(T.GRADEBOOK_TRANSLATOR_PK1,S.GRADEBOOK_TRANSLATOR_PK1,0,1) = 1 or
+       decode(T.SECONDARY_TRANSLATOR_PK1,S.SECONDARY_TRANSLATOR_PK1,0,1) = 1 or
+       decode(T.GRADING_TERM_PK1,S.GRADING_TERM_PK1,0,1) = 1 or
+       decode(T.QTI_ASI_DATA_PK1,S.QTI_ASI_DATA_PK1,0,1) = 1 or
+       decode(T.CRSMAIN_PK1,S.CRSMAIN_PK1,0,1) = 1 or
+       decode(T.BATCH_UID,S.BATCH_UID,0,1) = 1 or
+       decode(T.COURSE_CONTENTS_PK1,S.COURSE_CONTENTS_PK1,0,1) = 1 or
+       decode(T.LINKREFID,S.LINKREFID,0,1) = 1 or
+       decode(T.TITLE,S.TITLE,0,1) = 1 or
+       decode(T.DISPLAY_TITLE,S.DISPLAY_TITLE,0,1) = 1 or
+       decode(T.GRADEBOOK_TYPE_PK1,S.GRADEBOOK_TYPE_PK1,0,1) = 1 or
+       decode(T.DESCRIPTION,S.DESCRIPTION,0,1) = 1 or
+       decode(T.DESCRIPTION_TYPE,S.DESCRIPTION_TYPE,0,1) = 1 or
+       decode(T.DUE_DATE,S.DUE_DATE,0,1) = 1 or
+       decode(T.POSSIBLE,S.POSSIBLE,0,1) = 1 or
+       decode(T.VISIBLE_IND,S.VISIBLE_IND,0,1) = 1 or
+       decode(T.VISIBLE_IN_BOOK_IND,S.VISIBLE_IN_BOOK_IND,0,1) = 1 or
+       decode(T.VISIBLE_IN_ALL_TERMS_IND,S.VISIBLE_IN_ALL_TERMS_IND,0,1) = 1 or
+       decode(T.STAT_VISIBLE_TO_STU_IND,S.STAT_VISIBLE_TO_STU_IND,0,1) = 1 or
+       decode(T.HIDE_ATTEMPT_IND,S.HIDE_ATTEMPT_IND,0,1) = 1 or
+       decode(T.WEIGHT,S.WEIGHT,0,1) = 1 or
+       decode(T.DATE_ADDED,S.DATE_ADDED,0,1) = 1 or
+       decode(T.DATE_MODIFIED,S.DATE_MODIFIED,0,1) = 1 or
+       decode(T.AGGREGATION_MODEL,S.AGGREGATION_MODEL,0,1) = 1 or
+       decode(T.CALCULATED_IND,S.CALCULATED_IND,0,1) = 1 or
+       decode(T.SCORABLE_IND,S.SCORABLE_IND,0,1) = 1 or
+       decode(T.USER_CREATED_IND,S.USER_CREATED_IND,0,1) = 1 or
+       decode(T.SINGLE_ATTEMPT_IND,S.SINGLE_ATTEMPT_IND,0,1) = 1 or
+       decode(T.EXT_ASMT_ANALYSIS_URL,S.EXT_ASMT_ANALYSIS_URL,0,1) = 1 or
+       decode(T.EXT_ATMPT_HANDLER_URL,S.EXT_ATMPT_HANDLER_URL,0,1) = 1 or
+       decode(T.SCORE_PROVIDER_HANDLE,S.SCORE_PROVIDER_HANDLE,0,1) = 1 or
+       decode(T.IGNORE_UNSCORED_IND,S.IGNORE_UNSCORED_IND,0,1) = 1 or
+       decode(T.LIMITED_ATTENDANCE_IND,S.LIMITED_ATTENDANCE_IND,0,1) = 1 or
+       decode(T.VERSION,S.VERSION,0,1) = 1 or
+       decode(T.DELETED_IND,S.DELETED_IND,0,1) = 1 or
+       decode(T.MULTIPLE_ATTEMPTS,S.MULTIPLE_ATTEMPTS,0,1) = 1 or
+       decode(T.TOOL_COMPUTED_POINTS,S.TOOL_COMPUTED_POINTS,0,1) = 1 or
+       decode(T.GRADING_DECIMAL_PLACES,S.GRADING_DECIMAL_PLACES,0,1) = 1 or
+       decode(T.DELEGATED_GRADING_IND,S.DELEGATED_GRADING_IND,0,1) = 1 or
+       decode(T.PEER_GRADING_IND,S.PEER_GRADING_IND,0,1) = 1 or
+       decode(T.PEER_REVIEWS_PER_STUDENT,S.PEER_REVIEWS_PER_STUDENT,0,1) = 1 or
+       decode(T.ANONYMOUS_GRADING_IND,S.ANONYMOUS_GRADING_IND,0,1) = 1 or
+       decode(T.PEER_ALLOW_LATE_REVIEWS_IND,S.PEER_ALLOW_LATE_REVIEWS_IND,0,1) = 1 or
+       decode(T.ANON_GRADING_RELEASE_DATE,S.ANON_GRADING_RELEASE_DATE,0,1) = 1 or
+       decode(T.ANON_GRADING_REL_CRIT,S.ANON_GRADING_REL_CRIT,0,1) = 1 or
+       decode(T.LTI_DOMAIN_PK1,S.LTI_DOMAIN_PK1,0,1) = 1 or
+       decode(T.LTI_TAG,S.LTI_TAG,0,1) = 1 or
+       decode(T.LTI_RES_ID,S.LTI_RES_ID,0,1) = 1 
+when not matched then
+insert (
+       T.BB_SOURCE,
+       T.PK1,
+       T.POSITION,
+       T.GRADEBOOK_TRANSLATOR_PK1,
+       T.SECONDARY_TRANSLATOR_PK1,
+       T.GRADING_TERM_PK1,
+       T.QTI_ASI_DATA_PK1,
+       T.CRSMAIN_PK1,
+       T.BATCH_UID,
+       T.COURSE_CONTENTS_PK1,
+       T.LINKREFID,
+       T.TITLE,
+       T.DISPLAY_TITLE,
+       T.GRADEBOOK_TYPE_PK1,
+       T.DESCRIPTION,
+       T.DESCRIPTION_TYPE,
+       T.DUE_DATE,
+       T.POSSIBLE,
+       T.VISIBLE_IND,
+       T.VISIBLE_IN_BOOK_IND,
+       T.VISIBLE_IN_ALL_TERMS_IND,
+       T.STAT_VISIBLE_TO_STU_IND,
+       T.HIDE_ATTEMPT_IND,
+       T.WEIGHT,
+       T.DATE_ADDED,
+       T.DATE_MODIFIED,
+       T.AGGREGATION_MODEL,
+       T.CALCULATED_IND,
+       T.SCORABLE_IND,
+       T.USER_CREATED_IND,
+       T.SINGLE_ATTEMPT_IND,
+       T.EXT_ASMT_ANALYSIS_URL,
+       T.EXT_ATMPT_HANDLER_URL,
+       T.SCORE_PROVIDER_HANDLE,
+       T.IGNORE_UNSCORED_IND,
+       T.LIMITED_ATTENDANCE_IND,
+       T.VERSION,
+       T.DELETED_IND,
+       T.MULTIPLE_ATTEMPTS,
+       T.TOOL_COMPUTED_POINTS,
+       T.GRADING_DECIMAL_PLACES,
+       T.DELEGATED_GRADING_IND,
+       T.PEER_GRADING_IND,
+       T.PEER_REVIEWS_PER_STUDENT,
+       T.ANONYMOUS_GRADING_IND,
+       T.PEER_ALLOW_LATE_REVIEWS_IND,
+       T.ANON_GRADING_RELEASE_DATE,
+       T.ANON_GRADING_REL_CRIT,
+       T.LTI_DOMAIN_PK1,
+       T.LTI_TAG,
+       T.LTI_RES_ID,
+       T.DELETE_FLAG,
+       T.INSERT_TIME,
+       T.UPDATE_TIME
+)
+values (
+       S.BB_SOURCE,
+       S.PK1,
+       S.POSITION,
+       S.GRADEBOOK_TRANSLATOR_PK1,
+       S.SECONDARY_TRANSLATOR_PK1,
+       S.GRADING_TERM_PK1,
+       S.QTI_ASI_DATA_PK1,
+       S.CRSMAIN_PK1,
+       S.BATCH_UID,
+       S.COURSE_CONTENTS_PK1,
+       S.LINKREFID,
+       S.TITLE,
+       S.DISPLAY_TITLE,
+       S.GRADEBOOK_TYPE_PK1,
+       S.DESCRIPTION,
+       S.DESCRIPTION_TYPE,
+       S.DUE_DATE,
+       S.POSSIBLE,
+       S.VISIBLE_IND,
+       S.VISIBLE_IN_BOOK_IND,
+       S.VISIBLE_IN_ALL_TERMS_IND,
+       S.STAT_VISIBLE_TO_STU_IND,
+       S.HIDE_ATTEMPT_IND,
+       S.WEIGHT,
+       S.DATE_ADDED,
+       S.DATE_MODIFIED,
+       S.AGGREGATION_MODEL,
+       S.CALCULATED_IND,
+       S.SCORABLE_IND,
+       S.USER_CREATED_IND,
+       S.SINGLE_ATTEMPT_IND,
+       S.EXT_ASMT_ANALYSIS_URL,
+       S.EXT_ATMPT_HANDLER_URL,
+       S.SCORE_PROVIDER_HANDLE,
+       S.IGNORE_UNSCORED_IND,
+       S.LIMITED_ATTENDANCE_IND,
+       S.VERSION,
+       S.DELETED_IND,
+       S.MULTIPLE_ATTEMPTS,
+       S.TOOL_COMPUTED_POINTS,
+       S.GRADING_DECIMAL_PLACES,
+       S.DELEGATED_GRADING_IND,
+       S.PEER_GRADING_IND,
+       S.PEER_REVIEWS_PER_STUDENT,
+       S.ANONYMOUS_GRADING_IND,
+       S.PEER_ALLOW_LATE_REVIEWS_IND,
+       S.ANON_GRADING_RELEASE_DATE,
+       S.ANON_GRADING_REL_CRIT,
+       S.LTI_DOMAIN_PK1,
+       S.LTI_TAG,
+       S.LTI_RES_ID,
+       'N',
+       SYSDATE,
+       SYSDATE)
+;
+
+strSqlCommand   := 'SET intRowCount';
+intRowCount     := SQL%ROWCOUNT;
+
+strSqlCommand := 'commit';
+commit;
+
+strMessage01    := '# of BB_GRADEBOOK_MAIN_S2 rows merged: ' || TO_CHAR(intRowCount,'999,999,999,999');
+COMMON_OWNER.SMT_LOG.PUT_MESSAGE(i_Message => strMessage01);
+
+strSqlCommand := 'SMT_PROCESS_LOG.PROCESS_DETAIL';
+COMMON_OWNER.SMT_PROCESS_LOG.PROCESS_DETAIL
+        (
+                i_TargetTableName   => 'BB_GRADEBOOK_MAIN_S2',
+                i_Action            => 'MERGE',
+                i_RowCount          => intRowCount
+        );
+
+strSqlCommand := 'SMT_PROCESS_LOG.PROCESS_SUCCESS';
+COMMON_OWNER.SMT_PROCESS_LOG.PROCESS_SUCCESS;
+
+strMessage01    := strProcessName || ' is complete.';
+COMMON_OWNER.SMT_LOG.PUT_MESSAGE(i_Message => strMessage01);
+
+EXCEPTION
+    WHEN OTHERS THEN
+        COMMON_OWNER.SMT_PROCESS_LOG.PROCESS_EXCEPTION
+                (
+                        i_SqlCommand   => strSqlCommand,
+                        i_SqlCode      => SQLCODE,
+                        i_SqlErrm      => SQLERRM
+                );
+
+END BB_GRADEBOOK_MAIN_S2_P;
+/

@@ -1,0 +1,1258 @@
+DROP PROCEDURE CSMRT_OWNER.AM_PS_STDNT_FA_TERM_P
+/
+
+--
+-- AM_PS_STDNT_FA_TERM_P  (Procedure) 
+--
+CREATE OR REPLACE PROCEDURE CSMRT_OWNER."AM_PS_STDNT_FA_TERM_P" IS
+
+------------------------------------------------------------------------
+-- George Adams
+--
+-- Loads stage table PS_STDNT_FA_TERM from PeopleSoft table PS_STDNT_FA_TERM.
+--
+-- V01  SMT-xxxx 04/11/2017,    Jim Doucette
+--                              Converted from PS_STDNT_FA_TERM.SQL
+--
+------------------------------------------------------------------------
+
+        strMartId                       Varchar2(50)    := 'CSW';
+        strProcessName                  Varchar2(100)   := 'AM_PS_STDNT_FA_TERM';
+        intProcessSid                   Integer;
+        dtProcessStart                  Date            := SYSDATE;
+        strMessage01                    Varchar2(4000);
+        strMessage02                    Varchar2(512);
+        strMessage03                    Varchar2(512)   :='';
+        strNewLine                      Varchar2(2)     := chr(13) || chr(10);
+        strSqlCommand                   Varchar2(32767) :='';
+        strSqlDynamic                   Varchar2(32767) :='';
+        strClientInfo                   Varchar2(100);
+        strDELETE_FLG                   Varchar2(1);
+        intRowCount                     Integer;
+        intTotalRowCount                Integer         := 0;
+        intOLD_MAX_SCN                  Integer         := 0;
+        intNEW_MAX_SCN                  Integer         := 0;
+        numSqlCode                      Number;
+        strSqlErrm                      Varchar2(4000);
+        intTries                        Integer;
+
+BEGIN
+
+strSqlCommand := 'DBMS_APPLICATION_INFO.SET_CLIENT_INFO';
+DBMS_APPLICATION_INFO.SET_CLIENT_INFO (strProcessName);
+
+strSqlCommand := 'SMT_PROCESS_LOG.PROCESS_INIT';
+COMMON_OWNER.SMT_PROCESS_LOG.PROCESS_INIT
+        (
+                i_MartId                => strMartId,
+                i_ProcessName           => strProcessName,
+                i_ProcessStartTime      => dtProcessStart,
+                o_ProcessSid            => intProcessSid
+        );
+
+strMessage01    := 'Updating AMSTG_OWNER.UM_STAGE_JOBS';
+COMMON_OWNER.SMT_LOG.PUT_MESSAGE(i_Message => strMessage01);
+
+strSqlCommand   := 'update START_DT on AMSTG_OWNER.UM_STAGE_JOBS';
+update AMSTG_OWNER.UM_STAGE_JOBS
+   set TABLE_STATUS = 'Reading',
+       START_DT = sysdate,
+       END_DT = NULL
+ where TABLE_NAME = 'PS_STDNT_FA_TERM'
+;
+
+strSqlCommand := 'commit';
+commit;
+
+strSqlCommand   := 'update NEW_MAX_SCN on AMSTG_OWNER.UM_STAGE_JOBS';
+update AMSTG_OWNER.UM_STAGE_JOBS
+   set TABLE_STATUS = 'Merging',
+       NEW_MAX_SCN = (select /*+ full(S) */ max(ORA_ROWSCN) from SYSADM.PS_STDNT_FA_TERM@AMSOURCE S)
+ where TABLE_NAME = 'PS_STDNT_FA_TERM'
+;
+
+strSqlCommand := 'commit';
+commit;
+
+strMessage01    := 'Selecting variables from AMSTG_OWNER.UM_STAGE_JOBS';
+COMMON_OWNER.SMT_LOG.PUT_MESSAGE(i_Message => strMessage01);
+
+select DELETE_FLG, 
+       OLD_MAX_SCN, 
+       NEW_MAX_SCN
+  into strDELETE_FLG,
+       intOLD_MAX_SCN,
+       intNEW_MAX_SCN
+  from AMSTG_OWNER.UM_STAGE_JOBS
+ where TABLE_NAME = 'PS_STDNT_FA_TERM'
+;
+
+strMessage01    := 'Merging data into AMSTG_OWNER.PS_STDNT_FA_TERM';
+COMMON_OWNER.SMT_LOG.PUT_MESSAGE(i_Message => strMessage01);
+
+strSqlCommand   := 'merge into AMSTG_OWNER.PS_STDNT_FA_TERM';
+merge /*+ use_hash(S,T) parallel(8) enable_parallel_dml */ into AMSTG_OWNER.PS_STDNT_FA_TERM T
+using (select /*+ full(S) */
+    nvl(trim(EMPLID),'-') EMPLID, 
+    nvl(trim(INSTITUTION),'-') INSTITUTION, 
+    nvl(trim(STRM),'-') STRM, 
+    to_date(to_char(case when EFFDT < '01-JAN-1800' then NULL else EFFDT end,'MM/DD/YYYY HH24:MI:SS'),'MM/DD/YYYY HH24:MI:SS') EFFDT, 
+    nvl(EFFSEQ,0) EFFSEQ, 
+    EFF_STATUS EFF_STATUS,
+    AID_YEAR AID_YEAR,
+    BUDGET_REQUIRED BUDGET_REQUIRED,
+    WITHDRAW_CODE WITHDRAW_CODE,
+    WITHDRAW_REASON WITHDRAW_REASON,
+    to_date(to_char(case when WITHDRAW_DATE < '01-JAN-1800' then NULL 
+                    else WITHDRAW_DATE end,'MM/DD/YYYY HH24:MI:SS'),'MM/DD/YYYY HH24:MI:SS') WITHDRAW_DATE, 
+    to_date(to_char(case when LAST_DATE_ATTENDED < '01-JAN-1800' then NULL 
+                    else LAST_DATE_ATTENDED end,'MM/DD/YYYY HH24:MI:SS'),'MM/DD/YYYY HH24:MI:SS') LAST_DATE_ATTENDED,
+    ACAD_CAREER ACAD_CAREER,
+    ACAD_CAREER_CL ACAD_CAREER_CL,
+    OVRD_CAREER OVRD_CAREER,
+    ACAD_PLAN ACAD_PLAN,
+    ACAD_PLAN_CL ACAD_PLAN_CL,
+    OVRD_ACAD_PLAN OVRD_ACAD_PLAN,
+    ACAD_SUB_PLAN ACAD_SUB_PLAN,
+    ACAD_SUB_PLAN_CL ACAD_SUB_PLAN_CL,
+    OVRD_SUB_PLAN OVRD_SUB_PLAN,
+    STDNT_CAR_NBR STDNT_CAR_NBR,
+    ACAD_PROG_PRIMARY ACAD_PROG_PRIMARY,
+    ACAD_PROG_PRIM_CL ACAD_PROG_PRIM_CL,
+    OVRD_ACAD_PROG_PRM OVRD_ACAD_PROG_PRM,
+    ACAD_LOAD_APPR ACAD_LOAD_APPR,
+    ACAD_LOAD_APPR_CL ACAD_LOAD_APPR_CL,
+    OVRD_ACAD_LOAD_AP OVRD_ACAD_LOAD_AP,
+    ACADEMIC_LOAD ACADEMIC_LOAD,
+    ACADEMIC_LOAD_CL ACADEMIC_LOAD_CL,
+    OVRD_ACADEMIC_LOAD OVRD_ACADEMIC_LOAD,
+    ACAD_LEVEL_PROJ ACAD_LEVEL_PROJ,
+    ACAD_LEVEL_PROJ_CL ACAD_LEVEL_PROJ_CL,
+    ACAD_LEVEL_BOT ACAD_LEVEL_BOT,
+    ACAD_LEVEL_BOT_CL ACAD_LEVEL_BOT_CL,
+    ACAD_LEVEL_EOT ACAD_LEVEL_EOT,
+    ACAD_LEVEL_EOT_CL ACAD_LEVEL_EOT_CL,
+    OVRD_ACAD_LVL_PROJ OVRD_ACAD_LVL_PROJ,
+    OVRD_ACAD_LVL_ALL OVRD_ACAD_LVL_ALL,
+    ELIG_TO_ENROLL ELIG_TO_ENROLL,
+    RESET_CUM_STATS RESET_CUM_STATS,
+    FORM_OF_STUDY FORM_OF_STUDY,
+    FORM_OF_STUDY_CL FORM_OF_STUDY_CL,
+    OVRD_FORM_OF_STUDY OVRD_FORM_OF_STUDY,
+    TERM_TYPE TERM_TYPE,
+    SEL_GROUP SEL_GROUP,
+    TUIT_CALC_REQ TUIT_CALC_REQ,
+    to_date(to_char(case when TUIT_CALC_DTTM < '01-JAN-1800' then NULL 
+                    else TUIT_CALC_DTTM end,'MM/DD/YYYY HH24:MI:SS'),'MM/DD/YYYY HH24:MI:SS') TUIT_CALC_DTTM,
+    BILLING_CAREER BILLING_CAREER,
+    ACAD_YEAR ACAD_YEAR,
+    ACAD_YEAR_CL ACAD_YEAR_CL,
+    OVRD_ACAD_YEAR OVRD_ACAD_YEAR,
+    CUR_RESIDENT_TERMS CUR_RESIDENT_TERMS,
+    TRF_RESIDENT_TERMS TRF_RESIDENT_TERMS,
+    CUM_RESIDENT_TERMS CUM_RESIDENT_TERMS,
+    UNT_TAKEN_FA UNT_TAKEN_FA,
+    UNT_TAKEN_FA_CL UNT_TAKEN_FA_CL,
+    OVRD_UNT_TAKEN_FA OVRD_UNT_TAKEN_FA,
+    UNT_PASSD_FA UNT_PASSD_FA,
+    UNT_PASSD_FA_CL UNT_PASSD_FA_CL,
+    OVRD_UNT_PASSD_FA OVRD_UNT_PASSD_FA,
+    TOT_TAKEN_FA TOT_TAKEN_FA,
+    TOT_TAKEN_FA_CL TOT_TAKEN_FA_CL,
+    OVRD_TOT_TAKEN_FA OVRD_TOT_TAKEN_FA,
+    TOT_PASSD_FA TOT_PASSD_FA,
+    TOT_PASSD_FA_CL TOT_PASSD_FA_CL,
+    OVRD_TOT_PASSD_FA OVRD_TOT_PASSD_FA,
+    REMOTE_UNT_FA REMOTE_UNT_FA,
+    TOT_TERM_UNT_FA TOT_TERM_UNT_FA,
+    TOT_TERM_UNT_FA_CL TOT_TERM_UNT_FA_CL,
+    OVRD_FA_UNITS OVRD_FA_UNITS,
+    FA_UNIT_WARNING FA_UNIT_WARNING,
+    FA_LOAD FA_LOAD,
+    FA_LOAD_CL FA_LOAD_CL,
+    OVRD_FA_LOAD OVRD_FA_LOAD,
+    LS_GPA LS_GPA,
+    GPA_CL GPA_CL,
+    CUM_GPA CUM_GPA,
+    CUM_GPA_CL CUM_GPA_CL,
+    OVRD_CUM_GPA OVRD_CUM_GPA,
+    OVRD_GPA OVRD_GPA,
+    GPA_CALC_IND GPA_CALC_IND,
+    NSLDS_LOAN_YEAR NSLDS_LOAN_YEAR,
+    NSLDS_LOAN_YEAR_CL NSLDS_LOAN_YEAR_CL,
+    OVRD_NSLDS_LOAN_YR OVRD_NSLDS_LOAN_YR,
+    DIR_LND_YR DIR_LND_YR,
+    to_date(to_char(case when DEGR_CONFER_DT < '01-JAN-1800' then NULL 
+                    else DEGR_CONFER_DT end,'MM/DD/YYYY HH24:MI:SS'),'MM/DD/YYYY HH24:MI:SS') DEGR_CONFER_DT,
+    EXP_GRAD_TERM EXP_GRAD_TERM,
+    EXP_GRAD_TERM_CL EXP_GRAD_TERM_CL,
+    OVRD_GRAD_TERM OVRD_GRAD_TERM,
+    to_date(to_char(case when EXP_GRAD_DATE < '01-JAN-1800' then NULL 
+                    else EXP_GRAD_DATE end,'MM/DD/YYYY HH24:MI:SS'),'MM/DD/YYYY HH24:MI:SS') EXP_GRAD_DATE, 
+    to_date(to_char(case when EXP_GRAD_DATE_CL < '01-JAN-1800' then NULL 
+                    else EXP_GRAD_DATE_CL end,'MM/DD/YYYY HH24:MI:SS'),'MM/DD/YYYY HH24:MI:SS') EXP_GRAD_DATE_CL,
+    OVRD_GRAD_DATE OVRD_GRAD_DATE,
+    UNT_TAKEN_GPA UNT_TAKEN_GPA,
+    TOT_TAKEN_GPA TOT_TAKEN_GPA,
+    GRADE_POINTS GRADE_POINTS,
+    TOT_GRADE_POINTS TOT_GRADE_POINTS,
+    ACAD_STANDING ACAD_STANDING,
+    ACAD_STANDING_CL ACAD_STANDING_CL,
+    OVRD_ACAD_STANDING OVRD_ACAD_STANDING,
+    FA_STANDING FA_STANDING,
+    FA_STANDING_CL FA_STANDING_CL,
+    OVRD_FA_STANDING OVRD_FA_STANDING,
+    CAMPUS CAMPUS,
+    EXT_ORG_ID EXT_ORG_ID,
+    COUNTRY COUNTRY,
+    STUDY_AGREEMENT STUDY_AGREEMENT,
+    to_date(to_char(case when START_DATE < '01-JAN-1800' then NULL 
+                    else START_DATE end,'MM/DD/YYYY HH24:MI:SS'),'MM/DD/YYYY HH24:MI:SS') START_DATE,
+    to_date(to_char(case when END_DATE < '01-JAN-1800' then NULL 
+                    else END_DATE end,'MM/DD/YYYY HH24:MI:SS'),'MM/DD/YYYY HH24:MI:SS') END_DATE,
+    ACAD_GROUP_ADVIS ACAD_GROUP_ADVIS,
+    ADMIT_TERM ADMIT_TERM,
+    PROJ_BILL_UNT PROJ_BILL_UNT,
+    OVRD_BILL_UNITS OVRD_BILL_UNITS,
+    SRVC_IND_CD SRVC_IND_CD,
+    to_date(to_char(case when SRVC_IND_DTTM < '01-JAN-1800' then NULL 
+                    else SRVC_IND_DTTM end,'MM/DD/YYYY HH24:MI:SS'),'MM/DD/YYYY HH24:MI:SS') SRVC_IND_DTTM, 
+    REFUND_PCT REFUND_PCT,
+    REFUND_SCHEME REFUND_SCHEME,
+    REFUND_SETID REFUND_SETID,
+    REFUND_CLASS REFUND_CLASS,
+    CAMPUS_FA CAMPUS_FA,
+    CAMPUS_REGISTRAR CAMPUS_REGISTRAR,
+    CAMPUS_ADVISEMENT CAMPUS_ADVISEMENT,
+    BUSINESS_UNIT BUSINESS_UNIT,
+    ADVISOR_ROLE ADVISOR_ROLE,
+    ADVISOR_ID ADVISOR_ID,
+    COMMITTEE_ID COMMITTEE_ID,
+    WEEKS_OF_INSTRUCT WEEKS_OF_INSTRUCT,
+    FA_STATS_CALC_REQ FA_STATS_CALC_REQ,
+    FA_NUMBER_OF_WEEKS FA_NUMBER_OF_WEEKS,
+    COURSE_LD_PCT COURSE_LD_PCT,
+    COST_CODE COST_CODE,
+    to_date(to_char(case when OVRD_EXP_DT < '01-JAN-1800' then NULL 
+                    else OVRD_EXP_DT end,'MM/DD/YYYY HH24:MI:SS'),'MM/DD/YYYY HH24:MI:SS') OVRD_EXP_DT, 
+    DRIVER_OPTION DRIVER_OPTION,
+    ONLINE_BATCH_IND ONLINE_BATCH_IND,
+    TERM_SRC TERM_SRC,
+    to_date(to_char(case when CREATION_DT < '01-JAN-1800' then NULL 
+                    else CREATION_DT end,'MM/DD/YYYY HH24:MI:SS'),'MM/DD/YYYY HH24:MI:SS') CREATION_DT, 
+    OPRID OPRID,
+    PROCESS_INSTANCE PROCESS_INSTANCE,
+    UNT_TAKEN_FA_INEL UNT_TAKEN_FA_INEL,
+    UNT_PASSD_FA_INEL UNT_PASSD_FA_INEL,
+    UNT_TAKEN_PRG_INEL UNT_TAKEN_PRG_INEL,
+    GRADE_POINTS_INEL GRADE_POINTS_INEL,
+    UNT_TAKEN_GPA_INEL UNT_TAKEN_GPA_INEL,
+    FA_CAR_TYPE FA_CAR_TYPE,
+    UNT_TAKEN_FA_NOPIT UNT_TAKEN_FA_NOPIT,
+    to_date(to_char(case when LOCK_OVRD_DATE < '01-JAN-1800' then NULL 
+                    else LOCK_OVRD_DATE end,'MM/DD/YYYY HH24:MI:SS'),'MM/DD/YYYY HH24:MI:SS') LOCK_OVRD_DATE,
+    LOCK_OVRD_OPRID LOCK_OVRD_OPRID,
+    OVRD_CENSUSDT_LOCK OVRD_CENSUSDT_LOCK,
+    UNT_TRNSFR UNT_TRNSFR,
+    TRF_PASSED_GPA TRF_PASSED_GPA,
+    TRF_PASSED_NOGPA TRF_PASSED_NOGPA,
+    UNT_TEST_CREDIT UNT_TEST_CREDIT,
+    UNT_OTHER UNT_OTHER,
+    TC_UNITS_ADJUST TC_UNITS_ADJUST,
+    TOT_TRNSFR TOT_TRNSFR,
+    TOT_TEST_CREDIT TOT_TEST_CREDIT,
+    TOT_OTHER TOT_OTHER,
+    TOT_TC_UNIT_ADJUST TOT_TC_UNIT_ADJUST,
+    FA_EXP_DT_REBUILD FA_EXP_DT_REBUILD,
+    FA_UNIT_ANTIC FA_UNIT_ANTIC,
+    FA_UNIT_COMPLETED FA_UNIT_COMPLETED,
+    FA_UNIT_IN_PROG FA_UNIT_IN_PROG,
+    FA_UNIT_CURRENT FA_UNIT_CURRENT,
+    FA_LOAD_CURRENT FA_LOAD_CURRENT,
+    to_date(to_char(case when FA_REBUILD_DT < '01-JAN-1800' then NULL 
+                    else FA_REBUILD_DT end,'MM/DD/YYYY HH24:MI:SS'),'MM/DD/YYYY HH24:MI:SS') FA_REBUILD_DT, 
+    ACAD_PLAN_TYPE ACAD_PLAN_TYPE,
+    FA_LOAD_CHANGE_IND FA_LOAD_CHANGE_IND,
+    to_date(to_char(case when CENSUS_DT < '01-JAN-1800' then NULL 
+                    else CENSUS_DT end,'MM/DD/YYYY HH24:MI:SS'),'MM/DD/YYYY HH24:MI:SS') CENSUS_DT, 
+    AID_YEAR_CL AID_YEAR_CL,
+    OVRD_AID_YEAR OVRD_AID_YEAR,
+    FA_OEE_STUDENT FA_OEE_STUDENT,
+    DIR_LND_YR_CL DIR_LND_YR_CL,
+    OVRD_DIR_LND_YR OVRD_DIR_LND_YR,
+    SFA_ASG_AC_LVL_BOT SFA_ASG_AC_LVL_BOT,
+    SFA_ASG_AC_LVL_EOT SFA_ASG_AC_LVL_EOT,
+    OVRD_ASG_BOT OVRD_ASG_BOT,
+    OVRD_ASG_EOT OVRD_ASG_EOT,
+    SFA_ASG_AC_LVL_BCL SFA_ASG_AC_LVL_BCL,
+    SFA_ASG_AC_LVL_ECL SFA_ASG_AC_LVL_ECL,
+    SFA_ASG_UNITS_BOT SFA_ASG_UNITS_BOT,
+    SFA_ASG_UNITS_EOT SFA_ASG_UNITS_EOT,
+    SFA_ASG_WI_MTH SFA_ASG_WI_MTH,
+    SFA_ASG_WI_MTH_OVR SFA_ASG_WI_MTH_OVR,
+    SFA_ASG_WI_MTH_CL SFA_ASG_WI_MTH_CL,
+    SFA_ASG_WI_TRM SFA_ASG_WI_TRM,
+    SFA_ASG_WI_TRM_OVR SFA_ASG_WI_TRM_OVR,
+    SFA_ASG_WI_TRM_CL SFA_ASG_WI_TRM_CL,
+    SFA_ASG_WI_TCR SFA_ASG_WI_TCR,
+    SFA_ASG_WI_TCR_OVR SFA_ASG_WI_TCR_OVR,
+    SFA_ASG_WI_TCR_CL SFA_ASG_WI_TCR_CL,
+    SFA_ASG_WI_CUM_BOT SFA_ASG_WI_CUM_BOT,
+    SFA_ASG_WI_CUM_EOT SFA_ASG_WI_CUM_EOT,
+    SFA_ASG_WI_USED SFA_ASG_WI_USED,
+    OVRD_WOI OVRD_WOI,
+    SFA_WKS_OF_INST_CL SFA_WKS_OF_INST_CL,
+    OVRD_FA_NBR_WEEKS OVRD_FA_NBR_WEEKS,
+    SFA_FA_NBR_WKS_CL SFA_FA_NBR_WKS_CL,
+    CPS_SCHOOL_CODE CPS_SCHOOL_CODE,
+    SFA_SPEC_PROG_FLG SFA_SPEC_PROG_FLG,
+    SFA_SULA_UNIT SFA_SULA_UNIT,
+    SFA_SULA_UNIT_CL SFA_SULA_UNIT_CL,
+    OVRD_SULA_UNIT OVRD_SULA_UNIT,
+    SFA_SULA_LOAD SFA_SULA_LOAD
+  from SYSADM.PS_STDNT_FA_TERM@AMSOURCE S 
+-- where ORA_ROWSCN > (select OLD_MAX_SCN from AMSTG_OWNER.UM_STAGE_JOBS where TABLE_NAME = 'PS_STDNT_FA_TERM')
+ where ORA_ROWSCN > intOLD_MAX_SCN 
+   and EMPLID between '00000000' and '99999999'
+   and length(EMPLID) = 8 ) S
+ on ( 
+    T.EMPLID = S.EMPLID and 
+    T.INSTITUTION = S.INSTITUTION and 
+    T.STRM = S.STRM and 
+    T.EFFDT = S.EFFDT and 
+    T.EFFSEQ = S.EFFSEQ and 
+    T.SRC_SYS_ID = 'CS90')
+when matched then update set
+    T.EFF_STATUS = S.EFF_STATUS,
+    T.AID_YEAR = S.AID_YEAR,
+    T.BUDGET_REQUIRED = S.BUDGET_REQUIRED,
+    T.WITHDRAW_CODE = S.WITHDRAW_CODE,
+    T.WITHDRAW_REASON = S.WITHDRAW_REASON,
+    T.WITHDRAW_DATE = S.WITHDRAW_DATE,
+    T.LAST_DATE_ATTENDED = S.LAST_DATE_ATTENDED,
+    T.ACAD_CAREER = S.ACAD_CAREER,
+    T.ACAD_CAREER_CL = S.ACAD_CAREER_CL,
+    T.OVRD_CAREER = S.OVRD_CAREER,
+    T.ACAD_PLAN = S.ACAD_PLAN,
+    T.ACAD_PLAN_CL = S.ACAD_PLAN_CL,
+    T.OVRD_ACAD_PLAN = S.OVRD_ACAD_PLAN,
+    T.ACAD_SUB_PLAN = S.ACAD_SUB_PLAN,
+    T.ACAD_SUB_PLAN_CL = S.ACAD_SUB_PLAN_CL,
+    T.OVRD_SUB_PLAN = S.OVRD_SUB_PLAN,
+    T.STDNT_CAR_NBR = S.STDNT_CAR_NBR,
+    T.ACAD_PROG_PRIMARY = S.ACAD_PROG_PRIMARY,
+    T.ACAD_PROG_PRIM_CL = S.ACAD_PROG_PRIM_CL,
+    T.OVRD_ACAD_PROG_PRM = S.OVRD_ACAD_PROG_PRM,
+    T.ACAD_LOAD_APPR = S.ACAD_LOAD_APPR,
+    T.ACAD_LOAD_APPR_CL = S.ACAD_LOAD_APPR_CL,
+    T.OVRD_ACAD_LOAD_AP = S.OVRD_ACAD_LOAD_AP,
+    T.ACADEMIC_LOAD = S.ACADEMIC_LOAD,
+    T.ACADEMIC_LOAD_CL = S.ACADEMIC_LOAD_CL,
+    T.OVRD_ACADEMIC_LOAD = S.OVRD_ACADEMIC_LOAD,
+    T.ACAD_LEVEL_PROJ = S.ACAD_LEVEL_PROJ,
+    T.ACAD_LEVEL_PROJ_CL = S.ACAD_LEVEL_PROJ_CL,
+    T.ACAD_LEVEL_BOT = S.ACAD_LEVEL_BOT,
+    T.ACAD_LEVEL_BOT_CL = S.ACAD_LEVEL_BOT_CL,
+    T.ACAD_LEVEL_EOT = S.ACAD_LEVEL_EOT,
+    T.ACAD_LEVEL_EOT_CL = S.ACAD_LEVEL_EOT_CL,
+    T.OVRD_ACAD_LVL_PROJ = S.OVRD_ACAD_LVL_PROJ,
+    T.OVRD_ACAD_LVL_ALL = S.OVRD_ACAD_LVL_ALL,
+    T.ELIG_TO_ENROLL = S.ELIG_TO_ENROLL,
+    T.RESET_CUM_STATS = S.RESET_CUM_STATS,
+    T.FORM_OF_STUDY = S.FORM_OF_STUDY,
+    T.FORM_OF_STUDY_CL = S.FORM_OF_STUDY_CL,
+    T.OVRD_FORM_OF_STUDY = S.OVRD_FORM_OF_STUDY,
+    T.TERM_TYPE = S.TERM_TYPE,
+    T.SEL_GROUP = S.SEL_GROUP,
+    T.TUIT_CALC_REQ = S.TUIT_CALC_REQ,
+    T.TUIT_CALC_DTTM = S.TUIT_CALC_DTTM,
+    T.BILLING_CAREER = S.BILLING_CAREER,
+    T.ACAD_YEAR = S.ACAD_YEAR,
+    T.ACAD_YEAR_CL = S.ACAD_YEAR_CL,
+    T.OVRD_ACAD_YEAR = S.OVRD_ACAD_YEAR,
+    T.CUR_RESIDENT_TERMS = S.CUR_RESIDENT_TERMS,
+    T.TRF_RESIDENT_TERMS = S.TRF_RESIDENT_TERMS,
+    T.CUM_RESIDENT_TERMS = S.CUM_RESIDENT_TERMS,
+    T.UNT_TAKEN_FA = S.UNT_TAKEN_FA,
+    T.UNT_TAKEN_FA_CL = S.UNT_TAKEN_FA_CL,
+    T.OVRD_UNT_TAKEN_FA = S.OVRD_UNT_TAKEN_FA,
+    T.UNT_PASSD_FA = S.UNT_PASSD_FA,
+    T.UNT_PASSD_FA_CL = S.UNT_PASSD_FA_CL,
+    T.OVRD_UNT_PASSD_FA = S.OVRD_UNT_PASSD_FA,
+    T.TOT_TAKEN_FA = S.TOT_TAKEN_FA,
+    T.TOT_TAKEN_FA_CL = S.TOT_TAKEN_FA_CL,
+    T.OVRD_TOT_TAKEN_FA = S.OVRD_TOT_TAKEN_FA,
+    T.TOT_PASSD_FA = S.TOT_PASSD_FA,
+    T.TOT_PASSD_FA_CL = S.TOT_PASSD_FA_CL,
+    T.OVRD_TOT_PASSD_FA = S.OVRD_TOT_PASSD_FA,
+    T.REMOTE_UNT_FA = S.REMOTE_UNT_FA,
+    T.TOT_TERM_UNT_FA = S.TOT_TERM_UNT_FA,
+    T.TOT_TERM_UNT_FA_CL = S.TOT_TERM_UNT_FA_CL,
+    T.OVRD_FA_UNITS = S.OVRD_FA_UNITS,
+    T.FA_UNIT_WARNING = S.FA_UNIT_WARNING,
+    T.FA_LOAD = S.FA_LOAD,
+    T.FA_LOAD_CL = S.FA_LOAD_CL,
+    T.OVRD_FA_LOAD = S.OVRD_FA_LOAD,
+    T.LS_GPA = S.LS_GPA,
+    T.GPA_CL = S.GPA_CL,
+    T.CUM_GPA = S.CUM_GPA,
+    T.CUM_GPA_CL = S.CUM_GPA_CL,
+    T.OVRD_CUM_GPA = S.OVRD_CUM_GPA,
+    T.OVRD_GPA = S.OVRD_GPA,
+    T.GPA_CALC_IND = S.GPA_CALC_IND,
+    T.NSLDS_LOAN_YEAR = S.NSLDS_LOAN_YEAR,
+    T.NSLDS_LOAN_YEAR_CL = S.NSLDS_LOAN_YEAR_CL,
+    T.OVRD_NSLDS_LOAN_YR = S.OVRD_NSLDS_LOAN_YR,
+    T.DIR_LND_YR = S.DIR_LND_YR,
+    T.DEGR_CONFER_DT = S.DEGR_CONFER_DT,
+    T.EXP_GRAD_TERM = S.EXP_GRAD_TERM,
+    T.EXP_GRAD_TERM_CL = S.EXP_GRAD_TERM_CL,
+    T.OVRD_GRAD_TERM = S.OVRD_GRAD_TERM,
+    T.EXP_GRAD_DATE = S.EXP_GRAD_DATE,
+    T.EXP_GRAD_DATE_CL = S.EXP_GRAD_DATE_CL,
+    T.OVRD_GRAD_DATE = S.OVRD_GRAD_DATE,
+    T.UNT_TAKEN_GPA = S.UNT_TAKEN_GPA,
+    T.TOT_TAKEN_GPA = S.TOT_TAKEN_GPA,
+    T.GRADE_POINTS = S.GRADE_POINTS,
+    T.TOT_GRADE_POINTS = S.TOT_GRADE_POINTS,
+    T.ACAD_STANDING = S.ACAD_STANDING,
+    T.ACAD_STANDING_CL = S.ACAD_STANDING_CL,
+    T.OVRD_ACAD_STANDING = S.OVRD_ACAD_STANDING,
+    T.FA_STANDING = S.FA_STANDING,
+    T.FA_STANDING_CL = S.FA_STANDING_CL,
+    T.OVRD_FA_STANDING = S.OVRD_FA_STANDING,
+    T.CAMPUS = S.CAMPUS,
+    T.EXT_ORG_ID = S.EXT_ORG_ID,
+    T.COUNTRY = S.COUNTRY,
+    T.STUDY_AGREEMENT = S.STUDY_AGREEMENT,
+    T.START_DATE = S.START_DATE,
+    T.END_DATE = S.END_DATE,
+    T.ACAD_GROUP_ADVIS = S.ACAD_GROUP_ADVIS,
+    T.ADMIT_TERM = S.ADMIT_TERM,
+    T.PROJ_BILL_UNT = S.PROJ_BILL_UNT,
+    T.OVRD_BILL_UNITS = S.OVRD_BILL_UNITS,
+    T.SRVC_IND_CD = S.SRVC_IND_CD,
+    T.SRVC_IND_DTTM = S.SRVC_IND_DTTM,
+    T.REFUND_PCT = S.REFUND_PCT,
+    T.REFUND_SCHEME = S.REFUND_SCHEME,
+    T.REFUND_SETID = S.REFUND_SETID,
+    T.REFUND_CLASS = S.REFUND_CLASS,
+    T.CAMPUS_FA = S.CAMPUS_FA,
+    T.CAMPUS_REGISTRAR = S.CAMPUS_REGISTRAR,
+    T.CAMPUS_ADVISEMENT = S.CAMPUS_ADVISEMENT,
+    T.BUSINESS_UNIT = S.BUSINESS_UNIT,
+    T.ADVISOR_ROLE = S.ADVISOR_ROLE,
+    T.ADVISOR_ID = S.ADVISOR_ID,
+    T.COMMITTEE_ID = S.COMMITTEE_ID,
+    T.WEEKS_OF_INSTRUCT = S.WEEKS_OF_INSTRUCT,
+    T.FA_STATS_CALC_REQ = S.FA_STATS_CALC_REQ,
+    T.FA_NUMBER_OF_WEEKS = S.FA_NUMBER_OF_WEEKS,
+    T.COURSE_LD_PCT = S.COURSE_LD_PCT,
+    T.COST_CODE = S.COST_CODE,
+    T.OVRD_EXP_DT = S.OVRD_EXP_DT,
+    T.DRIVER_OPTION = S.DRIVER_OPTION,
+    T.ONLINE_BATCH_IND = S.ONLINE_BATCH_IND,
+    T.TERM_SRC = S.TERM_SRC,
+    T.CREATION_DT = S.CREATION_DT,
+    T.OPRID = S.OPRID,
+    T.PROCESS_INSTANCE = S.PROCESS_INSTANCE,
+    T.UNT_TAKEN_FA_INEL = S.UNT_TAKEN_FA_INEL,
+    T.UNT_PASSD_FA_INEL = S.UNT_PASSD_FA_INEL,
+    T.UNT_TAKEN_PRG_INEL = S.UNT_TAKEN_PRG_INEL,
+    T.GRADE_POINTS_INEL = S.GRADE_POINTS_INEL,
+    T.UNT_TAKEN_GPA_INEL = S.UNT_TAKEN_GPA_INEL,
+    T.FA_CAR_TYPE = S.FA_CAR_TYPE,
+    T.UNT_TAKEN_FA_NOPIT = S.UNT_TAKEN_FA_NOPIT,
+    T.LOCK_OVRD_DATE = S.LOCK_OVRD_DATE,
+    T.LOCK_OVRD_OPRID = S.LOCK_OVRD_OPRID,
+    T.OVRD_CENSUSDT_LOCK = S.OVRD_CENSUSDT_LOCK,
+    T.UNT_TRNSFR = S.UNT_TRNSFR,
+    T.TRF_PASSED_GPA = S.TRF_PASSED_GPA,
+    T.TRF_PASSED_NOGPA = S.TRF_PASSED_NOGPA,
+    T.UNT_TEST_CREDIT = S.UNT_TEST_CREDIT,
+    T.UNT_OTHER = S.UNT_OTHER,
+    T.TC_UNITS_ADJUST = S.TC_UNITS_ADJUST,
+    T.TOT_TRNSFR = S.TOT_TRNSFR,
+    T.TOT_TEST_CREDIT = S.TOT_TEST_CREDIT,
+    T.TOT_OTHER = S.TOT_OTHER,
+    T.TOT_TC_UNIT_ADJUST = S.TOT_TC_UNIT_ADJUST,
+    T.FA_EXP_DT_REBUILD = S.FA_EXP_DT_REBUILD,
+    T.FA_UNIT_ANTIC = S.FA_UNIT_ANTIC,
+    T.FA_UNIT_COMPLETED = S.FA_UNIT_COMPLETED,
+    T.FA_UNIT_IN_PROG = S.FA_UNIT_IN_PROG,
+    T.FA_UNIT_CURRENT = S.FA_UNIT_CURRENT,
+    T.FA_LOAD_CURRENT = S.FA_LOAD_CURRENT,
+    T.FA_REBUILD_DT = S.FA_REBUILD_DT,
+    T.ACAD_PLAN_TYPE = S.ACAD_PLAN_TYPE,
+    T.FA_LOAD_CHANGE_IND = S.FA_LOAD_CHANGE_IND,
+    T.CENSUS_DT = S.CENSUS_DT,
+    T.AID_YEAR_CL = S.AID_YEAR_CL,
+    T.OVRD_AID_YEAR = S.OVRD_AID_YEAR,
+    T.FA_OEE_STUDENT = S.FA_OEE_STUDENT,
+    T.DIR_LND_YR_CL = S.DIR_LND_YR_CL,
+    T.OVRD_DIR_LND_YR = S.OVRD_DIR_LND_YR,
+    T.SFA_ASG_AC_LVL_BOT = S.SFA_ASG_AC_LVL_BOT,
+    T.SFA_ASG_AC_LVL_EOT = S.SFA_ASG_AC_LVL_EOT,
+    T.OVRD_ASG_BOT = S.OVRD_ASG_BOT,
+    T.OVRD_ASG_EOT = S.OVRD_ASG_EOT,
+    T.SFA_ASG_AC_LVL_BCL = S.SFA_ASG_AC_LVL_BCL,
+    T.SFA_ASG_AC_LVL_ECL = S.SFA_ASG_AC_LVL_ECL,
+    T.SFA_ASG_UNITS_BOT = S.SFA_ASG_UNITS_BOT,
+    T.SFA_ASG_UNITS_EOT = S.SFA_ASG_UNITS_EOT,
+    T.SFA_ASG_WI_MTH = S.SFA_ASG_WI_MTH,
+    T.SFA_ASG_WI_MTH_OVR = S.SFA_ASG_WI_MTH_OVR,
+    T.SFA_ASG_WI_MTH_CL = S.SFA_ASG_WI_MTH_CL,
+    T.SFA_ASG_WI_TRM = S.SFA_ASG_WI_TRM,
+    T.SFA_ASG_WI_TRM_OVR = S.SFA_ASG_WI_TRM_OVR,
+    T.SFA_ASG_WI_TRM_CL = S.SFA_ASG_WI_TRM_CL,
+    T.SFA_ASG_WI_TCR = S.SFA_ASG_WI_TCR,
+    T.SFA_ASG_WI_TCR_OVR = S.SFA_ASG_WI_TCR_OVR,
+    T.SFA_ASG_WI_TCR_CL = S.SFA_ASG_WI_TCR_CL,
+    T.SFA_ASG_WI_CUM_BOT = S.SFA_ASG_WI_CUM_BOT,
+    T.SFA_ASG_WI_CUM_EOT = S.SFA_ASG_WI_CUM_EOT,
+    T.SFA_ASG_WI_USED = S.SFA_ASG_WI_USED,
+    T.OVRD_WOI = S.OVRD_WOI,
+    T.SFA_WKS_OF_INST_CL = S.SFA_WKS_OF_INST_CL,
+    T.OVRD_FA_NBR_WEEKS = S.OVRD_FA_NBR_WEEKS,
+    T.SFA_FA_NBR_WKS_CL = S.SFA_FA_NBR_WKS_CL,
+    T.CPS_SCHOOL_CODE = S.CPS_SCHOOL_CODE,
+    T.SFA_SPEC_PROG_FLG = S.SFA_SPEC_PROG_FLG,
+    T.SFA_SULA_UNIT = S.SFA_SULA_UNIT,
+    T.SFA_SULA_UNIT_CL = S.SFA_SULA_UNIT_CL,
+    T.OVRD_SULA_UNIT = S.OVRD_SULA_UNIT,
+    T.SFA_SULA_LOAD = S.SFA_SULA_LOAD,
+    T.DATA_ORIGIN = 'S',
+    T.LASTUPD_EW_DTTM = sysdate,
+    T.BATCH_SID = 1234
+where 
+    nvl(trim(T.EFF_STATUS),0) <> nvl(trim(S.EFF_STATUS),0) or 
+    nvl(trim(T.AID_YEAR),0) <> nvl(trim(S.AID_YEAR),0) or 
+    nvl(trim(T.BUDGET_REQUIRED),0) <> nvl(trim(S.BUDGET_REQUIRED),0) or 
+    nvl(trim(T.WITHDRAW_CODE),0) <> nvl(trim(S.WITHDRAW_CODE),0) or 
+    nvl(trim(T.WITHDRAW_REASON),0) <> nvl(trim(S.WITHDRAW_REASON),0) or 
+    nvl(trim(T.WITHDRAW_DATE),0) <> nvl(trim(S.WITHDRAW_DATE),0) or 
+    nvl(trim(T.LAST_DATE_ATTENDED),0) <> nvl(trim(S.LAST_DATE_ATTENDED),0) or 
+    nvl(trim(T.ACAD_CAREER),0) <> nvl(trim(S.ACAD_CAREER),0) or 
+    nvl(trim(T.ACAD_CAREER_CL),0) <> nvl(trim(S.ACAD_CAREER_CL),0) or 
+    nvl(trim(T.OVRD_CAREER),0) <> nvl(trim(S.OVRD_CAREER),0) or 
+    nvl(trim(T.ACAD_PLAN),0) <> nvl(trim(S.ACAD_PLAN),0) or 
+    nvl(trim(T.ACAD_PLAN_CL),0) <> nvl(trim(S.ACAD_PLAN_CL),0) or 
+    nvl(trim(T.OVRD_ACAD_PLAN),0) <> nvl(trim(S.OVRD_ACAD_PLAN),0) or 
+    nvl(trim(T.ACAD_SUB_PLAN),0) <> nvl(trim(S.ACAD_SUB_PLAN),0) or 
+    nvl(trim(T.ACAD_SUB_PLAN_CL),0) <> nvl(trim(S.ACAD_SUB_PLAN_CL),0) or 
+    nvl(trim(T.OVRD_SUB_PLAN),0) <> nvl(trim(S.OVRD_SUB_PLAN),0) or 
+    nvl(trim(T.STDNT_CAR_NBR),0) <> nvl(trim(S.STDNT_CAR_NBR),0) or 
+    nvl(trim(T.ACAD_PROG_PRIMARY),0) <> nvl(trim(S.ACAD_PROG_PRIMARY),0) or 
+    nvl(trim(T.ACAD_PROG_PRIM_CL),0) <> nvl(trim(S.ACAD_PROG_PRIM_CL),0) or 
+    nvl(trim(T.OVRD_ACAD_PROG_PRM),0) <> nvl(trim(S.OVRD_ACAD_PROG_PRM),0) or 
+    nvl(trim(T.ACAD_LOAD_APPR),0) <> nvl(trim(S.ACAD_LOAD_APPR),0) or 
+    nvl(trim(T.ACAD_LOAD_APPR_CL),0) <> nvl(trim(S.ACAD_LOAD_APPR_CL),0) or 
+    nvl(trim(T.OVRD_ACAD_LOAD_AP),0) <> nvl(trim(S.OVRD_ACAD_LOAD_AP),0) or 
+    nvl(trim(T.ACADEMIC_LOAD),0) <> nvl(trim(S.ACADEMIC_LOAD),0) or 
+    nvl(trim(T.ACADEMIC_LOAD_CL),0) <> nvl(trim(S.ACADEMIC_LOAD_CL),0) or 
+    nvl(trim(T.OVRD_ACADEMIC_LOAD),0) <> nvl(trim(S.OVRD_ACADEMIC_LOAD),0) or 
+    nvl(trim(T.ACAD_LEVEL_PROJ),0) <> nvl(trim(S.ACAD_LEVEL_PROJ),0) or 
+    nvl(trim(T.ACAD_LEVEL_PROJ_CL),0) <> nvl(trim(S.ACAD_LEVEL_PROJ_CL),0) or 
+    nvl(trim(T.ACAD_LEVEL_BOT),0) <> nvl(trim(S.ACAD_LEVEL_BOT),0) or 
+    nvl(trim(T.ACAD_LEVEL_BOT_CL),0) <> nvl(trim(S.ACAD_LEVEL_BOT_CL),0) or 
+    nvl(trim(T.ACAD_LEVEL_EOT),0) <> nvl(trim(S.ACAD_LEVEL_EOT),0) or 
+    nvl(trim(T.ACAD_LEVEL_EOT_CL),0) <> nvl(trim(S.ACAD_LEVEL_EOT_CL),0) or 
+    nvl(trim(T.OVRD_ACAD_LVL_PROJ),0) <> nvl(trim(S.OVRD_ACAD_LVL_PROJ),0) or 
+    nvl(trim(T.OVRD_ACAD_LVL_ALL),0) <> nvl(trim(S.OVRD_ACAD_LVL_ALL),0) or 
+    nvl(trim(T.ELIG_TO_ENROLL),0) <> nvl(trim(S.ELIG_TO_ENROLL),0) or 
+    nvl(trim(T.RESET_CUM_STATS),0) <> nvl(trim(S.RESET_CUM_STATS),0) or 
+    nvl(trim(T.FORM_OF_STUDY),0) <> nvl(trim(S.FORM_OF_STUDY),0) or 
+    nvl(trim(T.FORM_OF_STUDY_CL),0) <> nvl(trim(S.FORM_OF_STUDY_CL),0) or 
+    nvl(trim(T.OVRD_FORM_OF_STUDY),0) <> nvl(trim(S.OVRD_FORM_OF_STUDY),0) or 
+    nvl(trim(T.TERM_TYPE),0) <> nvl(trim(S.TERM_TYPE),0) or 
+    nvl(trim(T.SEL_GROUP),0) <> nvl(trim(S.SEL_GROUP),0) or 
+    nvl(trim(T.TUIT_CALC_REQ),0) <> nvl(trim(S.TUIT_CALC_REQ),0) or 
+    nvl(trim(T.TUIT_CALC_DTTM),0) <> nvl(trim(S.TUIT_CALC_DTTM),0) or 
+    nvl(trim(T.BILLING_CAREER),0) <> nvl(trim(S.BILLING_CAREER),0) or 
+    nvl(trim(T.ACAD_YEAR),0) <> nvl(trim(S.ACAD_YEAR),0) or 
+    nvl(trim(T.ACAD_YEAR_CL),0) <> nvl(trim(S.ACAD_YEAR_CL),0) or 
+    nvl(trim(T.OVRD_ACAD_YEAR),0) <> nvl(trim(S.OVRD_ACAD_YEAR),0) or 
+    nvl(trim(T.CUR_RESIDENT_TERMS),0) <> nvl(trim(S.CUR_RESIDENT_TERMS),0) or 
+    nvl(trim(T.TRF_RESIDENT_TERMS),0) <> nvl(trim(S.TRF_RESIDENT_TERMS),0) or 
+    nvl(trim(T.CUM_RESIDENT_TERMS),0) <> nvl(trim(S.CUM_RESIDENT_TERMS),0) or 
+    nvl(trim(T.UNT_TAKEN_FA),0) <> nvl(trim(S.UNT_TAKEN_FA),0) or 
+    nvl(trim(T.UNT_TAKEN_FA_CL),0) <> nvl(trim(S.UNT_TAKEN_FA_CL),0) or 
+    nvl(trim(T.OVRD_UNT_TAKEN_FA),0) <> nvl(trim(S.OVRD_UNT_TAKEN_FA),0) or 
+    nvl(trim(T.UNT_PASSD_FA),0) <> nvl(trim(S.UNT_PASSD_FA),0) or 
+    nvl(trim(T.UNT_PASSD_FA_CL),0) <> nvl(trim(S.UNT_PASSD_FA_CL),0) or 
+    nvl(trim(T.OVRD_UNT_PASSD_FA),0) <> nvl(trim(S.OVRD_UNT_PASSD_FA),0) or 
+    nvl(trim(T.TOT_TAKEN_FA),0) <> nvl(trim(S.TOT_TAKEN_FA),0) or 
+    nvl(trim(T.TOT_TAKEN_FA_CL),0) <> nvl(trim(S.TOT_TAKEN_FA_CL),0) or 
+    nvl(trim(T.OVRD_TOT_TAKEN_FA),0) <> nvl(trim(S.OVRD_TOT_TAKEN_FA),0) or 
+    nvl(trim(T.TOT_PASSD_FA),0) <> nvl(trim(S.TOT_PASSD_FA),0) or 
+    nvl(trim(T.TOT_PASSD_FA_CL),0) <> nvl(trim(S.TOT_PASSD_FA_CL),0) or 
+    nvl(trim(T.OVRD_TOT_PASSD_FA),0) <> nvl(trim(S.OVRD_TOT_PASSD_FA),0) or 
+    nvl(trim(T.REMOTE_UNT_FA),0) <> nvl(trim(S.REMOTE_UNT_FA),0) or 
+    nvl(trim(T.TOT_TERM_UNT_FA),0) <> nvl(trim(S.TOT_TERM_UNT_FA),0) or 
+    nvl(trim(T.TOT_TERM_UNT_FA_CL),0) <> nvl(trim(S.TOT_TERM_UNT_FA_CL),0) or 
+    nvl(trim(T.OVRD_FA_UNITS),0) <> nvl(trim(S.OVRD_FA_UNITS),0) or 
+    nvl(trim(T.FA_UNIT_WARNING),0) <> nvl(trim(S.FA_UNIT_WARNING),0) or 
+    nvl(trim(T.FA_LOAD),0) <> nvl(trim(S.FA_LOAD),0) or 
+    nvl(trim(T.FA_LOAD_CL),0) <> nvl(trim(S.FA_LOAD_CL),0) or 
+    nvl(trim(T.OVRD_FA_LOAD),0) <> nvl(trim(S.OVRD_FA_LOAD),0) or 
+    nvl(trim(T.LS_GPA),0) <> nvl(trim(S.LS_GPA),0) or 
+    nvl(trim(T.GPA_CL),0) <> nvl(trim(S.GPA_CL),0) or 
+    nvl(trim(T.CUM_GPA),0) <> nvl(trim(S.CUM_GPA),0) or 
+    nvl(trim(T.CUM_GPA_CL),0) <> nvl(trim(S.CUM_GPA_CL),0) or 
+    nvl(trim(T.OVRD_CUM_GPA),0) <> nvl(trim(S.OVRD_CUM_GPA),0) or 
+    nvl(trim(T.OVRD_GPA),0) <> nvl(trim(S.OVRD_GPA),0) or 
+    nvl(trim(T.GPA_CALC_IND),0) <> nvl(trim(S.GPA_CALC_IND),0) or 
+    nvl(trim(T.NSLDS_LOAN_YEAR),0) <> nvl(trim(S.NSLDS_LOAN_YEAR),0) or 
+    nvl(trim(T.NSLDS_LOAN_YEAR_CL),0) <> nvl(trim(S.NSLDS_LOAN_YEAR_CL),0) or 
+    nvl(trim(T.OVRD_NSLDS_LOAN_YR),0) <> nvl(trim(S.OVRD_NSLDS_LOAN_YR),0) or 
+    nvl(trim(T.DIR_LND_YR),0) <> nvl(trim(S.DIR_LND_YR),0) or 
+    nvl(trim(T.DEGR_CONFER_DT),0) <> nvl(trim(S.DEGR_CONFER_DT),0) or 
+    nvl(trim(T.EXP_GRAD_TERM),0) <> nvl(trim(S.EXP_GRAD_TERM),0) or 
+    nvl(trim(T.EXP_GRAD_TERM_CL),0) <> nvl(trim(S.EXP_GRAD_TERM_CL),0) or 
+    nvl(trim(T.OVRD_GRAD_TERM),0) <> nvl(trim(S.OVRD_GRAD_TERM),0) or 
+    nvl(trim(T.EXP_GRAD_DATE),0) <> nvl(trim(S.EXP_GRAD_DATE),0) or 
+    nvl(trim(T.EXP_GRAD_DATE_CL),0) <> nvl(trim(S.EXP_GRAD_DATE_CL),0) or 
+    nvl(trim(T.OVRD_GRAD_DATE),0) <> nvl(trim(S.OVRD_GRAD_DATE),0) or 
+    nvl(trim(T.UNT_TAKEN_GPA),0) <> nvl(trim(S.UNT_TAKEN_GPA),0) or 
+    nvl(trim(T.TOT_TAKEN_GPA),0) <> nvl(trim(S.TOT_TAKEN_GPA),0) or 
+    nvl(trim(T.GRADE_POINTS),0) <> nvl(trim(S.GRADE_POINTS),0) or 
+    nvl(trim(T.TOT_GRADE_POINTS),0) <> nvl(trim(S.TOT_GRADE_POINTS),0) or 
+    nvl(trim(T.ACAD_STANDING),0) <> nvl(trim(S.ACAD_STANDING),0) or 
+    nvl(trim(T.ACAD_STANDING_CL),0) <> nvl(trim(S.ACAD_STANDING_CL),0) or 
+    nvl(trim(T.OVRD_ACAD_STANDING),0) <> nvl(trim(S.OVRD_ACAD_STANDING),0) or 
+    nvl(trim(T.FA_STANDING),0) <> nvl(trim(S.FA_STANDING),0) or 
+    nvl(trim(T.FA_STANDING_CL),0) <> nvl(trim(S.FA_STANDING_CL),0) or 
+    nvl(trim(T.OVRD_FA_STANDING),0) <> nvl(trim(S.OVRD_FA_STANDING),0) or 
+    nvl(trim(T.CAMPUS),0) <> nvl(trim(S.CAMPUS),0) or 
+    nvl(trim(T.EXT_ORG_ID),0) <> nvl(trim(S.EXT_ORG_ID),0) or 
+    nvl(trim(T.COUNTRY),0) <> nvl(trim(S.COUNTRY),0) or 
+    nvl(trim(T.STUDY_AGREEMENT),0) <> nvl(trim(S.STUDY_AGREEMENT),0) or 
+    nvl(trim(T.START_DATE),0) <> nvl(trim(S.START_DATE),0) or 
+    nvl(trim(T.END_DATE),0) <> nvl(trim(S.END_DATE),0) or 
+    nvl(trim(T.ACAD_GROUP_ADVIS),0) <> nvl(trim(S.ACAD_GROUP_ADVIS),0) or 
+    nvl(trim(T.ADMIT_TERM),0) <> nvl(trim(S.ADMIT_TERM),0) or 
+    nvl(trim(T.PROJ_BILL_UNT),0) <> nvl(trim(S.PROJ_BILL_UNT),0) or 
+    nvl(trim(T.OVRD_BILL_UNITS),0) <> nvl(trim(S.OVRD_BILL_UNITS),0) or 
+    nvl(trim(T.SRVC_IND_CD),0) <> nvl(trim(S.SRVC_IND_CD),0) or 
+    nvl(trim(T.SRVC_IND_DTTM),0) <> nvl(trim(S.SRVC_IND_DTTM),0) or 
+    nvl(trim(T.REFUND_PCT),0) <> nvl(trim(S.REFUND_PCT),0) or 
+    nvl(trim(T.REFUND_SCHEME),0) <> nvl(trim(S.REFUND_SCHEME),0) or 
+    nvl(trim(T.REFUND_SETID),0) <> nvl(trim(S.REFUND_SETID),0) or 
+    nvl(trim(T.REFUND_CLASS),0) <> nvl(trim(S.REFUND_CLASS),0) or 
+    nvl(trim(T.CAMPUS_FA),0) <> nvl(trim(S.CAMPUS_FA),0) or 
+    nvl(trim(T.CAMPUS_REGISTRAR),0) <> nvl(trim(S.CAMPUS_REGISTRAR),0) or 
+    nvl(trim(T.CAMPUS_ADVISEMENT),0) <> nvl(trim(S.CAMPUS_ADVISEMENT),0) or 
+    nvl(trim(T.BUSINESS_UNIT),0) <> nvl(trim(S.BUSINESS_UNIT),0) or 
+    nvl(trim(T.ADVISOR_ROLE),0) <> nvl(trim(S.ADVISOR_ROLE),0) or 
+    nvl(trim(T.ADVISOR_ID),0) <> nvl(trim(S.ADVISOR_ID),0) or 
+    nvl(trim(T.COMMITTEE_ID),0) <> nvl(trim(S.COMMITTEE_ID),0) or 
+    nvl(trim(T.WEEKS_OF_INSTRUCT),0) <> nvl(trim(S.WEEKS_OF_INSTRUCT),0) or 
+    nvl(trim(T.FA_STATS_CALC_REQ),0) <> nvl(trim(S.FA_STATS_CALC_REQ),0) or 
+    nvl(trim(T.FA_NUMBER_OF_WEEKS),0) <> nvl(trim(S.FA_NUMBER_OF_WEEKS),0) or 
+    nvl(trim(T.COURSE_LD_PCT),0) <> nvl(trim(S.COURSE_LD_PCT),0) or 
+    nvl(trim(T.COST_CODE),0) <> nvl(trim(S.COST_CODE),0) or 
+    nvl(trim(T.OVRD_EXP_DT),0) <> nvl(trim(S.OVRD_EXP_DT),0) or 
+    nvl(trim(T.DRIVER_OPTION),0) <> nvl(trim(S.DRIVER_OPTION),0) or 
+    nvl(trim(T.ONLINE_BATCH_IND),0) <> nvl(trim(S.ONLINE_BATCH_IND),0) or 
+    nvl(trim(T.TERM_SRC),0) <> nvl(trim(S.TERM_SRC),0) or 
+    nvl(trim(T.CREATION_DT),0) <> nvl(trim(S.CREATION_DT),0) or 
+    nvl(trim(T.OPRID),0) <> nvl(trim(S.OPRID),0) or 
+    nvl(trim(T.PROCESS_INSTANCE),0) <> nvl(trim(S.PROCESS_INSTANCE),0) or 
+    nvl(trim(T.UNT_TAKEN_FA_INEL),0) <> nvl(trim(S.UNT_TAKEN_FA_INEL),0) or 
+    nvl(trim(T.UNT_PASSD_FA_INEL),0) <> nvl(trim(S.UNT_PASSD_FA_INEL),0) or 
+    nvl(trim(T.UNT_TAKEN_PRG_INEL),0) <> nvl(trim(S.UNT_TAKEN_PRG_INEL),0) or 
+    nvl(trim(T.GRADE_POINTS_INEL),0) <> nvl(trim(S.GRADE_POINTS_INEL),0) or 
+    nvl(trim(T.UNT_TAKEN_GPA_INEL),0) <> nvl(trim(S.UNT_TAKEN_GPA_INEL),0) or 
+    nvl(trim(T.FA_CAR_TYPE),0) <> nvl(trim(S.FA_CAR_TYPE),0) or 
+    nvl(trim(T.UNT_TAKEN_FA_NOPIT),0) <> nvl(trim(S.UNT_TAKEN_FA_NOPIT),0) or 
+    nvl(trim(T.LOCK_OVRD_DATE),0) <> nvl(trim(S.LOCK_OVRD_DATE),0) or 
+    nvl(trim(T.LOCK_OVRD_OPRID),0) <> nvl(trim(S.LOCK_OVRD_OPRID),0) or 
+    nvl(trim(T.OVRD_CENSUSDT_LOCK),0) <> nvl(trim(S.OVRD_CENSUSDT_LOCK),0) or 
+    nvl(trim(T.UNT_TRNSFR),0) <> nvl(trim(S.UNT_TRNSFR),0) or 
+    nvl(trim(T.TRF_PASSED_GPA),0) <> nvl(trim(S.TRF_PASSED_GPA),0) or 
+    nvl(trim(T.TRF_PASSED_NOGPA),0) <> nvl(trim(S.TRF_PASSED_NOGPA),0) or 
+    nvl(trim(T.UNT_TEST_CREDIT),0) <> nvl(trim(S.UNT_TEST_CREDIT),0) or 
+    nvl(trim(T.UNT_OTHER),0) <> nvl(trim(S.UNT_OTHER),0) or 
+    nvl(trim(T.TC_UNITS_ADJUST),0) <> nvl(trim(S.TC_UNITS_ADJUST),0) or 
+    nvl(trim(T.TOT_TRNSFR),0) <> nvl(trim(S.TOT_TRNSFR),0) or 
+    nvl(trim(T.TOT_TEST_CREDIT),0) <> nvl(trim(S.TOT_TEST_CREDIT),0) or 
+    nvl(trim(T.TOT_OTHER),0) <> nvl(trim(S.TOT_OTHER),0) or 
+    nvl(trim(T.TOT_TC_UNIT_ADJUST),0) <> nvl(trim(S.TOT_TC_UNIT_ADJUST),0) or 
+    nvl(trim(T.FA_EXP_DT_REBUILD),0) <> nvl(trim(S.FA_EXP_DT_REBUILD),0) or 
+    nvl(trim(T.FA_UNIT_ANTIC),0) <> nvl(trim(S.FA_UNIT_ANTIC),0) or 
+    nvl(trim(T.FA_UNIT_COMPLETED),0) <> nvl(trim(S.FA_UNIT_COMPLETED),0) or 
+    nvl(trim(T.FA_UNIT_IN_PROG),0) <> nvl(trim(S.FA_UNIT_IN_PROG),0) or 
+    nvl(trim(T.FA_UNIT_CURRENT),0) <> nvl(trim(S.FA_UNIT_CURRENT),0) or 
+    nvl(trim(T.FA_LOAD_CURRENT),0) <> nvl(trim(S.FA_LOAD_CURRENT),0) or 
+    nvl(trim(T.FA_REBUILD_DT),0) <> nvl(trim(S.FA_REBUILD_DT),0) or 
+    nvl(trim(T.ACAD_PLAN_TYPE),0) <> nvl(trim(S.ACAD_PLAN_TYPE),0) or 
+    nvl(trim(T.FA_LOAD_CHANGE_IND),0) <> nvl(trim(S.FA_LOAD_CHANGE_IND),0) or 
+    nvl(trim(T.CENSUS_DT),0) <> nvl(trim(S.CENSUS_DT),0) or 
+    nvl(trim(T.AID_YEAR_CL),0) <> nvl(trim(S.AID_YEAR_CL),0) or 
+    nvl(trim(T.OVRD_AID_YEAR),0) <> nvl(trim(S.OVRD_AID_YEAR),0) or 
+    nvl(trim(T.FA_OEE_STUDENT),0) <> nvl(trim(S.FA_OEE_STUDENT),0) or 
+    nvl(trim(T.DIR_LND_YR_CL),0) <> nvl(trim(S.DIR_LND_YR_CL),0) or 
+    nvl(trim(T.OVRD_DIR_LND_YR),0) <> nvl(trim(S.OVRD_DIR_LND_YR),0) or 
+    nvl(trim(T.SFA_ASG_AC_LVL_BOT),0) <> nvl(trim(S.SFA_ASG_AC_LVL_BOT),0) or 
+    nvl(trim(T.SFA_ASG_AC_LVL_EOT),0) <> nvl(trim(S.SFA_ASG_AC_LVL_EOT),0) or 
+    nvl(trim(T.OVRD_ASG_BOT),0) <> nvl(trim(S.OVRD_ASG_BOT),0) or 
+    nvl(trim(T.OVRD_ASG_EOT),0) <> nvl(trim(S.OVRD_ASG_EOT),0) or 
+    nvl(trim(T.SFA_ASG_AC_LVL_BCL),0) <> nvl(trim(S.SFA_ASG_AC_LVL_BCL),0) or 
+    nvl(trim(T.SFA_ASG_AC_LVL_ECL),0) <> nvl(trim(S.SFA_ASG_AC_LVL_ECL),0) or 
+    nvl(trim(T.SFA_ASG_UNITS_BOT),0) <> nvl(trim(S.SFA_ASG_UNITS_BOT),0) or 
+    nvl(trim(T.SFA_ASG_UNITS_EOT),0) <> nvl(trim(S.SFA_ASG_UNITS_EOT),0) or 
+    nvl(trim(T.SFA_ASG_WI_MTH),0) <> nvl(trim(S.SFA_ASG_WI_MTH),0) or 
+    nvl(trim(T.SFA_ASG_WI_MTH_OVR),0) <> nvl(trim(S.SFA_ASG_WI_MTH_OVR),0) or 
+    nvl(trim(T.SFA_ASG_WI_MTH_CL),0) <> nvl(trim(S.SFA_ASG_WI_MTH_CL),0) or 
+    nvl(trim(T.SFA_ASG_WI_TRM),0) <> nvl(trim(S.SFA_ASG_WI_TRM),0) or 
+    nvl(trim(T.SFA_ASG_WI_TRM_OVR),0) <> nvl(trim(S.SFA_ASG_WI_TRM_OVR),0) or 
+    nvl(trim(T.SFA_ASG_WI_TRM_CL),0) <> nvl(trim(S.SFA_ASG_WI_TRM_CL),0) or 
+    nvl(trim(T.SFA_ASG_WI_TCR),0) <> nvl(trim(S.SFA_ASG_WI_TCR),0) or 
+    nvl(trim(T.SFA_ASG_WI_TCR_OVR),0) <> nvl(trim(S.SFA_ASG_WI_TCR_OVR),0) or 
+    nvl(trim(T.SFA_ASG_WI_TCR_CL),0) <> nvl(trim(S.SFA_ASG_WI_TCR_CL),0) or 
+    nvl(trim(T.SFA_ASG_WI_CUM_BOT),0) <> nvl(trim(S.SFA_ASG_WI_CUM_BOT),0) or 
+    nvl(trim(T.SFA_ASG_WI_CUM_EOT),0) <> nvl(trim(S.SFA_ASG_WI_CUM_EOT),0) or 
+    nvl(trim(T.SFA_ASG_WI_USED),0) <> nvl(trim(S.SFA_ASG_WI_USED),0) or 
+    nvl(trim(T.OVRD_WOI),0) <> nvl(trim(S.OVRD_WOI),0) or 
+    nvl(trim(T.SFA_WKS_OF_INST_CL),0) <> nvl(trim(S.SFA_WKS_OF_INST_CL),0) or 
+    nvl(trim(T.OVRD_FA_NBR_WEEKS),0) <> nvl(trim(S.OVRD_FA_NBR_WEEKS),0) or 
+    nvl(trim(T.SFA_FA_NBR_WKS_CL),0) <> nvl(trim(S.SFA_FA_NBR_WKS_CL),0) or 
+    nvl(trim(T.CPS_SCHOOL_CODE),0) <> nvl(trim(S.CPS_SCHOOL_CODE),0) or 
+    nvl(trim(T.SFA_SPEC_PROG_FLG),0) <> nvl(trim(S.SFA_SPEC_PROG_FLG),0) or 
+    nvl(trim(T.SFA_SULA_UNIT),0) <> nvl(trim(S.SFA_SULA_UNIT),0) or 
+    nvl(trim(T.SFA_SULA_UNIT_CL),0) <> nvl(trim(S.SFA_SULA_UNIT_CL),0) or 
+    nvl(trim(T.OVRD_SULA_UNIT),0) <> nvl(trim(S.OVRD_SULA_UNIT),0) or 
+    nvl(trim(T.SFA_SULA_LOAD),0) <> nvl(trim(S.SFA_SULA_LOAD),0) or 
+    T.DATA_ORIGIN = 'D' 
+when not matched then 
+insert (
+    T.EMPLID, 
+    T.INSTITUTION,
+    T.STRM, 
+    T.EFFDT,
+    T.EFFSEQ, 
+    T.SRC_SYS_ID, 
+    T.EFF_STATUS, 
+    T.AID_YEAR, 
+    T.BUDGET_REQUIRED,
+    T.WITHDRAW_CODE,
+    T.WITHDRAW_REASON,
+    T.WITHDRAW_DATE,
+    T.LAST_DATE_ATTENDED, 
+    T.ACAD_CAREER,
+    T.ACAD_CAREER_CL, 
+    T.OVRD_CAREER,
+    T.ACAD_PLAN,
+    T.ACAD_PLAN_CL, 
+    T.OVRD_ACAD_PLAN, 
+    T.ACAD_SUB_PLAN,
+    T.ACAD_SUB_PLAN_CL, 
+    T.OVRD_SUB_PLAN,
+    T.STDNT_CAR_NBR,
+    T.ACAD_PROG_PRIMARY,
+    T.ACAD_PROG_PRIM_CL,
+    T.OVRD_ACAD_PROG_PRM, 
+    T.ACAD_LOAD_APPR, 
+    T.ACAD_LOAD_APPR_CL,
+    T.OVRD_ACAD_LOAD_AP,
+    T.ACADEMIC_LOAD,
+    T.ACADEMIC_LOAD_CL, 
+    T.OVRD_ACADEMIC_LOAD, 
+    T.ACAD_LEVEL_PROJ,
+    T.ACAD_LEVEL_PROJ_CL, 
+    T.ACAD_LEVEL_BOT, 
+    T.ACAD_LEVEL_BOT_CL,
+    T.ACAD_LEVEL_EOT, 
+    T.ACAD_LEVEL_EOT_CL,
+    T.OVRD_ACAD_LVL_PROJ, 
+    T.OVRD_ACAD_LVL_ALL,
+    T.ELIG_TO_ENROLL, 
+    T.RESET_CUM_STATS,
+    T.FORM_OF_STUDY,
+    T.FORM_OF_STUDY_CL, 
+    T.OVRD_FORM_OF_STUDY, 
+    T.TERM_TYPE,
+    T.SEL_GROUP,
+    T.TUIT_CALC_REQ,
+    T.TUIT_CALC_DTTM, 
+    T.BILLING_CAREER, 
+    T.ACAD_YEAR,
+    T.ACAD_YEAR_CL, 
+    T.OVRD_ACAD_YEAR, 
+    T.CUR_RESIDENT_TERMS, 
+    T.TRF_RESIDENT_TERMS, 
+    T.CUM_RESIDENT_TERMS, 
+    T.UNT_TAKEN_FA, 
+    T.UNT_TAKEN_FA_CL,
+    T.OVRD_UNT_TAKEN_FA,
+    T.UNT_PASSD_FA, 
+    T.UNT_PASSD_FA_CL,
+    T.OVRD_UNT_PASSD_FA,
+    T.TOT_TAKEN_FA, 
+    T.TOT_TAKEN_FA_CL,
+    T.OVRD_TOT_TAKEN_FA,
+    T.TOT_PASSD_FA, 
+    T.TOT_PASSD_FA_CL,
+    T.OVRD_TOT_PASSD_FA,
+    T.REMOTE_UNT_FA,
+    T.TOT_TERM_UNT_FA,
+    T.TOT_TERM_UNT_FA_CL, 
+    T.OVRD_FA_UNITS,
+    T.FA_UNIT_WARNING,
+    T.FA_LOAD,
+    T.FA_LOAD_CL, 
+    T.OVRD_FA_LOAD, 
+    T.LS_GPA, 
+    T.GPA_CL, 
+    T.CUM_GPA,
+    T.CUM_GPA_CL, 
+    T.OVRD_CUM_GPA, 
+    T.OVRD_GPA, 
+    T.GPA_CALC_IND, 
+    T.NSLDS_LOAN_YEAR,
+    T.NSLDS_LOAN_YEAR_CL, 
+    T.OVRD_NSLDS_LOAN_YR, 
+    T.DIR_LND_YR, 
+    T.DEGR_CONFER_DT, 
+    T.EXP_GRAD_TERM,
+    T.EXP_GRAD_TERM_CL, 
+    T.OVRD_GRAD_TERM, 
+    T.EXP_GRAD_DATE,
+    T.EXP_GRAD_DATE_CL, 
+    T.OVRD_GRAD_DATE, 
+    T.UNT_TAKEN_GPA,
+    T.TOT_TAKEN_GPA,
+    T.GRADE_POINTS, 
+    T.TOT_GRADE_POINTS, 
+    T.ACAD_STANDING,
+    T.ACAD_STANDING_CL, 
+    T.OVRD_ACAD_STANDING, 
+    T.FA_STANDING,
+    T.FA_STANDING_CL, 
+    T.OVRD_FA_STANDING, 
+    T.CAMPUS, 
+    T.EXT_ORG_ID, 
+    T.COUNTRY,
+    T.STUDY_AGREEMENT,
+    T.START_DATE, 
+    T.END_DATE, 
+    T.ACAD_GROUP_ADVIS, 
+    T.ADMIT_TERM, 
+    T.PROJ_BILL_UNT,
+    T.OVRD_BILL_UNITS,
+    T.SRVC_IND_CD,
+    T.SRVC_IND_DTTM,
+    T.REFUND_PCT, 
+    T.REFUND_SCHEME,
+    T.REFUND_SETID, 
+    T.REFUND_CLASS, 
+    T.CAMPUS_FA,
+    T.CAMPUS_REGISTRAR, 
+    T.CAMPUS_ADVISEMENT,
+    T.BUSINESS_UNIT,
+    T.ADVISOR_ROLE, 
+    T.ADVISOR_ID, 
+    T.COMMITTEE_ID, 
+    T.WEEKS_OF_INSTRUCT,
+    T.FA_STATS_CALC_REQ,
+    T.FA_NUMBER_OF_WEEKS, 
+    T.COURSE_LD_PCT,
+    T.COST_CODE,
+    T.OVRD_EXP_DT,
+    T.DRIVER_OPTION,
+    T.ONLINE_BATCH_IND, 
+    T.TERM_SRC, 
+    T.CREATION_DT,
+    T.OPRID,
+    T.PROCESS_INSTANCE, 
+    T.UNT_TAKEN_FA_INEL,
+    T.UNT_PASSD_FA_INEL,
+    T.UNT_TAKEN_PRG_INEL, 
+    T.GRADE_POINTS_INEL,
+    T.UNT_TAKEN_GPA_INEL, 
+    T.FA_CAR_TYPE,
+    T.UNT_TAKEN_FA_NOPIT, 
+    T.LOCK_OVRD_DATE, 
+    T.LOCK_OVRD_OPRID,
+    T.OVRD_CENSUSDT_LOCK, 
+    T.UNT_TRNSFR, 
+    T.TRF_PASSED_GPA, 
+    T.TRF_PASSED_NOGPA, 
+    T.UNT_TEST_CREDIT,
+    T.UNT_OTHER,
+    T.TC_UNITS_ADJUST,
+    T.TOT_TRNSFR, 
+    T.TOT_TEST_CREDIT,
+    T.TOT_OTHER,
+    T.TOT_TC_UNIT_ADJUST, 
+    T.FA_EXP_DT_REBUILD,
+    T.FA_UNIT_ANTIC,
+    T.FA_UNIT_COMPLETED,
+    T.FA_UNIT_IN_PROG,
+    T.FA_UNIT_CURRENT,
+    T.FA_LOAD_CURRENT,
+    T.FA_REBUILD_DT,
+    T.ACAD_PLAN_TYPE, 
+    T.FA_LOAD_CHANGE_IND, 
+    T.CENSUS_DT,
+    T.AID_YEAR_CL,
+    T.OVRD_AID_YEAR,
+    T.FA_OEE_STUDENT, 
+    T.DIR_LND_YR_CL,
+    T.OVRD_DIR_LND_YR,
+    T.SFA_ASG_AC_LVL_BOT, 
+    T.SFA_ASG_AC_LVL_EOT, 
+    T.OVRD_ASG_BOT, 
+    T.OVRD_ASG_EOT, 
+    T.SFA_ASG_AC_LVL_BCL, 
+    T.SFA_ASG_AC_LVL_ECL, 
+    T.SFA_ASG_UNITS_BOT,
+    T.SFA_ASG_UNITS_EOT,
+    T.SFA_ASG_WI_MTH, 
+    T.SFA_ASG_WI_MTH_OVR, 
+    T.SFA_ASG_WI_MTH_CL,
+    T.SFA_ASG_WI_TRM, 
+    T.SFA_ASG_WI_TRM_OVR, 
+    T.SFA_ASG_WI_TRM_CL,
+    T.SFA_ASG_WI_TCR, 
+    T.SFA_ASG_WI_TCR_OVR, 
+    T.SFA_ASG_WI_TCR_CL,
+    T.SFA_ASG_WI_CUM_BOT, 
+    T.SFA_ASG_WI_CUM_EOT, 
+    T.SFA_ASG_WI_USED,
+    T.OVRD_WOI, 
+    T.SFA_WKS_OF_INST_CL, 
+    T.OVRD_FA_NBR_WEEKS,
+    T.SFA_FA_NBR_WKS_CL,
+    T.CPS_SCHOOL_CODE,
+    T.SFA_SPEC_PROG_FLG,
+    T.SFA_SULA_UNIT,
+    T.SFA_SULA_UNIT_CL, 
+    T.OVRD_SULA_UNIT, 
+    T.SFA_SULA_LOAD,
+    T.LOAD_ERROR, 
+    T.DATA_ORIGIN,
+    T.CREATED_EW_DTTM,
+    T.LASTUPD_EW_DTTM,
+    T.BATCH_SID
+) 
+values (
+    S.EMPLID, 
+    S.INSTITUTION,
+    S.STRM, 
+    S.EFFDT,
+    S.EFFSEQ, 
+    'CS90', 
+    S.EFF_STATUS, 
+    S.AID_YEAR, 
+    S.BUDGET_REQUIRED,
+    S.WITHDRAW_CODE,
+    S.WITHDRAW_REASON,
+    S.WITHDRAW_DATE,
+    S.LAST_DATE_ATTENDED, 
+    S.ACAD_CAREER,
+    S.ACAD_CAREER_CL, 
+    S.OVRD_CAREER,
+    S.ACAD_PLAN,
+    S.ACAD_PLAN_CL, 
+    S.OVRD_ACAD_PLAN, 
+    S.ACAD_SUB_PLAN,
+    S.ACAD_SUB_PLAN_CL, 
+    S.OVRD_SUB_PLAN,
+    S.STDNT_CAR_NBR,
+    S.ACAD_PROG_PRIMARY,
+    S.ACAD_PROG_PRIM_CL,
+    S.OVRD_ACAD_PROG_PRM, 
+    S.ACAD_LOAD_APPR, 
+    S.ACAD_LOAD_APPR_CL,
+    S.OVRD_ACAD_LOAD_AP,
+    S.ACADEMIC_LOAD,
+    S.ACADEMIC_LOAD_CL, 
+    S.OVRD_ACADEMIC_LOAD, 
+    S.ACAD_LEVEL_PROJ,
+    S.ACAD_LEVEL_PROJ_CL, 
+    S.ACAD_LEVEL_BOT, 
+    S.ACAD_LEVEL_BOT_CL,
+    S.ACAD_LEVEL_EOT, 
+    S.ACAD_LEVEL_EOT_CL,
+    S.OVRD_ACAD_LVL_PROJ, 
+    S.OVRD_ACAD_LVL_ALL,
+    S.ELIG_TO_ENROLL, 
+    S.RESET_CUM_STATS,
+    S.FORM_OF_STUDY,
+    S.FORM_OF_STUDY_CL, 
+    S.OVRD_FORM_OF_STUDY, 
+    S.TERM_TYPE,
+    S.SEL_GROUP,
+    S.TUIT_CALC_REQ,
+    S.TUIT_CALC_DTTM, 
+    S.BILLING_CAREER, 
+    S.ACAD_YEAR,
+    S.ACAD_YEAR_CL, 
+    S.OVRD_ACAD_YEAR, 
+    S.CUR_RESIDENT_TERMS, 
+    S.TRF_RESIDENT_TERMS, 
+    S.CUM_RESIDENT_TERMS, 
+    S.UNT_TAKEN_FA, 
+    S.UNT_TAKEN_FA_CL,
+    S.OVRD_UNT_TAKEN_FA,
+    S.UNT_PASSD_FA, 
+    S.UNT_PASSD_FA_CL,
+    S.OVRD_UNT_PASSD_FA,
+    S.TOT_TAKEN_FA, 
+    S.TOT_TAKEN_FA_CL,
+    S.OVRD_TOT_TAKEN_FA,
+    S.TOT_PASSD_FA, 
+    S.TOT_PASSD_FA_CL,
+    S.OVRD_TOT_PASSD_FA,
+    S.REMOTE_UNT_FA,
+    S.TOT_TERM_UNT_FA,
+    S.TOT_TERM_UNT_FA_CL, 
+    S.OVRD_FA_UNITS,
+    S.FA_UNIT_WARNING,
+    S.FA_LOAD,
+    S.FA_LOAD_CL, 
+    S.OVRD_FA_LOAD, 
+    S.LS_GPA, 
+    S.GPA_CL, 
+    S.CUM_GPA,
+    S.CUM_GPA_CL, 
+    S.OVRD_CUM_GPA, 
+    S.OVRD_GPA, 
+    S.GPA_CALC_IND, 
+    S.NSLDS_LOAN_YEAR,
+    S.NSLDS_LOAN_YEAR_CL, 
+    S.OVRD_NSLDS_LOAN_YR, 
+    S.DIR_LND_YR, 
+    S.DEGR_CONFER_DT, 
+    S.EXP_GRAD_TERM,
+    S.EXP_GRAD_TERM_CL, 
+    S.OVRD_GRAD_TERM, 
+    S.EXP_GRAD_DATE,
+    S.EXP_GRAD_DATE_CL, 
+    S.OVRD_GRAD_DATE, 
+    S.UNT_TAKEN_GPA,
+    S.TOT_TAKEN_GPA,
+    S.GRADE_POINTS, 
+    S.TOT_GRADE_POINTS, 
+    S.ACAD_STANDING,
+    S.ACAD_STANDING_CL, 
+    S.OVRD_ACAD_STANDING, 
+    S.FA_STANDING,
+    S.FA_STANDING_CL, 
+    S.OVRD_FA_STANDING, 
+    S.CAMPUS, 
+    S.EXT_ORG_ID, 
+    S.COUNTRY,
+    S.STUDY_AGREEMENT,
+    S.START_DATE, 
+    S.END_DATE, 
+    S.ACAD_GROUP_ADVIS, 
+    S.ADMIT_TERM, 
+    S.PROJ_BILL_UNT,
+    S.OVRD_BILL_UNITS,
+    S.SRVC_IND_CD,
+    S.SRVC_IND_DTTM,
+    S.REFUND_PCT, 
+    S.REFUND_SCHEME,
+    S.REFUND_SETID, 
+    S.REFUND_CLASS, 
+    S.CAMPUS_FA,
+    S.CAMPUS_REGISTRAR, 
+    S.CAMPUS_ADVISEMENT,
+    S.BUSINESS_UNIT,
+    S.ADVISOR_ROLE, 
+    S.ADVISOR_ID, 
+    S.COMMITTEE_ID, 
+    S.WEEKS_OF_INSTRUCT,
+    S.FA_STATS_CALC_REQ,
+    S.FA_NUMBER_OF_WEEKS, 
+    S.COURSE_LD_PCT,
+    S.COST_CODE,
+    S.OVRD_EXP_DT,
+    S.DRIVER_OPTION,
+    S.ONLINE_BATCH_IND, 
+    S.TERM_SRC, 
+    S.CREATION_DT,
+    S.OPRID,
+    S.PROCESS_INSTANCE, 
+    S.UNT_TAKEN_FA_INEL,
+    S.UNT_PASSD_FA_INEL,
+    S.UNT_TAKEN_PRG_INEL, 
+    S.GRADE_POINTS_INEL,
+    S.UNT_TAKEN_GPA_INEL, 
+    S.FA_CAR_TYPE,
+    S.UNT_TAKEN_FA_NOPIT, 
+    S.LOCK_OVRD_DATE, 
+    S.LOCK_OVRD_OPRID,
+    S.OVRD_CENSUSDT_LOCK, 
+    S.UNT_TRNSFR, 
+    S.TRF_PASSED_GPA, 
+    S.TRF_PASSED_NOGPA, 
+    S.UNT_TEST_CREDIT,
+    S.UNT_OTHER,
+    S.TC_UNITS_ADJUST,
+    S.TOT_TRNSFR, 
+    S.TOT_TEST_CREDIT,
+    S.TOT_OTHER,
+    S.TOT_TC_UNIT_ADJUST, 
+    S.FA_EXP_DT_REBUILD,
+    S.FA_UNIT_ANTIC,
+    S.FA_UNIT_COMPLETED,
+    S.FA_UNIT_IN_PROG,
+    S.FA_UNIT_CURRENT,
+    S.FA_LOAD_CURRENT,
+    S.FA_REBUILD_DT,
+    S.ACAD_PLAN_TYPE, 
+    S.FA_LOAD_CHANGE_IND, 
+    S.CENSUS_DT,
+    S.AID_YEAR_CL,
+    S.OVRD_AID_YEAR,
+    S.FA_OEE_STUDENT, 
+    S.DIR_LND_YR_CL,
+    S.OVRD_DIR_LND_YR,
+    S.SFA_ASG_AC_LVL_BOT, 
+    S.SFA_ASG_AC_LVL_EOT, 
+    S.OVRD_ASG_BOT, 
+    S.OVRD_ASG_EOT, 
+    S.SFA_ASG_AC_LVL_BCL, 
+    S.SFA_ASG_AC_LVL_ECL, 
+    S.SFA_ASG_UNITS_BOT,
+    S.SFA_ASG_UNITS_EOT,
+    S.SFA_ASG_WI_MTH, 
+    S.SFA_ASG_WI_MTH_OVR, 
+    S.SFA_ASG_WI_MTH_CL,
+    S.SFA_ASG_WI_TRM, 
+    S.SFA_ASG_WI_TRM_OVR, 
+    S.SFA_ASG_WI_TRM_CL,
+    S.SFA_ASG_WI_TCR, 
+    S.SFA_ASG_WI_TCR_OVR, 
+    S.SFA_ASG_WI_TCR_CL,
+    S.SFA_ASG_WI_CUM_BOT, 
+    S.SFA_ASG_WI_CUM_EOT, 
+    S.SFA_ASG_WI_USED,
+    S.OVRD_WOI, 
+    S.SFA_WKS_OF_INST_CL, 
+    S.OVRD_FA_NBR_WEEKS,
+    S.SFA_FA_NBR_WKS_CL,
+    S.CPS_SCHOOL_CODE,
+    S.SFA_SPEC_PROG_FLG,
+    S.SFA_SULA_UNIT,
+    S.SFA_SULA_UNIT_CL, 
+    S.OVRD_SULA_UNIT, 
+    S.SFA_SULA_LOAD,
+    'N',
+    'S',
+    sysdate,
+    sysdate,
+    1234);
+
+strSqlCommand   := 'SET intRowCount';
+intRowCount     := SQL%ROWCOUNT;
+
+strSqlCommand := 'commit';
+commit;
+
+strMessage01    := '# of PS_STDNT_FA_TERM rows merged: ' || TO_CHAR(intRowCount,'999,999,999,999');
+COMMON_OWNER.SMT_LOG.PUT_MESSAGE(i_Message => strMessage01);
+
+strSqlCommand := 'SMT_PROCESS_LOG.PROCESS_DETAIL';
+COMMON_OWNER.SMT_PROCESS_LOG.PROCESS_DETAIL
+        (
+                i_TargetTableName   => 'PS_STDNT_FA_TERM',
+                i_Action            => 'MERGE',
+                i_RowCount          => intRowCount
+        );
+
+If strDELETE_FLG = 'Y' then
+
+strMessage01    := 'Updating AMSTG_OWNER.UM_STAGE_JOBS';
+COMMON_OWNER.SMT_LOG.PUT_MESSAGE(i_Message => strMessage01);
+
+strSqlCommand   := 'update TABLE_STATUS on AMSTG_OWNER.UM_STAGE_JOBS';
+update AMSTG_OWNER.UM_STAGE_JOBS
+   set TABLE_STATUS = 'Deleting',
+       OLD_MAX_SCN = NEW_MAX_SCN
+ where TABLE_NAME = 'PS_STDNT_FA_TERM';
+
+strSqlCommand := 'commit';
+commit;
+
+strMessage01    := 'Updating DATA_ORIGIN on AMSTG_OWNER.PS_STDNT_FA_TERM';
+COMMON_OWNER.SMT_LOG.PUT_MESSAGE(i_Message => strMessage01);
+
+strSqlCommand   := 'update DATA_ORIGIN on AMSTG_OWNER.PS_STDNT_FA_TERM';
+update /*+ parallel(8) enable_parallel_dml */ AMSTG_OWNER.PS_STDNT_FA_TERM T
+   set T.DATA_ORIGIN = 'D',
+          T.LASTUPD_EW_DTTM = SYSDATE
+ where T.DATA_ORIGIN <> 'D'
+   and exists 
+(select 1 from
+(select EMPLID, INSTITUTION, STRM, EFFDT, EFFSEQ
+   from AMSTG_OWNER.PS_STDNT_FA_TERM T2
+--  where (select DELETE_FLG from AMSTG_OWNER.UM_STAGE_JOBS where TABLE_NAME = 'PS_STDNT_FA_TERM') = 'Y'
+  minus
+ select EMPLID, INSTITUTION, STRM, EFFDT, EFFSEQ
+   from SYSADM.PS_STDNT_FA_TERM@AMSOURCE S2
+--  where (select DELETE_FLG from AMSTG_OWNER.UM_STAGE_JOBS where TABLE_NAME = 'PS_STDNT_FA_TERM') = 'Y'
+   ) S
+ where T.EMPLID = S.EMPLID
+   and T.INSTITUTION = S.INSTITUTION
+   and T.STRM = S.STRM
+   and T.EFFDT = S.EFFDT
+   and T.EFFSEQ = S.EFFSEQ
+   and T.SRC_SYS_ID = 'CS90' 
+   ) 
+;
+
+strSqlCommand   := 'SET intRowCount';
+intRowCount     := SQL%ROWCOUNT;
+
+strSqlCommand := 'commit';
+commit;
+
+strMessage01    := '# of PS_STDNT_FA_TERM rows updated: ' || TO_CHAR(intRowCount,'999,999,999,999');
+COMMON_OWNER.SMT_LOG.PUT_MESSAGE(i_Message => strMessage01);
+
+strSqlCommand := 'SMT_PROCESS_LOG.PROCESS_DETAIL';
+COMMON_OWNER.SMT_PROCESS_LOG.PROCESS_DETAIL
+        (
+                i_TargetTableName   => 'PS_STDNT_FA_TERM',
+                i_Action            => 'UPDATE',
+                i_RowCount          => intRowCount
+        );
+
+End if;
+
+strMessage01    := 'Updating AMSTG_OWNER.UM_STAGE_JOBS';
+COMMON_OWNER.SMT_LOG.PUT_MESSAGE(i_Message => strMessage01);
+
+strSqlCommand   := 'update END_DT on AMSTG_OWNER.UM_STAGE_JOBS';
+
+update AMSTG_OWNER.UM_STAGE_JOBS
+   set TABLE_STATUS = 'Complete',
+       END_DT = SYSDATE
+ where TABLE_NAME = 'PS_STDNT_FA_TERM'
+;
+
+strSqlCommand := 'commit';
+commit;
+
+strSqlCommand := 'SMT_PROCESS_LOG.PROCESS_SUCCESS';
+COMMON_OWNER.SMT_PROCESS_LOG.PROCESS_SUCCESS;
+
+strMessage01    := strProcessName || ' is complete.';
+COMMON_OWNER.SMT_LOG.PUT_MESSAGE(i_Message => strMessage01);
+
+EXCEPTION
+    WHEN OTHERS THEN
+
+        COMMON_OWNER.SMT_PROCESS_LOG.PROCESS_EXCEPTION
+                (
+                        i_SqlCommand   => strSqlCommand,
+                        i_SqlCode      => SQLCODE,
+                        i_SqlErrm      => SQLERRM
+                );
+
+END AM_PS_STDNT_FA_TERM_P;
+/

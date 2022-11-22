@@ -1,10 +1,16 @@
-CREATE OR REPLACE PROCEDURE             "UM_F_PRSPCT_RFRL_P" AUTHID CURRENT_USER IS
+DROP PROCEDURE CSMRT_OWNER.UM_F_PRSPCT_RFRL_P
+/
+
+--
+-- UM_F_PRSPCT_RFRL_P  (Procedure) 
+--
+CREATE OR REPLACE PROCEDURE CSMRT_OWNER."UM_F_PRSPCT_RFRL_P" AUTHID CURRENT_USER IS
 
 ------------------------------------------------------------------------
 --George Adams
 --Loads table              -- UM_F_PRSPCT_RFRL
 --UM_F_PRSPCT_RFRL         -- PS_D_INSTITUTION ;PS_D_ACAD_CAR;PS_D_PERSON;UM_D_PRSPCT_CAR;PS_D_RECRT_CNTR;UM_D_RFRL_DTL
---V01 11/28/2018           -- srikanth ,pabbu converted to proc from sql 
+--V01 11/28/2018           -- srikanth ,pabbu converted to proc from sql
 
 ------------------------------------------------------------------------
 
@@ -39,20 +45,6 @@ COMMON_OWNER.SMT_PROCESS_LOG.PROCESS_INIT
                 o_ProcessSid            => intProcessSid
         );
 
-strMessage01    := 'Disabling Indexes for table CSMRT_OWNER.UM_F_PRSPCT_RFRL';
-COMMON_OWNER.SMT_LOG.PUT_MESSAGE(i_Message => strMessage01);
-COMMON_OWNER.SMT_INDEX.ALL_UNUSABLE('CSMRT_OWNER','UM_F_PRSPCT_RFRL');
-
-strSqlDynamic   := 'alter table CSMRT_OWNER.UM_F_PRSPCT_RFRL disable constraint PK_UM_F_PRSPCT_RFRL';
-strSqlCommand   := 'SMT_UTILITY.EXECUTE_IMMEDIATE: ' || strSqlDynamic;
-COMMON_OWNER.SMT_UTILITY.EXECUTE_IMMEDIATE
-                (
-                i_SqlStatement          => strSqlDynamic,
-                i_MaxTries              => 10,
-                i_WaitSeconds           => 10,
-                o_Tries                 => intTries
-                );
-				
 strMessage01    := 'Truncating table CSMRT_OWNER.UM_F_PRSPCT_RFRL';
 COMMON_OWNER.SMT_LOG.PUT_MESSAGE(i_Message => strMessage01);
 
@@ -66,79 +58,93 @@ COMMON_OWNER.SMT_UTILITY.EXECUTE_IMMEDIATE
                 o_Tries                 => intTries
                 );
 
+strMessage01    := 'Disabling Indexes for table CSMRT_OWNER.UM_F_PRSPCT_RFRL';
+COMMON_OWNER.SMT_LOG.PUT_MESSAGE(i_Message => strMessage01);
+COMMON_OWNER.SMT_INDEX.ALL_UNUSABLE('CSMRT_OWNER','UM_F_PRSPCT_RFRL');
+
+--strSqlDynamic   := 'alter table CSMRT_OWNER.UM_F_PRSPCT_RFRL disable constraint PK_UM_F_PRSPCT_RFRL';
+--strSqlCommand   := 'SMT_UTILITY.EXECUTE_IMMEDIATE: ' || strSqlDynamic;
+--COMMON_OWNER.SMT_UTILITY.EXECUTE_IMMEDIATE
+--                (
+--                i_SqlStatement          => strSqlDynamic,
+--                i_MaxTries              => 10,
+--                i_WaitSeconds           => 10,
+--                o_Tries                 => intTries
+--                );
+
 strMessage01    := 'Inserting data into CSMRT_OWNER.UM_F_PRSPCT_RFRL';
 COMMON_OWNER.SMT_LOG.PUT_MESSAGE(i_Message => strMessage01);
 
-strSqlCommand   := 'insert into CSMRT_OWNER.UM_F_PRSPCT_RFRL';				
-insert /*+ append */ into UM_F_PRSPCT_RFRL 
+strSqlCommand   := 'insert into CSMRT_OWNER.UM_F_PRSPCT_RFRL';
+insert /*+ append enable_parallel_dml parallel(8) */ into UM_F_PRSPCT_RFRL
   with PC as (
 select /*+ inline parallel(16) */
-       INSTITUTION_CD, ACAD_CAR_CD, EMPLID, SRC_SYS_ID, min(PRSPCT_CAR_SID) PRSPCT_CAR_SID 
-  from CSMRT_OWNER.UM_D_PRSPCT_CAR 
+       INSTITUTION_CD, ACAD_CAR_CD, EMPLID, SRC_SYS_ID, min(PRSPCT_CAR_SID) PRSPCT_CAR_SID
+  from CSMRT_OWNER.UM_D_PRSPCT_CAR
  where DATA_ORIGIN <> 'D'
  group by INSTITUTION_CD, ACAD_CAR_CD, EMPLID, SRC_SYS_ID),
        R as (
-select EMPLID, ACAD_CAREER, INSTITUTION, UM_REFRL_GRP, UM_REFRL_DTL, UM_REFRL_DATE, ADMIT_TERM, UM_ADM_REC_NBR, SRC_SYS_ID, 
+select EMPLID, ACAD_CAREER, INSTITUTION, UM_REFRL_GRP, UM_REFRL_DTL, UM_REFRL_DATE, ADMIT_TERM, UM_ADM_REC_NBR, SRC_SYS_ID,
        ADM_RECR_CTR, DATA_ORIGIN,
        row_number() over (partition by EMPLID, ACAD_CAREER, INSTITUTION, UM_REFRL_GRP, UM_REFRL_DTL, SRC_SYS_ID
                               order by UM_REFRL_DATE desc) R_ORDER
   from CSSTG_OWNER.PS_UM_PRSPCT_REFL
  where DATA_ORIGIN <> 'D')
-select /*+ parallel(16) */ 
-       R.INSTITUTION as INSTITUTION_CD, 
+select /*+ parallel(16) */
+       R.INSTITUTION as INSTITUTION_CD,
 	   R.ACAD_CAREER as ACAD_CAR_CD,
 	   R.ADMIT_TERM,
 	   R.EMPLID,
-       R.UM_REFRL_GRP as RFRL_GRP, 
-       R.UM_REFRL_DTL as RFRL_DTL, 
-       R.UM_REFRL_DATE as RFRL_DT,  
-       R.UM_ADM_REC_NBR, 
+       R.UM_REFRL_GRP as RFRL_GRP,
+       R.UM_REFRL_DTL as RFRL_DTL,
+       R.UM_REFRL_DATE as RFRL_DT,
+       R.UM_ADM_REC_NBR,
        R.SRC_SYS_ID,
 	   nvl(I.INSTITUTION_SID, 2147483646) INSTITUTION_SID,
 	   nvl(C.ACAD_CAR_SID, 2147483646) ACAD_CAR_SID,
        nvl(T.TERM_SID,2147483646) ADMIT_TERM_SID,
 	   nvl(P.PERSON_SID, 2147483646) PERSON_SID,
 	   nvl(PC.PRSPCT_CAR_SID,2147483646) PRSPCT_CAR_SID,
-	   nvl(RC.RECRT_CNTR_SID,2147483646) RECRT_CNTR_SID, 
+	   nvl(RC.RECRT_CNTR_SID,2147483646) RECRT_CNTR_SID,
 	   nvl(RD.RFRL_DTL_SID,2147483646) RFRL_DTL_SID,
        R.ADM_RECR_CTR,
-	   'N' LOAD_ERROR, 
-       'S' DATA_ORIGIN, 
-       SYSDATE CREATED_EW_DTTM, 
-       SYSDATE LASTUPD_EW_DTTM, 
+	   'N' LOAD_ERROR,
+       'S' DATA_ORIGIN,
+       SYSDATE CREATED_EW_DTTM,
+       SYSDATE LASTUPD_EW_DTTM,
        1234 BATCH_SID
-  from R 
+  from R
   left outer join CSMRT_OWNER.PS_D_INSTITUTION I
     on R.INSTITUTION = I.INSTITUTION_CD
    and R.SRC_SYS_ID = I.SRC_SYS_ID
    and I.DATA_ORIGIN <> 'D'
   left outer join CSMRT_OWNER.PS_D_ACAD_CAR C
-    on R.ACAD_CAREER = C.ACAD_CAR_CD 
-   and R.INSTITUTION = C.INSTITUTION_CD	
+    on R.ACAD_CAREER = C.ACAD_CAR_CD
+   and R.INSTITUTION = C.INSTITUTION_CD
    and R.SRC_SYS_ID = C.SRC_SYS_ID
    and C.DATA_ORIGIN <> 'D'
-  left outer join CSMRT_OWNER.PS_D_TERM T	
+  left outer join CSMRT_OWNER.PS_D_TERM T
     on R.INSTITUTION = T.INSTITUTION_CD
    and R.ACAD_CAREER = T.ACAD_CAR_CD
    and R.ADMIT_TERM = T.TERM_CD
-   and R.SRC_SYS_ID = T.SRC_SYS_ID 
-   and T.DATA_ORIGIN <> 'D' 
+   and R.SRC_SYS_ID = T.SRC_SYS_ID
+   and T.DATA_ORIGIN <> 'D'
   left outer join CSMRT_OWNER.PS_D_PERSON P
-    on R.EMPLID = P.PERSON_ID  
+    on R.EMPLID = P.PERSON_ID
    and R.SRC_SYS_ID = P.SRC_SYS_ID
-   and P.DATA_ORIGIN <> 'D' 
+   and P.DATA_ORIGIN <> 'D'
   join PC
     on R.INSTITUTION = PC.INSTITUTION_CD
    and R.ACAD_CAREER = PC.ACAD_CAR_CD
    and R.EMPLID = PC.EMPLID
    and R.SRC_SYS_ID = PC.SRC_SYS_ID
   left outer join CSMRT_OWNER.PS_D_RECRT_CNTR RC
-    on R.INSTITUTION = RC.INSTITUTION_CD	
+    on R.INSTITUTION = RC.INSTITUTION_CD
    and R.ADM_RECR_CTR = RC.RECRT_CNTR_ID
    and R.SRC_SYS_ID = RC.SRC_SYS_ID
    and RC.DATA_ORIGIN <> 'D'
   left outer join CSMRT_OWNER.UM_D_RFRL_DTL RD
-    on R.INSTITUTION = RD.INSTITUTION_CD 
+    on R.INSTITUTION = RD.INSTITUTION_CD
    and R.UM_REFRL_GRP = RD.RFRL_GRP
    and R.UM_REFRL_DTL = RD.RFRL_DTL
    and R.SRC_SYS_ID = RD.SRC_SYS_ID
@@ -174,16 +180,16 @@ COMMON_OWNER.SMT_PROCESS_LOG.PROCESS_DETAIL
 strMessage01    := 'Enabling Indexes for table CSMRT_OWNER.UM_F_PRSPCT_RFRL';
 COMMON_OWNER.SMT_LOG.PUT_MESSAGE(i_Message => strMessage01);
 
-strSqlDynamic   := 'alter table CSMRT_OWNER.UM_F_PRSPCT_RFRL enable constraint PK_UM_F_PRSPCT_RFRL';
-strSqlCommand   := 'SMT_UTILITY.EXECUTE_IMMEDIATE: ' || strSqlDynamic;
-COMMON_OWNER.SMT_UTILITY.EXECUTE_IMMEDIATE
-                (
-                i_SqlStatement          => strSqlDynamic,
-                i_MaxTries              => 10,
-                i_WaitSeconds           => 10,
-                o_Tries                 => intTries
-                );
-				
+--strSqlDynamic   := 'alter table CSMRT_OWNER.UM_F_PRSPCT_RFRL enable constraint PK_UM_F_PRSPCT_RFRL';
+--strSqlCommand   := 'SMT_UTILITY.EXECUTE_IMMEDIATE: ' || strSqlDynamic;
+--COMMON_OWNER.SMT_UTILITY.EXECUTE_IMMEDIATE
+--                (
+--                i_SqlStatement          => strSqlDynamic,
+--                i_MaxTries              => 10,
+--                i_WaitSeconds           => 10,
+--                o_Tries                 => intTries
+--                );
+
 COMMON_OWNER.SMT_INDEX.ALL_REBUILD('CSMRT_OWNER','UM_F_PRSPCT_RFRL');
 
 strSqlCommand := 'SMT_PROCESS_LOG.PROCESS_SUCCESS';

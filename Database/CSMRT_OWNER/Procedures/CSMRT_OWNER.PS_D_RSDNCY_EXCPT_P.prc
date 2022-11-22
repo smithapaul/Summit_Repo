@@ -1,4 +1,10 @@
-CREATE OR REPLACE PROCEDURE             "PS_D_RSDNCY_EXCPT_P" AUTHID CURRENT_USER IS
+DROP PROCEDURE CSMRT_OWNER.PS_D_RSDNCY_EXCPT_P
+/
+
+--
+-- PS_D_RSDNCY_EXCPT_P  (Procedure) 
+--
+CREATE OR REPLACE PROCEDURE CSMRT_OWNER."PS_D_RSDNCY_EXCPT_P" AUTHID CURRENT_USER IS
 
 ------------------------------------------------------------------------
 -- George Adams

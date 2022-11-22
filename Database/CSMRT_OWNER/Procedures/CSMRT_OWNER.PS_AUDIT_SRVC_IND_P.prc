@@ -1,4 +1,10 @@
-CREATE OR REPLACE PROCEDURE             PS_AUDIT_SRVC_IND_P AUTHID CURRENT_USER IS
+DROP PROCEDURE CSMRT_OWNER.PS_AUDIT_SRVC_IND_P
+/
+
+--
+-- PS_AUDIT_SRVC_IND_P  (Procedure) 
+--
+CREATE OR REPLACE PROCEDURE CSMRT_OWNER.PS_AUDIT_SRVC_IND_P AUTHID CURRENT_USER IS
 
 ------------------------------------------------------------------------
 -- George Adams

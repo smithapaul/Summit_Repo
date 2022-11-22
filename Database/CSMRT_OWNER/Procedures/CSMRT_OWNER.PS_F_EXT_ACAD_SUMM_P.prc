@@ -1,14 +1,16 @@
-CREATE OR REPLACE PROCEDURE             "PS_F_EXT_ACAD_SUMM_P" AUTHID CURRENT_USER IS
+DROP PROCEDURE CSMRT_OWNER.PS_F_EXT_ACAD_SUMM_P
+/
+
+--
+-- PS_F_EXT_ACAD_SUMM_P  (Procedure) 
+--
+CREATE OR REPLACE PROCEDURE CSMRT_OWNER."PS_F_EXT_ACAD_SUMM_P" AUTHID CURRENT_USER IS
 
 ------------------------------------------------------------------------
 -- George Adams
 --
 -- Loads mart table PS_F_EXT_ACAD_SUMM.
 --
- --V01  SMT-xxxx 07/13/2018,    James Doucette
---                              Converted from SQL Script
--- V01.2  SMT-8300 09/06/2017,    James Doucette
---                                Added two new fields.
 ------------------------------------------------------------------------
 
         strMartId                       Varchar2(50)    := 'CSW';
@@ -42,21 +44,6 @@ COMMON_OWNER.SMT_PROCESS_LOG.PROCESS_INIT
                 o_ProcessSid            => intProcessSid
         );
 
-strMessage01    := 'Disabling Indexes for table CSMRT_OWNER.PS_F_EXT_ACAD_SUMM';
-COMMON_OWNER.SMT_LOG.PUT_MESSAGE(i_Message => strMessage01);
-COMMON_OWNER.SMT_INDEX.ALL_UNUSABLE('CSMRT_OWNER','PS_F_EXT_ACAD_SUMM');
-
-strSqlDynamic   := 'alter table CSMRT_OWNER.PS_F_EXT_ACAD_SUMM disable constraint PK_PS_F_EXT_ACAD_SUMM';
-strSqlCommand   := 'SMT_UTILITY.EXECUTE_IMMEDIATE: ' || strSqlDynamic;
-COMMON_OWNER.SMT_UTILITY.EXECUTE_IMMEDIATE
-                (
-                i_SqlStatement          => strSqlDynamic,
-                i_MaxTries              => 10,
-                i_WaitSeconds           => 10,
-                o_Tries                 => intTries
-                );
-				
-				
 strMessage01    := 'Truncating table CSMRT_OWNER.PS_F_EXT_ACAD_SUMM';
 COMMON_OWNER.SMT_LOG.PUT_MESSAGE(i_Message => strMessage01);
 
@@ -70,65 +57,81 @@ COMMON_OWNER.SMT_UTILITY.EXECUTE_IMMEDIATE
                 o_Tries                 => intTries
                 );
 
+strMessage01    := 'Disabling Indexes for table CSMRT_OWNER.PS_F_EXT_ACAD_SUMM';
+COMMON_OWNER.SMT_LOG.PUT_MESSAGE(i_Message => strMessage01);
+COMMON_OWNER.SMT_INDEX.ALL_UNUSABLE('CSMRT_OWNER','PS_F_EXT_ACAD_SUMM');
+
+--strSqlDynamic   := 'alter table CSMRT_OWNER.PS_F_EXT_ACAD_SUMM disable constraint PK_PS_F_EXT_ACAD_SUMM';
+--strSqlCommand   := 'SMT_UTILITY.EXECUTE_IMMEDIATE: ' || strSqlDynamic;
+--COMMON_OWNER.SMT_UTILITY.EXECUTE_IMMEDIATE
+--                (
+--                i_SqlStatement          => strSqlDynamic,
+--                i_MaxTries              => 10,
+--                i_WaitSeconds           => 10,
+--                o_Tries                 => intTries
+--                );
+
 strMessage01    := 'Inserting data into CSMRT_OWNER.PS_F_EXT_ACAD_SUMM';
 COMMON_OWNER.SMT_LOG.PUT_MESSAGE(i_Message => strMessage01);
 
-strSqlCommand   := 'insert into CSMRT_OWNER.PS_F_EXT_ACAD_SUMM';				
-insert /*+ append */ into CSMRT_OWNER.PS_F_EXT_ACAD_SUMM 
+strSqlCommand   := 'insert into CSMRT_OWNER.PS_F_EXT_ACAD_SUMM';
+insert /*+ append enable_parallel_dml parallel(8) */ into CSMRT_OWNER.PS_F_EXT_ACAD_SUMM
   with INST as (
-select distinct INSTITUTION 
-  from CSSTG_OWNER.PS_INSTITUTION_TBL 
+select /*+ inline parallel(8) no_merge */
+       distinct INSTITUTION
+  from CSSTG_OWNER.PS_INSTITUTION_TBL
  where DATA_ORIGIN <> 'D'),
        ALL_LIST as (
-SELECT /*+ PARALLEL(8) INLINE */ distinct EMPLID, EXT_ORG_ID, EXT_CAREER, EXT_DATA_NBR, E.SRC_SYS_ID, I.INSTITUTION
+SELECT /*+ inline parallel(8) no_merge */ distinct EMPLID, EXT_ORG_ID, EXT_CAREER, EXT_DATA_NBR, E.SRC_SYS_ID, I.INSTITUTION
   FROM CSSTG_OWNER.PS_EXT_ACAD_SUM E, INST I
  WHERE E.DATA_ORIGIN <> 'D'
  UNION
-SELECT /*+ PARALLEL(8) INLINE */ EMPLID, EXT_ORG_ID, EXT_CAREER, EXT_DATA_NBR, E.SRC_SYS_ID, I.INSTITUTION
+SELECT /*+ inline parallel(8) no_merge */ EMPLID, EXT_ORG_ID, EXT_CAREER, EXT_DATA_NBR, E.SRC_SYS_ID, I.INSTITUTION
   FROM CSSTG_OWNER.PS_EXT_ACAD_DATA E, INST I
  WHERE E.DATA_ORIGIN <> 'D'
  UNION ALL
-SELECT /*+ PARALLEL(8) INLINE */ EMPLID, EXT_ORG_ID, 'UN' EXT_CAREER, 0 EXT_DATA_NBR, E.SRC_SYS_ID, I.INSTITUTION
+SELECT /*+ inline parallel(8) no_merge */ EMPLID, EXT_ORG_ID, 'UN' EXT_CAREER, 0 EXT_DATA_NBR, E.SRC_SYS_ID, I.INSTITUTION
   FROM (select EMPLID, EXT_ORG_ID, SRC_SYS_ID from CSSTG_OWNER.PS_ACAD_HISTORY where DATA_ORIGIN <> 'D'
          minus
         select distinct EMPLID, EXT_ORG_ID, SRC_SYS_ID from CSSTG_OWNER.PS_EXT_ACAD_SUM where DATA_ORIGIN <> 'D'
          minus
         select distinct EMPLID, EXT_ORG_ID, SRC_SYS_ID from CSSTG_OWNER.PS_EXT_ACAD_DATA where DATA_ORIGIN <> 'D') E, INST I),
 LVL_LIST AS (
-SELECT DEG.DEGREE,
+SELECT /*+ inline parallel(8) no_merge */
+       DEG.DEGREE,
        DEG.SRC_SYS_ID,
        DEG.EFF_STATUS,
        DEG.EDUCATION_LVL,
-       ROW_NUMBER() OVER (PARTITION BY DEG.DEGREE, DEG.SRC_SYS_ID 
+       ROW_NUMBER() OVER (PARTITION BY DEG.DEGREE, DEG.SRC_SYS_ID
                               ORDER BY DECODE(DEG.EFF_STATUS, 'A', 1, 99999), DEG.EFFDT DESC) ORD
   FROM CSSTG_OWNER.PS_DEGREE_TBL DEG
  WHERE DEG.DATA_ORIGIN <> 'D'),
        DEG_LIST AS (
-SELECT /*+ PARALLEL(8) INLINE */ 
+SELECT /*+ inline parallel(8) no_merge */
        DEG.EMPLID, DEG.EXT_ORG_ID, DEG.SRC_SYS_ID,
        DEG.EXT_DATA_NBR, D.EDUCATION_LVL,
        NVL ( TO_CHAR(DEG.DEGREE_DT, 'YYYYMM'), '190001') DEG_MONTH,
-       ROW_NUMBER() OVER (PARTITION BY DEG.EMPLID, DEG.EXT_ORG_ID, DEG.SRC_SYS_ID 
+       ROW_NUMBER() OVER (PARTITION BY DEG.EMPLID, DEG.EXT_ORG_ID, DEG.SRC_SYS_ID
                               ORDER BY TO_CHAR(DEG.DEGREE_DT, 'YYYYMM') DESC,
                                        DECODE (EDUCATION_LVL, '21', 1, '15', 2, '18', 3, '17', 4, '14', 5, '13', 6, '10', 7, 99999999)) ORD,
-       ROW_NUMBER() OVER (PARTITION BY DEG.EMPLID, DEG.EXT_ORG_ID, DEG.SRC_SYS_ID 
+       ROW_NUMBER() OVER (PARTITION BY DEG.EMPLID, DEG.EXT_ORG_ID, DEG.SRC_SYS_ID
                               ORDER BY DECODE (EDUCATION_LVL, '21', 1, '15', 2, '18', 3, '17', 4, '14', 5, '13', 6, '10', 7, 99999999),
-                                       TO_CHAR(DEG.DEGREE_DT, 'YYYYMM') DESC) ORD_LVL                        
-  FROM CSSTG_OWNER.PS_EXT_DEGREE DEG, LVL_LIST D 
+                                       TO_CHAR(DEG.DEGREE_DT, 'YYYYMM') DESC) ORD_LVL
+  FROM CSSTG_OWNER.PS_EXT_DEGREE DEG, LVL_LIST D
  WHERE DEG.DATA_ORIGIN <> 'D'
    AND DEG.DEGREE_STATUS = 'C'
    AND DEG.DEGREE = D.DEGREE
    AND D.ORD = 1),
        EXT_LIST AS (
-SELECT /*+ PARALLEL(8) INLINE */
-       EXT_ORG_ID, SRC_SYS_ID, 
+SELECT /*+ inline parallel(8) no_merge */
+       EXT_ORG_ID, SRC_SYS_ID,
        LS_SCHOOL_TYPE,
-       ROW_NUMBER() OVER (PARTITION BY EXT_ORG_ID, SRC_SYS_ID 
+       ROW_NUMBER() OVER (PARTITION BY EXT_ORG_ID, SRC_SYS_ID
                               ORDER BY decode(EFF_STATUS,'A',0,9), EFFDT desc) ORD
   FROM CSSTG_OWNER.PS_EXT_ORG_TBL_ADM
  WHERE DATA_ORIGIN <> 'D'),
      S as (
-SELECT /*+ PARALLEL(8) INLINE */ 
+SELECT /*+ inline parallel(8) no_merge */
        A.INSTITUTION INSTITUTION_CD,
        A.EMPLID PERSON_ID,
        A.EXT_ORG_ID,
@@ -150,13 +153,13 @@ SELECT /*+ PARALLEL(8) INLINE */
        NVL(S.CONVERT_GPA, 0) CONVERTED_GPA,
        NVL(S.PERCENTILE, 0) CLASS_PERCENTILE,
        NVL(S.RANK_TYPE, '-') ACAD_RANK_TYPE_ID,
-       NVL(D.LS_DATA_SOURCE, '-') LS_DATA_SOURCE, 
-       NVL(D.TRANSCRIPT_FLAG, '-') TRNSCR_FLG, 
-       NVL(D.TRANSCRIPT_TYPE, '-') TRNSCR_TYPE, 
-       NVL(D.TRNSCRPT_STATUS, '-') TRNSCR_STATUS, 
-       D.TRANSCRIPT_DT TRNSCR_DT, 
-       D.FROM_DT,  
-       D.TO_DT, 
+       NVL(D.LS_DATA_SOURCE, '-') LS_DATA_SOURCE,
+       NVL(D.TRANSCRIPT_FLAG, '-') TRNSCR_FLG,
+       NVL(D.TRANSCRIPT_TYPE, '-') TRNSCR_TYPE,
+       NVL(D.TRNSCRPT_STATUS, '-') TRNSCR_STATUS,
+       D.TRANSCRIPT_DT TRNSCR_DT,
+       D.FROM_DT,
+       D.TO_DT,
        NVL(D.EXT_ACAD_LEVEL, '-') D_EXT_ACAD_LEVEL,
        NVL(D.TERM_YEAR, 0) D_TERM_YEAR,
        NVL(D.EXT_TERM_TYPE, '-') D_EXT_TERM_TYPE,
@@ -171,14 +174,12 @@ SELECT /*+ PARALLEL(8) INLINE */
        NVL(S.UM_EXT_ORG_CNV_CR, 0) UM_EXT_ORG_CNV_CR,
        NVL(S.UM_EXT_ORG_CNV_GPA, 0) UM_EXT_ORG_CNV_GPA,
        NVL(S.UM_EXT_ORG_CNV_QP, 0) UM_EXT_ORG_CNV_QP,
-       NVL(S.UM_GPA_OVERRIDE, '-') UM_GPA_OVRD_FLG,     -- May 2017 
-       NVL(S.UM_1_OVR_HSGPA, '-') UM_1_OVRD_HSGPA_FLG,      -- May 2017 
-	   
-	   NVL(S.UM_EXT_OR_MTSC_GPA, 0) UM_EXT_OR_MTSC_GPA,     -- SMT-8300 Sep. 2019 
-	   NVL(S.MS_CONVERT_GPA, 0) MS_CONVERT_GPA,             -- SMT-8300 Sep. 2019 
-	   
-       NVL(S.UM_CONVERT_GPA, 0) UM_CONVERT_GPA,
-       CASE WHEN S.EXT_SUMM_TYPE = 'HSOV' OR EXT.LS_SCHOOL_TYPE = 'SCD' 
+       NVL(S.UM_GPA_OVERRIDE, '-') UM_GPA_OVRD_FLG,     -- May 2017
+       NVL(S.UM_1_OVR_HSGPA, '-') UM_1_OVRD_HSGPA_FLG,      -- May 2017
+	   NVL(S.UM_EXT_OR_MTSC_GPA, 0) UM_EXT_OR_MTSC_GPA,     -- SMT-8300 Sep. 2019
+	   NVL(S.MS_CONVERT_GPA, 0) MS_CONVERT_GPA,             -- SMT-8300 Sep. 2019
+	   NVL(S.UM_CONVERT_GPA, 0) UM_CONVERT_GPA,
+       CASE WHEN S.EXT_SUMM_TYPE = 'HSOV' OR EXT.LS_SCHOOL_TYPE = 'SCD'
             THEN CASE WHEN (ROW_NUMBER() OVER (PARTITION BY A.EMPLID, A.INSTITUTION
                                                    ORDER BY DECODE(S.EXT_SUMM_TYPE, 'HSOV', 1, 99999999),
                                                             DECODE(EXT.LS_SCHOOL_TYPE, 'SCD', 1, 99999999),
@@ -188,13 +189,13 @@ SELECT /*+ PARALLEL(8) INLINE */
                                                             NVL(S.CONVERT_GPA, 0) DESC,
                                                             NVL(S.TERM_YEAR, 0) DESC,
                                                             NVL(A.EXT_ORG_ID, '-') DESC,
-                                                            A.EXT_DATA_NBR desc,    -- Sep 2019  
-                                                            A.EXT_CAREER            -- Sep 2019 
+                                                            A.EXT_DATA_NBR desc,    -- Sep 2019
+                                                            A.EXT_CAREER            -- Sep 2019
                                                             ) ) = 1
-                      THEN 'Y' 
-                      ELSE 'N' 
-                  END 
-            WHEN S.EXT_SUMM_TYPE = 'UGOV' OR S.EXT_SUMM_TYPE = 'PBOV' 
+                      THEN 'Y'
+                      ELSE 'N'
+                  END
+            WHEN S.EXT_SUMM_TYPE = 'UGOV' OR S.EXT_SUMM_TYPE = 'PBOV'
             THEN CASE WHEN (ROW_NUMBER () OVER (PARTITION BY A.EMPLID, A.INSTITUTION
                                                     ORDER BY DECODE(S.EXT_SUMM_TYPE, 'UGOV', 1, 'PBOV', 2, 99999999),
                                                              DECODE(NVL(DEG2.EDUCATION_LVL, '-'), '21', 1, '15', 2, '18', 3, '17', 4, '14', 5, '13', 6, '10', 7, 99999999),
@@ -204,26 +205,31 @@ SELECT /*+ PARALLEL(8) INLINE */
                                                              NVL(S.CONVERT_GPA, 0) DESC,
                                                              NVL(S.TERM_YEAR, 0) DESC,
                                                              NVL(A.EXT_ORG_ID, '-') DESC,
-                                                             A.EXT_DATA_NBR desc,    -- Sep 2019  
-                                                             A.EXT_CAREER            -- Sep 2019 
-                                                             ) ) = 1 
-                      THEN 'Y' 
-                      ELSE 'N' 
-                  END                 
+                                                             A.EXT_DATA_NBR desc,    -- Sep 2019
+                                                             A.EXT_CAREER            -- Sep 2019
+                                                             ) ) = 1
+                      THEN 'Y'
+                      ELSE 'N'
+                  END
              ELSE 'N'
         END BEST_SUMM_TYPE_GPA_FLG,
+       CASE WHEN ROW_NUMBER() OVER (PARTITION BY A.EMPLID, A.INSTITUTION, A.EXT_ORG_ID, A.EXT_CAREER, S.EXT_SUMM_TYPE
+                                        ORDER BY A.EMPLID, A.INSTITUTION, A.EXT_ORG_ID, A.EXT_CAREER, S.EXT_SUMM_TYPE, A.EXT_DATA_NBR DESC) = 1
+            THEN 'Y'
+            ELSE 'N'
+        END MAX_DATA_ROW,       -- Aug 2022
        'S' DATA_ORIGIN
   FROM ALL_LIST A
   LEFT OUTER JOIN CSSTG_OWNER.PS_EXT_ACAD_DATA D
           ON A.EMPLID = D.EMPLID
-         AND A.EXT_ORG_ID = D.EXT_ORG_ID 
+         AND A.EXT_ORG_ID = D.EXT_ORG_ID
          AND A.EXT_CAREER = D.EXT_CAREER
          AND A.EXT_DATA_NBR = D.EXT_DATA_NBR
          AND A.SRC_SYS_ID = D.SRC_SYS_ID
-         AND D.DATA_ORIGIN <> 'D'  
+         AND D.DATA_ORIGIN <> 'D'
   LEFT OUTER JOIN CSSTG_OWNER.PS_EXT_ACAD_SUM S
           ON S.EMPLID = A.EMPLID
-         AND S.EXT_ORG_ID = A.EXT_ORG_ID 
+         AND S.EXT_ORG_ID = A.EXT_ORG_ID
          AND S.EXT_CAREER = A.EXT_CAREER
          AND S.EXT_DATA_NBR = A.EXT_DATA_NBR
          AND S.SRC_SYS_ID = A.SRC_SYS_ID
@@ -245,73 +251,70 @@ SELECT /*+ PARALLEL(8) INLINE */
           ON A.EMPLID = DEG2.EMPLID
          AND A.EXT_ORG_ID = DEG2.EXT_ORG_ID
          AND A.SRC_SYS_ID = DEG2.SRC_SYS_ID
-         AND DEG2.ORD_LVL = 1                
+         AND DEG2.ORD_LVL = 1
   LEFT OUTER JOIN EXT_LIST EXT
           ON A.EXT_ORG_ID = EXT.EXT_ORG_ID
          AND A.SRC_SYS_ID = EXT.SRC_SYS_ID
          AND EXT.ORD = 1
- where length(trim(A.EMPLID)) = 8 
-   and A.EMPLID between '00000000' and '99999999')
-select /*+ parallel(16) */
-       S.INSTITUTION_CD, 
-       S.PERSON_ID, 
-       S.EXT_ORG_ID, 
-       S.EXT_ACAD_CAR_ID, 
-       S.EXT_DATA_NBR, 
-       S.EXT_SUMM_TYPE_ID, 
-       S.SRC_SYS_ID, 
-       nvl(I.INSTITUTION_SID, 2147483646) INSTITUTION_SID, 
-       nvl(P.PERSON_SID, 2147483646) APPLCNT_SID, 
-       nvl(O.EXT_ORG_SID, 2147483646) EXT_ORG_SID, 
-       nvl(EC.EXT_ACAD_CAR_SID, 2147483646) EXT_ACAD_CAR_SID, 
-       nvl(ES.EXT_SUMM_TYPE_SID, 2147483646) EXT_SUMM_TYPE_SID, 
-       nvl(RT.ACAD_RANK_TYPE_SID, 2147483646) ACAD_RANK_TYPE_SID, 
-       nvl(UT.ACAD_UNIT_TYPE_SID, 2147483646) ACAD_UNIT_TYPE_SID, 
-       nvl(EL.EXT_ACAD_LVL_SID, 2147483646) EXT_ACAD_LVL_SID, 
-       nvl(ET.EXT_TERM_SID, 2147483646) EXT_TERM_SID, 
-       S.TERM_YEAR EXT_TERM_YEAR_SID, 
-       nvl(GT.GPA_TYPE_SID, 2147483646) GPA_TYPE_SID, 
-       nvl(DL.EXT_ACAD_LVL_SID, 2147483646) D_EXT_ACAD_LVL_SID, 
-       S.D_TERM_YEAR D_EXT_TERM_YEAR_SID, 
-       nvl(DT.EXT_TERM_SID, 2147483646) D_EXT_TERM_SID, 
-BEST_SUMM_TYPE_GPA_FLG, 
-CLASS_RANK, 
-CLASS_SIZE, 
-CLASS_PERCENTILE, 
-FROM_DT, 
-TO_DT, 
-LS_DATA_SOURCE, 
-TRNSCR_FLG, 
-TRNSCR_TYPE, 
-TRNSCR_STATUS, 
-TRNSCR_DT, 
-CONVERTED_GPA, 
-EXT_GPA, 
-UNITS_ATTMPTD, 
-UNITS_CMPLTD, 
-UM_CONVERT_GPA, 
-UM_CUM_CREDIT, 
-UM_CUM_GPA, 
-UM_CUM_QP, 
-UM_EXT_ORG_CR, 
-UM_EXT_ORG_QP, 
-UM_EXT_ORG_GPA, 
-UM_EXT_ORG_CNV_CR, 
-UM_EXT_ORG_CNV_GPA, 
-UM_EXT_ORG_CNV_QP, 
-UM_GPA_EXCLUDE_FLG, 
-UM_GPA_OVRD_FLG, 
-UM_1_OVRD_HSGPA_FLG,
-UM_EXT_OR_MTSC_GPA,            -- SMT-8300 Sep. 2019  
-MS_CONVERT_GPA,                -- SMT-8300 Sep. 2019 
-'N' LOAD_ERROR, 
-'S' DATA_ORIGIN, 
-SYSDATE CREATED_EW_DTTM, 
-SYSDATE LASTUPD_EW_DTTM, 
-1234 BATCH_SID
+ where length(trim(A.EMPLID)) = 8
+   and A.EMPLID between '00000000' and '99999999'),
+     S2 as (
+SELECT /*+ inline parallel(8) no_merge */
+       S.INSTITUTION_CD,
+       S.PERSON_ID,
+       S.EXT_ORG_ID,
+       S.EXT_ACAD_CAR_ID,
+       S.EXT_DATA_NBR,
+       S.EXT_SUMM_TYPE_ID,
+       S.SRC_SYS_ID,
+       nvl(I.INSTITUTION_SID, 2147483646) INSTITUTION_SID,
+       nvl(P.PERSON_SID, 2147483646) APPLCNT_SID,
+       nvl(O.EXT_ORG_SID, 2147483646) EXT_ORG_SID,
+       nvl(EC.EXT_ACAD_CAR_SID, 2147483646) EXT_ACAD_CAR_SID,
+       nvl(ES.EXT_SUMM_TYPE_SID, 2147483646) EXT_SUMM_TYPE_SID,
+       nvl(RT.ACAD_RANK_TYPE_SID, 2147483646) ACAD_RANK_TYPE_SID,
+       nvl(UT.ACAD_UNIT_TYPE_SID, 2147483646) ACAD_UNIT_TYPE_SID,
+       nvl(EL.EXT_ACAD_LVL_SID, 2147483646) EXT_ACAD_LVL_SID,
+       nvl(ET.EXT_TERM_SID, 2147483646) EXT_TERM_SID,
+       S.TERM_YEAR EXT_TERM_YEAR_SID,
+       nvl(GT.GPA_TYPE_SID, 2147483646) GPA_TYPE_SID,
+       nvl(DL.EXT_ACAD_LVL_SID, 2147483646) D_EXT_ACAD_LVL_SID,
+       S.D_TERM_YEAR D_EXT_TERM_YEAR_SID,
+       nvl(DT.EXT_TERM_SID, 2147483646) D_EXT_TERM_SID,
+       BEST_SUMM_TYPE_GPA_FLG,
+       CLASS_RANK,
+       CLASS_SIZE,
+       CLASS_PERCENTILE,
+       FROM_DT,
+       TO_DT,
+       LS_DATA_SOURCE,
+       TRNSCR_FLG,
+       TRNSCR_TYPE,
+       TRNSCR_STATUS,
+       TRNSCR_DT,
+       CONVERTED_GPA,
+       EXT_GPA,
+       UNITS_ATTMPTD,
+       UNITS_CMPLTD,
+       UM_CONVERT_GPA,
+       UM_CUM_CREDIT,
+       UM_CUM_GPA,
+       UM_CUM_QP,
+       UM_EXT_ORG_CR,
+       UM_EXT_ORG_QP,
+       UM_EXT_ORG_GPA,
+       case when UM_EXT_ORG_CNV_CR = 0 and UM_EXT_ORG_CNV_GPA <> 0 and UM_EXT_ORG_CNV_QP <> 0 then round((UM_EXT_ORG_CNV_QP / UM_EXT_ORG_CNV_GPA),2) else UM_EXT_ORG_CNV_CR end UM_EXT_ORG_CNV_CR,     -- Mar 2022
+       case when UM_EXT_ORG_CNV_GPA = 0 and UM_EXT_ORG_CNV_QP <> 0 and UM_EXT_ORG_CNV_CR <> 0 then round((UM_EXT_ORG_CNV_QP / UM_EXT_ORG_CNV_CR),3) else UM_EXT_ORG_CNV_GPA end UM_EXT_ORG_CNV_GPA,    -- Mar 2022
+       case when UM_EXT_ORG_CNV_QP = 0 and UM_EXT_ORG_CNV_CR <> 0 and UM_EXT_ORG_CNV_GPA <> 0 then round((UM_EXT_ORG_CNV_CR * UM_EXT_ORG_CNV_GPA),2) else UM_EXT_ORG_CNV_QP end UM_EXT_ORG_CNV_QP,     -- Mar 2022
+       UM_GPA_EXCLUDE_FLG,
+       UM_GPA_OVRD_FLG,
+       UM_1_OVRD_HSGPA_FLG,
+       UM_EXT_OR_MTSC_GPA,             -- SMT-8300 Sep. 2019
+       MS_CONVERT_GPA,                 -- SMT-8300 Sep. 2019
+       MAX_DATA_ROW                    -- Aug 2022
   from S
   left outer join PS_D_INSTITUTION I
-    on S.INSTITUTION_CD = I.INSTITUTION_CD  
+    on S.INSTITUTION_CD = I.INSTITUTION_CD
    and S.SRC_SYS_ID = I.SRC_SYS_ID
    and I.DATA_ORIGIN <> 'D'
   left outer join PS_D_PERSON P
@@ -319,11 +322,11 @@ SYSDATE LASTUPD_EW_DTTM,
    and S.SRC_SYS_ID = P.SRC_SYS_ID
    and P.DATA_ORIGIN <> 'D'
   left outer join PS_D_EXT_ORG O
-    on S.EXT_ORG_ID = O.EXT_ORG_ID  
+    on S.EXT_ORG_ID = O.EXT_ORG_ID
    and S.SRC_SYS_ID = O.SRC_SYS_ID
    and O.DATA_ORIGIN <> 'D'
   left outer join PS_D_EXT_ACAD_CAR EC
-    on S.EXT_ACAD_CAR_ID = EC.EXT_ACAD_CAR_ID  
+    on S.EXT_ACAD_CAR_ID = EC.EXT_ACAD_CAR_ID
    and S.SRC_SYS_ID = EC.SRC_SYS_ID
    and EC.DATA_ORIGIN <> 'D'
   left outer join PS_D_EXT_SUMM_TYP ES
@@ -348,7 +351,7 @@ SYSDATE LASTUPD_EW_DTTM,
    and S.SRC_SYS_ID = ET.SRC_SYS_ID
    and ET.DATA_ORIGIN <> 'D'
   left outer join PS_D_GPA_TYPE GT
-    on S.INSTITUTION_CD = GT.INSTITUTION_CD         -- INSTITUTION_CD in PS_D_GPA_TYPE_NEW!!! 
+    on S.INSTITUTION_CD = GT.INSTITUTION_CD         -- INSTITUTION_CD in PS_D_GPA_TYPE_NEW!!!
    and S.GPA_TYPE_ID = GT.GPA_TYPE_ID
    and S.SRC_SYS_ID = GT.SRC_SYS_ID
    and GT.DATA_ORIGIN <> 'D'
@@ -360,7 +363,76 @@ SYSDATE LASTUPD_EW_DTTM,
     on S.D_EXT_TERM_TYPE = DT.EXT_TERM_TYPE_ID
    and S.D_EXT_TERM = DT.EXT_TERM_ID
    and S.SRC_SYS_ID = DT.SRC_SYS_ID
-   and DT.DATA_ORIGIN <> 'D'
+   and DT.DATA_ORIGIN <> 'D')
+select /*+ inline parallel(8) no_merge */
+       INSTITUTION_CD,
+       PERSON_ID,
+       EXT_ORG_ID,
+       EXT_ACAD_CAR_ID,
+       EXT_DATA_NBR,
+       EXT_SUMM_TYPE_ID,
+       SRC_SYS_ID,
+       INSTITUTION_SID,
+       APPLCNT_SID,
+       EXT_ORG_SID,
+       EXT_ACAD_CAR_SID,
+       EXT_SUMM_TYPE_SID,
+       ACAD_RANK_TYPE_SID,
+       ACAD_UNIT_TYPE_SID,
+       EXT_ACAD_LVL_SID,
+       EXT_TERM_SID,
+       EXT_TERM_YEAR_SID,
+       GPA_TYPE_SID,
+       D_EXT_ACAD_LVL_SID,
+       D_EXT_TERM_YEAR_SID,
+       D_EXT_TERM_SID,
+       BEST_SUMM_TYPE_GPA_FLG,
+       CLASS_RANK,
+       CLASS_SIZE,
+       CLASS_PERCENTILE,
+       FROM_DT,
+       TO_DT,
+       LS_DATA_SOURCE,
+       TRNSCR_FLG,
+       TRNSCR_TYPE,
+       TRNSCR_STATUS,
+       TRNSCR_DT,
+       CONVERTED_GPA,
+       EXT_GPA,
+       UNITS_ATTMPTD,
+       UNITS_CMPLTD,
+       UM_CONVERT_GPA,
+       UM_CUM_CREDIT,       -- Aug 2022
+       UM_CUM_GPA,          -- Aug 2022
+       UM_CUM_QP,           -- Aug 2022
+       SUM(CASE WHEN MAX_DATA_ROW = 'Y' AND UM_GPA_EXCLUDE_FLG <> 'Y' THEN UM_EXT_ORG_CNV_CR END) OVER (PARTITION BY INSTITUTION_CD, PERSON_ID, EXT_SUMM_TYPE_ID) UM_CUM_CREDIT_AGG,
+       CASE WHEN (SUM(CASE WHEN MAX_DATA_ROW = 'Y' AND UM_GPA_EXCLUDE_FLG <> 'Y'
+                           THEN UM_EXT_ORG_CNV_CR
+                       END) OVER (PARTITION BY INSTITUTION_CD, PERSON_ID, EXT_SUMM_TYPE_ID)) > 0 and UM_EXT_ORG_CNV_QP > 0
+            THEN ROUND(SUM(CASE WHEN MAX_DATA_ROW = 'Y' AND UM_GPA_EXCLUDE_FLG <> 'Y'
+            THEN UM_EXT_ORG_CNV_QP END)
+                 OVER (PARTITION BY INSTITUTION_CD, PERSON_ID, EXT_SUMM_TYPE_ID) /
+                       SUM(CASE WHEN MAX_DATA_ROW = 'Y' AND UM_GPA_EXCLUDE_FLG <> 'Y'
+                                THEN UM_EXT_ORG_CNV_CR END) OVER (PARTITION BY INSTITUTION_CD, PERSON_ID, EXT_SUMM_TYPE_ID),3) END UM_CUM_GPA_AGG,
+       SUM(CASE WHEN MAX_DATA_ROW = 'Y' AND UM_GPA_EXCLUDE_FLG <> 'Y' THEN UM_EXT_ORG_CNV_QP END) OVER (PARTITION BY INSTITUTION_CD, PERSON_ID, EXT_SUMM_TYPE_ID) UM_CUM_QP_AGG,
+       UM_EXT_ORG_CR,
+       UM_EXT_ORG_QP,
+       UM_EXT_ORG_GPA,
+       UM_EXT_ORG_CNV_CR,
+       UM_EXT_ORG_CNV_GPA,
+       UM_EXT_ORG_CNV_QP,
+       UM_GPA_EXCLUDE_FLG,
+       UM_GPA_OVRD_FLG,
+       UM_1_OVRD_HSGPA_FLG,
+       UM_EXT_OR_MTSC_GPA,
+       MS_CONVERT_GPA,
+       MAX_DATA_ROW,
+       'N' LOAD_ERROR,
+       'S' DATA_ORIGIN,
+       SYSDATE CREATED_EW_DTTM,
+       SYSDATE LASTUPD_EW_DTTM,
+       1234 BATCH_SID
+  from S2
 ;
 
 strSqlCommand   := 'SET intRowCount';
@@ -380,27 +452,19 @@ COMMON_OWNER.SMT_PROCESS_LOG.PROCESS_DETAIL
                 i_RowCount          => intRowCount
         );
 
-strSqlCommand := 'SMT_PROCESS_LOG.PROCESS_DETAIL';
-COMMON_OWNER.SMT_PROCESS_LOG.PROCESS_DETAIL
-        (
-                i_TargetTableName   => 'PS_F_EXT_ACAD_SUMM',
-                i_Action            => 'UPDATE',
-                i_RowCount          => intRowCount
-        );
-
 strMessage01    := 'Enabling Indexes for table CSMRT_OWNER.PS_F_EXT_ACAD_SUMM';
 COMMON_OWNER.SMT_LOG.PUT_MESSAGE(i_Message => strMessage01);
 
-strSqlDynamic   := 'alter table CSMRT_OWNER.PS_F_EXT_ACAD_SUMM enable constraint PK_PS_F_EXT_ACAD_SUMM';
-strSqlCommand   := 'SMT_UTILITY.EXECUTE_IMMEDIATE: ' || strSqlDynamic;
-COMMON_OWNER.SMT_UTILITY.EXECUTE_IMMEDIATE
-                (
-                i_SqlStatement          => strSqlDynamic,
-                i_MaxTries              => 10,
-                i_WaitSeconds           => 10,
-                o_Tries                 => intTries
-                );
-				
+--strSqlDynamic   := 'alter table CSMRT_OWNER.PS_F_EXT_ACAD_SUMM enable constraint PK_PS_F_EXT_ACAD_SUMM';
+--strSqlCommand   := 'SMT_UTILITY.EXECUTE_IMMEDIATE: ' || strSqlDynamic;
+--COMMON_OWNER.SMT_UTILITY.EXECUTE_IMMEDIATE
+--                (
+--                i_SqlStatement          => strSqlDynamic,
+--                i_MaxTries              => 10,
+--                i_WaitSeconds           => 10,
+--                o_Tries                 => intTries
+--                );
+
 COMMON_OWNER.SMT_INDEX.ALL_REBUILD('CSMRT_OWNER','PS_F_EXT_ACAD_SUMM');
 
 strSqlCommand := 'SMT_PROCESS_LOG.PROCESS_SUCCESS';

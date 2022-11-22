@@ -1,4 +1,10 @@
-CREATE OR REPLACE PROCEDURE             "PS_ITEM_TYPE_TBL_AMH_S1_P" 
+DROP PROCEDURE CSMRT_OWNER.PS_ITEM_TYPE_TBL_AMH_S1_P
+/
+
+--
+-- PS_ITEM_TYPE_TBL_AMH_S1_P  (Procedure) 
+--
+CREATE OR REPLACE PROCEDURE CSMRT_OWNER."PS_ITEM_TYPE_TBL_AMH_S1_P" 
         (
                 i_ContextBlock          in  Varchar2    Default Null,
                 i_UploadId              in  Varchar2,

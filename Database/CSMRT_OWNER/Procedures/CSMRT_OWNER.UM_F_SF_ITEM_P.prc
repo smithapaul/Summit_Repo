@@ -1,4 +1,10 @@
-CREATE OR REPLACE PROCEDURE             "UM_F_SF_ITEM_P" AUTHID CURRENT_USER IS
+DROP PROCEDURE CSMRT_OWNER.UM_F_SF_ITEM_P
+/
+
+--
+-- UM_F_SF_ITEM_P  (Procedure) 
+--
+CREATE OR REPLACE PROCEDURE CSMRT_OWNER."UM_F_SF_ITEM_P" AUTHID CURRENT_USER IS
 
 ------------------------------------------------------------------------
 -- George Adams
@@ -58,23 +64,23 @@ strMessage01    := 'Disabling Indexes for table CSMRT_OWNER.UM_F_SF_ITEM';
 COMMON_OWNER.SMT_LOG.PUT_MESSAGE(i_Message => strMessage01);
 COMMON_OWNER.SMT_INDEX.ALL_UNUSABLE('CSMRT_OWNER','UM_F_SF_ITEM');
 
-strSqlDynamic   := 'alter table CSMRT_OWNER.UM_F_SF_ITEM disable constraint PK_UM_F_SF_ITEM';
-strSqlCommand   := 'SMT_UTILITY.EXECUTE_IMMEDIATE: ' || strSqlDynamic;
-COMMON_OWNER.SMT_UTILITY.EXECUTE_IMMEDIATE
-                (
-                i_SqlStatement          => strSqlDynamic,
-                i_MaxTries              => 10,
-                i_WaitSeconds           => 10,
-                o_Tries                 => intTries
-                );
+--strSqlDynamic   := 'alter table CSMRT_OWNER.UM_F_SF_ITEM disable constraint PK_UM_F_SF_ITEM';
+--strSqlCommand   := 'SMT_UTILITY.EXECUTE_IMMEDIATE: ' || strSqlDynamic;
+--COMMON_OWNER.SMT_UTILITY.EXECUTE_IMMEDIATE
+--                (
+--                i_SqlStatement          => strSqlDynamic,
+--                i_MaxTries              => 10,
+--                i_WaitSeconds           => 10,
+--                o_Tries                 => intTries
+--                );
 
 strMessage01    := 'Inserting data into CSMRT_OWNER.UM_F_SF_ITEM';
 COMMON_OWNER.SMT_LOG.PUT_MESSAGE(i_Message => strMessage01);
 
 strSqlCommand   := 'insert into CSMRT_OWNER.UM_F_SF_ITEM';
 insert /*+ append parallel(8) enable_parallel_dml */ into CSMRT_OWNER.UM_F_SF_ITEM
-with X as (
-select /*+ inline parallel(8) */
+  with X as (
+select /*+ inline parallel(8) no_merge */
        FIELDNAME, FIELDVALUE, EFFDT, SRC_SYS_ID,
        XLATLONGNAME, XLATSHORTNAME, DATA_ORIGIN,
        row_number() over (partition by FIELDNAME, FIELDVALUE, SRC_SYS_ID
@@ -83,7 +89,7 @@ select /*+ inline parallel(8) */
  where DATA_ORIGIN <> 'D'),
 T0_SF AS
 (
-SELECT /*+ inline parallel(8) */ --T0.*,
+SELECT /*+ inline parallel(8) no_merge */ 
        BUSINESS_UNIT, COMMON_ID, SA_ID_TYPE, ITEM_NBR, SRC_SYS_ID, ACAD_CAREER,
        COUNT(DISTINCT ACAD_CAREER) OVER (PARTITION BY BUSINESS_UNIT, COMMON_ID, ITEM_TERM) CAREER_COUNT,
        MAX(ACAD_CAREER) OVER (PARTITION BY BUSINESS_UNIT, COMMON_ID, ITEM_TERM) MAX_ACAD_CAREER
@@ -92,7 +98,7 @@ SELECT /*+ inline parallel(8) */ --T0.*,
 /*For students with one valid career in a term, all transaction rows with bliack career can be filled with that valid career*/
 T1_SF AS
 (
-SELECT /*+ inline parallel(8) */ --T1.*,
+SELECT /*+ inline parallel(8) no_merge */ 
        BUSINESS_UNIT, COMMON_ID, SA_ID_TYPE, ITEM_NBR, SRC_SYS_ID, ACAD_CAREER,
        CASE
             WHEN(T1.ACAD_CAREER = '-' AND CAREER_COUNT = 2)
@@ -100,7 +106,7 @@ SELECT /*+ inline parallel(8) */ --T1.*,
             ELSE T1.ACAD_CAREER
         END AS SMT_ACAD_CAREER
   FROM T0_SF T1)
-select /*+ parallel(8) */
+select /*+ parallel(8) no_merge */
 		I.BUSINESS_UNIT INSTITUTION_CD,
 		I.COMMON_ID PERSON_ID,
 		I.SA_ID_TYPE,
@@ -299,26 +305,18 @@ COMMON_OWNER.SMT_PROCESS_LOG.PROCESS_DETAIL
                 i_RowCount          => intRowCount
         );
 
-strSqlCommand := 'SMT_PROCESS_LOG.PROCESS_DETAIL';
-COMMON_OWNER.SMT_PROCESS_LOG.PROCESS_DETAIL
-        (
-                i_TargetTableName   => 'UM_F_SF_ITEM',
-                i_Action            => 'UPDATE',
-                i_RowCount          => intRowCount
-        );
-
 strMessage01    := 'Enabling Indexes for table CSMRT_OWNER.UM_F_SF_ITEM';
 COMMON_OWNER.SMT_LOG.PUT_MESSAGE(i_Message => strMessage01);
 
-strSqlDynamic   := 'alter table CSMRT_OWNER.UM_F_SF_ITEM enable constraint PK_UM_F_SF_ITEM';
-strSqlCommand   := 'SMT_UTILITY.EXECUTE_IMMEDIATE: ' || strSqlDynamic;
-COMMON_OWNER.SMT_UTILITY.EXECUTE_IMMEDIATE
-                (
-                i_SqlStatement          => strSqlDynamic,
-                i_MaxTries              => 10,
-                i_WaitSeconds           => 10,
-                o_Tries                 => intTries
-                );
+--strSqlDynamic   := 'alter table CSMRT_OWNER.UM_F_SF_ITEM enable constraint PK_UM_F_SF_ITEM';
+--strSqlCommand   := 'SMT_UTILITY.EXECUTE_IMMEDIATE: ' || strSqlDynamic;
+--COMMON_OWNER.SMT_UTILITY.EXECUTE_IMMEDIATE
+--                (
+--                i_SqlStatement          => strSqlDynamic,
+--                i_MaxTries              => 10,
+--                i_WaitSeconds           => 10,
+--                o_Tries                 => intTries
+--                );
 
 COMMON_OWNER.SMT_INDEX.ALL_REBUILD('CSMRT_OWNER','UM_F_SF_ITEM');
 

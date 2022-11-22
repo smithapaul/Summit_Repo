@@ -1,4 +1,10 @@
-CREATE OR REPLACE PROCEDURE             "UM_D_VISA_PERMIT_P" AUTHID CURRENT_USER IS
+DROP PROCEDURE CSMRT_OWNER.UM_D_VISA_PERMIT_P
+/
+
+--
+-- UM_D_VISA_PERMIT_P  (Procedure) 
+--
+CREATE OR REPLACE PROCEDURE CSMRT_OWNER."UM_D_VISA_PERMIT_P" AUTHID CURRENT_USER IS
 
 ------------------------------------------------------------------------
 -- George Adams

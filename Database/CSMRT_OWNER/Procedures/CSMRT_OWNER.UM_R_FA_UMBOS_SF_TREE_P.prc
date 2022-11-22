@@ -1,4 +1,10 @@
-CREATE OR REPLACE PROCEDURE             "UM_R_FA_UMBOS_SF_TREE_P" AUTHID CURRENT_USER IS
+DROP PROCEDURE CSMRT_OWNER.UM_R_FA_UMBOS_SF_TREE_P
+/
+
+--
+-- UM_R_FA_UMBOS_SF_TREE_P  (Procedure) 
+--
+CREATE OR REPLACE PROCEDURE CSMRT_OWNER."UM_R_FA_UMBOS_SF_TREE_P" AUTHID CURRENT_USER IS
 
 ------------------------------------------------------------------------
 -- George Adams
@@ -41,20 +47,6 @@ COMMON_OWNER.SMT_PROCESS_LOG.PROCESS_INIT
                 o_ProcessSid            => intProcessSid
         );
 
-strMessage01    := 'Disabling Indexes for table CSMRT_OWNER.UM_R_FA_UMBOS_SF_TREE';
-COMMON_OWNER.SMT_LOG.PUT_MESSAGE(i_Message => strMessage01);
-COMMON_OWNER.SMT_INDEX.ALL_UNUSABLE('CSMRT_OWNER','UM_R_FA_UMBOS_SF_TREE');
-
-strSqlDynamic   := 'alter table CSMRT_OWNER.UM_R_FA_UMBOS_SF_TREE disable constraint PK_UM_R_FA_UMBOS_SF_TREE';
-strSqlCommand   := 'SMT_UTILITY.EXECUTE_IMMEDIATE: ' || strSqlDynamic;
-COMMON_OWNER.SMT_UTILITY.EXECUTE_IMMEDIATE
-                (
-                i_SqlStatement          => strSqlDynamic,
-                i_MaxTries              => 10,
-                i_WaitSeconds           => 10,
-                o_Tries                 => intTries
-                );
-				
 strMessage01    := 'Truncating table CSMRT_OWNER.UM_R_FA_UMBOS_SF_TREE';
 COMMON_OWNER.SMT_LOG.PUT_MESSAGE(i_Message => strMessage01);
 
@@ -68,11 +60,25 @@ COMMON_OWNER.SMT_UTILITY.EXECUTE_IMMEDIATE
                 o_Tries                 => intTries
                 );
 
+strMessage01    := 'Disabling Indexes for table CSMRT_OWNER.UM_R_FA_UMBOS_SF_TREE';
+COMMON_OWNER.SMT_LOG.PUT_MESSAGE(i_Message => strMessage01);
+COMMON_OWNER.SMT_INDEX.ALL_UNUSABLE('CSMRT_OWNER','UM_R_FA_UMBOS_SF_TREE');
+
+--strSqlDynamic   := 'alter table CSMRT_OWNER.UM_R_FA_UMBOS_SF_TREE disable constraint PK_UM_R_FA_UMBOS_SF_TREE';
+--strSqlCommand   := 'SMT_UTILITY.EXECUTE_IMMEDIATE: ' || strSqlDynamic;
+--COMMON_OWNER.SMT_UTILITY.EXECUTE_IMMEDIATE
+--                (
+--                i_SqlStatement          => strSqlDynamic,
+--                i_MaxTries              => 10,
+--                i_WaitSeconds           => 10,
+--                o_Tries                 => intTries
+--                );
+
 strMessage01    := 'Inserting data into CSMRT_OWNER.UM_R_FA_UMBOS_SF_TREE';
 COMMON_OWNER.SMT_LOG.PUT_MESSAGE(i_Message => strMessage01);
 
-strSqlCommand   := 'insert into CSMRT_OWNER.UM_R_FA_UMBOS_SF_TREE';				
-insert /*+ append */ into CSMRT_OWNER.UM_R_FA_UMBOS_SF_TREE
+strSqlCommand   := 'insert into CSMRT_OWNER.UM_R_FA_UMBOS_SF_TREE';
+insert /*+ append enable_parallel_dml parallel(8) */ into CSMRT_OWNER.UM_R_FA_UMBOS_SF_TREE
     WITH
         Q1
         AS
@@ -253,7 +259,7 @@ insert /*+ append */ into CSMRT_OWNER.UM_R_FA_UMBOS_SF_TREE
                     EQTN_CD,
                     SRC_SYS_ID
                FROM (
-            (SELECT 
+            (SELECT
                     INSTITUTION,
                     BILLING_CAREER,
                     STRM,
@@ -265,8 +271,8 @@ insert /*+ append */ into CSMRT_OWNER.UM_R_FA_UMBOS_SF_TREE
                     AND INSTITUTION = 'UMBOS'
                     AND BILLING_CAREER = 'UGRD'
                     AND VARIABLE_CHAR1 <> '-'
-             UNION 
-             SELECT 
+             UNION
+             SELECT
                     INSTITUTION,
                     BILLING_CAREER,
                     STRM,
@@ -279,7 +285,7 @@ insert /*+ append */ into CSMRT_OWNER.UM_R_FA_UMBOS_SF_TREE
                     AND BILLING_CAREER = 'UGRD'
                     AND VARIABLE_CHAR2 <> '-'
              UNION
-             SELECT 
+             SELECT
                     INSTITUTION,
                     BILLING_CAREER,
                     STRM,
@@ -292,7 +298,7 @@ insert /*+ append */ into CSMRT_OWNER.UM_R_FA_UMBOS_SF_TREE
                     AND BILLING_CAREER = 'UGRD'
                     AND VARIABLE_CHAR3 <> '-'
              UNION
-             SELECT 
+             SELECT
                     INSTITUTION,
                     BILLING_CAREER,
                     STRM,
@@ -305,7 +311,7 @@ insert /*+ append */ into CSMRT_OWNER.UM_R_FA_UMBOS_SF_TREE
                     AND BILLING_CAREER = 'UGRD'
                     AND VARIABLE_CHAR4 <> '-'
              UNION
-             SELECT 
+             SELECT
                     INSTITUTION,
                     BILLING_CAREER,
                     STRM,
@@ -369,7 +375,7 @@ insert /*+ append */ into CSMRT_OWNER.UM_R_FA_UMBOS_SF_TREE
                   AND Q8.SRC_SYS_ID = T.SRC_SYS_ID
            LEFT OUTER JOIN PS_D_PERSON P
                ON Q8.EMPLID = P.PERSON_ID AND Q8.SRC_SYS_ID = T.SRC_SYS_ID
-;               
+;
 
 strSqlCommand   := 'SET intRowCount';
 intRowCount     := SQL%ROWCOUNT;
@@ -399,16 +405,16 @@ COMMON_OWNER.SMT_PROCESS_LOG.PROCESS_DETAIL
 strMessage01    := 'Enabling Indexes for table CSMRT_OWNER.UM_R_FA_UMBOS_SF_TREE';
 COMMON_OWNER.SMT_LOG.PUT_MESSAGE(i_Message => strMessage01);
 
-strSqlDynamic   := 'alter table CSMRT_OWNER.UM_R_FA_UMBOS_SF_TREE enable constraint PK_UM_R_FA_UMBOS_SF_TREE';
-strSqlCommand   := 'SMT_UTILITY.EXECUTE_IMMEDIATE: ' || strSqlDynamic;
-COMMON_OWNER.SMT_UTILITY.EXECUTE_IMMEDIATE
-                (
-                i_SqlStatement          => strSqlDynamic,
-                i_MaxTries              => 10,
-                i_WaitSeconds           => 10,
-                o_Tries                 => intTries
-                );
-				
+--strSqlDynamic   := 'alter table CSMRT_OWNER.UM_R_FA_UMBOS_SF_TREE enable constraint PK_UM_R_FA_UMBOS_SF_TREE';
+--strSqlCommand   := 'SMT_UTILITY.EXECUTE_IMMEDIATE: ' || strSqlDynamic;
+--COMMON_OWNER.SMT_UTILITY.EXECUTE_IMMEDIATE
+--                (
+--                i_SqlStatement          => strSqlDynamic,
+--                i_MaxTries              => 10,
+--                i_WaitSeconds           => 10,
+--                o_Tries                 => intTries
+--                );
+
 COMMON_OWNER.SMT_INDEX.ALL_REBUILD('CSMRT_OWNER','UM_R_FA_UMBOS_SF_TREE');
 
 strSqlCommand := 'SMT_PROCESS_LOG.PROCESS_SUCCESS';

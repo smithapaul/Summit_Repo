@@ -1,4 +1,10 @@
-CREATE OR REPLACE PROCEDURE             UM_F_ADM_APPL_EXT_P AUTHID CURRENT_USER IS
+DROP PROCEDURE CSMRT_OWNER.UM_F_ADM_APPL_EXT_P
+/
+
+--
+-- UM_F_ADM_APPL_EXT_P  (Procedure) 
+--
+CREATE OR REPLACE PROCEDURE CSMRT_OWNER.UM_F_ADM_APPL_EXT_P AUTHID CURRENT_USER IS
 
 ------------------------------------------------------------------------
 --George Adams
@@ -42,20 +48,6 @@ COMMON_OWNER.SMT_PROCESS_LOG.PROCESS_INIT
                 o_ProcessSid            => intProcessSid
         );
 
-strMessage01    := 'Disabling Indexes for table CSMRT_OWNER.UM_F_ADM_APPL_EXT';
-COMMON_OWNER.SMT_LOG.PUT_MESSAGE(i_Message => strMessage01);
-COMMON_OWNER.SMT_INDEX.ALL_UNUSABLE('CSMRT_OWNER','UM_F_ADM_APPL_EXT');
-
-strSqlDynamic   := 'alter table CSMRT_OWNER.UM_F_ADM_APPL_EXT disable constraint PK_UM_F_ADM_APPL_EXT';
-strSqlCommand   := 'SMT_UTILITY.EXECUTE_IMMEDIATE: ' || strSqlDynamic;
-COMMON_OWNER.SMT_UTILITY.EXECUTE_IMMEDIATE
-                (
-                i_SqlStatement          => strSqlDynamic,
-                i_MaxTries              => 10,
-                i_WaitSeconds           => 10,
-                o_Tries                 => intTries
-                );
-				
 strMessage01    := 'Truncating table CSMRT_OWNER.UM_F_ADM_APPL_EXT';
 COMMON_OWNER.SMT_LOG.PUT_MESSAGE(i_Message => strMessage01);
 
@@ -69,18 +61,32 @@ COMMON_OWNER.SMT_UTILITY.EXECUTE_IMMEDIATE
                 o_Tries                 => intTries
                 );
 
+strMessage01    := 'Disabling Indexes for table CSMRT_OWNER.UM_F_ADM_APPL_EXT';
+COMMON_OWNER.SMT_LOG.PUT_MESSAGE(i_Message => strMessage01);
+COMMON_OWNER.SMT_INDEX.ALL_UNUSABLE('CSMRT_OWNER','UM_F_ADM_APPL_EXT');
+
+--strSqlDynamic   := 'alter table CSMRT_OWNER.UM_F_ADM_APPL_EXT disable constraint PK_UM_F_ADM_APPL_EXT';
+--strSqlCommand   := 'SMT_UTILITY.EXECUTE_IMMEDIATE: ' || strSqlDynamic;
+--COMMON_OWNER.SMT_UTILITY.EXECUTE_IMMEDIATE
+--                (
+--                i_SqlStatement          => strSqlDynamic,
+--                i_MaxTries              => 10,
+--                i_WaitSeconds           => 10,
+--                o_Tries                 => intTries
+--                );
+
 strMessage01    := 'Inserting data into CSMRT_OWNER.UM_F_ADM_APPL_EXT';
 COMMON_OWNER.SMT_LOG.PUT_MESSAGE(i_Message => strMessage01);
 
-strSqlCommand   := 'insert into CSMRT_OWNER.UM_F_ADM_APPL_EXT';				
-insert /*+ append */ into CSMRT_OWNER.UM_F_ADM_APPL_EXT
+strSqlCommand   := 'insert into CSMRT_OWNER.UM_F_ADM_APPL_EXT';
+insert /*+ append enable_parallel_dml parallel(8) */ into CSMRT_OWNER.UM_F_ADM_APPL_EXT
    WITH A
-        AS (SELECT /*+ INLINE PARALLEL(8) */ 
-            DISTINCT APPLCNT_SID, 
-                     INSTITUTION_SID, 
+        AS (SELECT /*+ INLINE PARALLEL(8) */
+            DISTINCT APPLCNT_SID,
+                     INSTITUTION_SID,
                      SRC_SYS_ID
               FROM CSMRT_OWNER.UM_F_ADM_APPL_STAT)
-   SELECT /*+ INLINE PARALLEL(8) */ 
+   SELECT /*+ INLINE PARALLEL(8) */
           A.APPLCNT_SID,
           A.INSTITUTION_SID,
           NVL (E.EXT_ORG_SID, 2147483646) EXT_ORG_SID,
@@ -88,11 +94,11 @@ insert /*+ append */ into CSMRT_OWNER.UM_F_ADM_APPL_EXT
           NVL (E.EXT_DATA_NBR, 0) EXT_DATA_NBR,
           NVL (E.EXT_SUMM_TYPE_SID, 2147483646) EXT_SUMM_TYPE_SID,
           A.SRC_SYS_ID,
-          NVL (E.PERSON_ID,'-') PERSON_ID,                      -- Move to UM_F_ADM_APPL_STAT!!!  
-          NVL (E.INSTITUTION_CD,'-') INSTITUTION_CD,            -- Move to UM_F_ADM_APPL_STAT!!!  
-          NVL (E.EXT_ORG_ID,'-') EXT_ORG_ID,                    -- Move to UM_F_ADM_APPL_STAT!!!  
-          NVL (E.EXT_ACAD_CAR_ID,'-') EXT_ACAD_CAR_ID,          -- Move to UM_F_ADM_APPL_STAT!!!  
-          NVL (E.EXT_SUMM_TYPE_ID,'-') EXT_SUMM_TYPE_ID,        -- Move to UM_F_ADM_APPL_STAT!!!  
+          NVL (E.PERSON_ID,'-') PERSON_ID,                      -- Move to UM_F_ADM_APPL_STAT!!!
+          NVL (E.INSTITUTION_CD,'-') INSTITUTION_CD,            -- Move to UM_F_ADM_APPL_STAT!!!
+          NVL (E.EXT_ORG_ID,'-') EXT_ORG_ID,                    -- Move to UM_F_ADM_APPL_STAT!!!
+          NVL (E.EXT_ACAD_CAR_ID,'-') EXT_ACAD_CAR_ID,          -- Move to UM_F_ADM_APPL_STAT!!!
+          NVL (E.EXT_SUMM_TYPE_ID,'-') EXT_SUMM_TYPE_ID,        -- Move to UM_F_ADM_APPL_STAT!!!
           NVL (E.EXT_ACAD_LVL_SID, 2147483646) EXT_ACAD_LVL_SID,
           NVL (E.EXT_TERM_YEAR_SID, 2147483646) EXT_TERM_YEAR_SID,
           NVL (E.EXT_TERM_SID, 2147483646) EXT_TERM_SID,
@@ -125,45 +131,54 @@ insert /*+ append */ into CSMRT_OWNER.UM_F_ADM_APPL_EXT
           NVL (E.D_EXT_ACAD_LVL_SID, 2147483646) D_EXT_ACAD_LVL_SID,
           NVL (E.D_EXT_TERM_YEAR_SID, 2147483646) D_EXT_TERM_YEAR_SID,
           NVL (E.D_EXT_TERM_SID, 2147483646) D_EXT_TERM_SID,
-          (CASE WHEN E.UNITS_ATTMPTD = 0 THEN NULL 
-                ELSE E.UNITS_ATTMPTD 
+          (CASE WHEN E.UNITS_ATTMPTD = 0 THEN NULL
+                ELSE E.UNITS_ATTMPTD
                 END) UNITS_ATTMPTD,
-          (CASE WHEN E.UNITS_CMPLTD = 0 THEN NULL 
-                ELSE E.UNITS_CMPLTD 
+          (CASE WHEN E.UNITS_CMPLTD = 0 THEN NULL
+                ELSE E.UNITS_CMPLTD
                 END) UNITS_CMPLTD,
-          (CASE WHEN E.CLASS_RANK = 0 THEN NULL 
-                ELSE E.CLASS_RANK 
+          (CASE WHEN E.CLASS_RANK = 0 THEN NULL
+                ELSE E.CLASS_RANK
                 END) CLASS_RANK,
-          (CASE WHEN E.CLASS_SIZE = 0 THEN NULL 
-                ELSE E.CLASS_SIZE 
+          (CASE WHEN E.CLASS_SIZE = 0 THEN NULL
+                ELSE E.CLASS_SIZE
                 END) CLASS_SIZE,
           (CASE WHEN E.CLASS_PERCENTILE = 0 THEN NULL
                 ELSE E.CLASS_PERCENTILE
                 END) CLASS_PERCENTILE,
-          (CASE WHEN E.EXT_GPA = 0 THEN NULL 
-                ELSE E.EXT_GPA 
+          (CASE WHEN E.EXT_GPA = 0 THEN NULL
+                ELSE E.EXT_GPA
                 END) EXT_GPA,
-          (CASE WHEN E.CONVERTED_GPA = 0 THEN NULL 
-                ELSE E.CONVERTED_GPA 
+          (CASE WHEN E.CONVERTED_GPA = 0 THEN NULL
+                ELSE E.CONVERTED_GPA
                 END) CONVERTED_GPA,
-          (CASE WHEN E.UM_CUM_CREDIT = 0 THEN NULL 
-                ELSE E.UM_CUM_CREDIT 
+          (CASE WHEN E.UM_CUM_CREDIT = 0 THEN NULL
+                ELSE E.UM_CUM_CREDIT
                 END) UM_CUM_CREDIT,
-          (CASE WHEN E.UM_CUM_GPA = 0 THEN NULL 
-                ELSE E.UM_CUM_GPA 
+          (CASE WHEN E.UM_CUM_GPA = 0 THEN NULL
+                ELSE E.UM_CUM_GPA
                 END) UM_CUM_GPA,
-          (CASE WHEN E.UM_CUM_QP = 0 THEN NULL 
-                ELSE E.UM_CUM_QP 
+          (CASE WHEN E.UM_CUM_QP = 0 THEN NULL
+                ELSE E.UM_CUM_QP
                 END) UM_CUM_QP,
+          (CASE WHEN E.UM_CUM_CREDIT_AGG = 0 THEN NULL      -- Aug 2022
+                ELSE E.UM_CUM_CREDIT_AGG
+                END) UM_CUM_CREDIT_AGG,
+          (CASE WHEN E.UM_CUM_GPA_AGG = 0 THEN NULL         -- Aug 2022
+                ELSE E.UM_CUM_GPA_AGG
+                END) UM_CUM_GPA_AGG,
+          (CASE WHEN E.UM_CUM_QP_AGG = 0 THEN NULL          -- Aug 2022
+                ELSE E.UM_CUM_QP_AGG
+                END) UM_CUM_QP_AGG,
           E.UM_GPA_EXCLUDE_FLG,
-          (CASE WHEN E.UM_EXT_ORG_CR = 0 THEN NULL 
-                ELSE E.UM_EXT_ORG_CR 
+          (CASE WHEN E.UM_EXT_ORG_CR = 0 THEN NULL
+                ELSE E.UM_EXT_ORG_CR
                 END) UM_EXT_ORG_CR,
-          (CASE WHEN E.UM_EXT_ORG_QP = 0 THEN NULL 
-                ELSE E.UM_EXT_ORG_QP 
+          (CASE WHEN E.UM_EXT_ORG_QP = 0 THEN NULL
+                ELSE E.UM_EXT_ORG_QP
                 END) UM_EXT_ORG_QP,
-          (CASE WHEN E.UM_EXT_ORG_GPA = 0 THEN NULL 
-                ELSE E.UM_EXT_ORG_GPA 
+          (CASE WHEN E.UM_EXT_ORG_GPA = 0 THEN NULL
+                ELSE E.UM_EXT_ORG_GPA
                 END) UM_EXT_ORG_GPA,
           (CASE WHEN E.UM_EXT_ORG_CNV_CR = 0 THEN NULL
                 ELSE E.UM_EXT_ORG_CNV_CR
@@ -174,30 +189,28 @@ insert /*+ append */ into CSMRT_OWNER.UM_F_ADM_APPL_EXT
           (CASE WHEN E.UM_EXT_ORG_CNV_QP = 0 THEN NULL
                 ELSE E.UM_EXT_ORG_CNV_QP
                 END) UM_EXT_ORG_CNV_QP,
-          E.UM_1_OVRD_HSGPA_FLG,            -- Moved 8/30/2019 
-          E.UM_GPA_OVRD_FLG,                -- Moved 8/30/2019 
+          E.UM_1_OVRD_HSGPA_FLG,            -- Moved 8/30/2019
+          E.UM_GPA_OVRD_FLG,                -- Moved 8/30/2019
 		  (CASE WHEN UM_GPA_OVRD_FLG = 'Y' OR UM_1_OVRD_HSGPA_FLG = 'Y' THEN 'Y'
                 ELSE 'N'
                 END) UM_OVRD_GPA_FLG,       -- 8/20/2019, CSR 8335
-          (CASE WHEN E.UM_CONVERT_GPA = 0 THEN NULL 
-                ELSE E.UM_CONVERT_GPA 
+          (CASE WHEN E.UM_CONVERT_GPA = 0 THEN NULL
+                ELSE E.UM_CONVERT_GPA
                 END) UM_CONVERT_GPA,
           ROW_NUMBER () OVER (PARTITION BY A.APPLCNT_SID, A.INSTITUTION_SID, NVL (E.EXT_ORG_SID, 2147483646),
                                 NVL (E.EXT_ACAD_CAR_SID, 2147483646), NVL (E.EXT_SUMM_TYPE_SID, 2147483646),
                                 A.SRC_SYS_ID
                                   ORDER BY NVL (E.EXT_DATA_NBR, 0) DESC) ADM_APPL_EXT_ORDER,
           BEST_SUMM_TYPE_GPA_FLG,
-          max(case when EXT_SUMM_TYPE_ID IN ('HSOV', '-') and BEST_SUMM_TYPE_GPA_FLG = 'Y' then decode(CONVERTED_GPA,0,NULL,CONVERTED_GPA) else NULL end) 
+          max(case when EXT_SUMM_TYPE_ID IN ('HSOV', '-') and BEST_SUMM_TYPE_GPA_FLG = 'Y' then decode(CONVERTED_GPA,0,NULL,CONVERTED_GPA) else NULL end)
              over (partition by A.APPLCNT_SID, A.INSTITUTION_SID, A.SRC_SYS_ID) BEST_HS_GPA,
-			 
-			 
-		  (CASE WHEN E.UM_EXT_OR_MTSC_GPA = 0 THEN NULL 
-                ELSE E.UM_EXT_OR_MTSC_GPA 
-                END)  UM_EXT_OR_MTSC_GPA,       -- SMT-8300  
-          (CASE WHEN E.MS_CONVERT_GPA = 0 THEN NULL 
-                ELSE E.MS_CONVERT_GPA 
-                END)  MS_CONVERT_GPA,           -- SMT-8300 	 
-		  
+		  (CASE WHEN E.UM_EXT_OR_MTSC_GPA = 0 THEN NULL
+                ELSE E.UM_EXT_OR_MTSC_GPA
+                END)  UM_EXT_OR_MTSC_GPA,       -- SMT-8300
+          (CASE WHEN E.MS_CONVERT_GPA = 0 THEN NULL
+                ELSE E.MS_CONVERT_GPA
+                END)  MS_CONVERT_GPA,           -- SMT-8300
+          E.MAX_DATA_ROW,         -- Aug 2022
 		  NVL (E.DATA_ORIGIN, 'S') DATA_ORIGIN,
 		  NVL (E.CREATED_EW_DTTM, sysdate) CREATED_EW_DTTM,
 		  NVL (E.LASTUPD_EW_DTTM, sysdate) LASTUPD_EW_DTTM
@@ -207,8 +220,8 @@ insert /*+ append */ into CSMRT_OWNER.UM_F_ADM_APPL_EXT
             AND A.INSTITUTION_SID = E.INSTITUTION_SID
             AND A.SRC_SYS_ID = E.SRC_SYS_ID
             AND NVL (E.DATA_ORIGIN, '-') <> 'D'
-    where A.APPLCNT_SID <> 2147483646         -- Aug 2018 
-      and A.INSTITUTION_SID <> 2147483646     -- Aug 2018 
+    where A.APPLCNT_SID <> 2147483646         -- Aug 2018
+      and A.INSTITUTION_SID <> 2147483646     -- Aug 2018
 ;
 
 strSqlCommand := 'commit';
@@ -228,16 +241,16 @@ COMMON_OWNER.SMT_PROCESS_LOG.PROCESS_DETAIL
 strMessage01    := 'Enabling Indexes for table CSMRT_OWNER.UM_F_ADM_APPL_EXT';
 COMMON_OWNER.SMT_LOG.PUT_MESSAGE(i_Message => strMessage01);
 
-strSqlDynamic   := 'alter table CSMRT_OWNER.UM_F_ADM_APPL_EXT enable constraint PK_UM_F_ADM_APPL_EXT';
-strSqlCommand   := 'SMT_UTILITY.EXECUTE_IMMEDIATE: ' || strSqlDynamic;
-COMMON_OWNER.SMT_UTILITY.EXECUTE_IMMEDIATE
-                (
-                i_SqlStatement          => strSqlDynamic,
-                i_MaxTries              => 10,
-                i_WaitSeconds           => 10,
-                o_Tries                 => intTries
-                );
-				
+--strSqlDynamic   := 'alter table CSMRT_OWNER.UM_F_ADM_APPL_EXT enable constraint PK_UM_F_ADM_APPL_EXT';
+--strSqlCommand   := 'SMT_UTILITY.EXECUTE_IMMEDIATE: ' || strSqlDynamic;
+--COMMON_OWNER.SMT_UTILITY.EXECUTE_IMMEDIATE
+--                (
+--                i_SqlStatement          => strSqlDynamic,
+--                i_MaxTries              => 10,
+--                i_WaitSeconds           => 10,
+--                o_Tries                 => intTries
+--                );
+
 COMMON_OWNER.SMT_INDEX.ALL_REBUILD('CSMRT_OWNER','UM_F_ADM_APPL_EXT');
 
 strSqlCommand := 'SMT_PROCESS_LOG.PROCESS_SUCCESS';

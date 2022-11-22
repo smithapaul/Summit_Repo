@@ -1,4 +1,10 @@
-CREATE OR REPLACE PROCEDURE             "PS_EXT_SUBJECT_TBL_P" AUTHID CURRENT_USER IS
+DROP PROCEDURE CSMRT_OWNER.PS_EXT_SUBJECT_TBL_P
+/
+
+--
+-- PS_EXT_SUBJECT_TBL_P  (Procedure) 
+--
+CREATE OR REPLACE PROCEDURE CSMRT_OWNER."PS_EXT_SUBJECT_TBL_P" AUTHID CURRENT_USER IS
 
 ------------------------------------------------------------------------
 --George Adams

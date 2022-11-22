@@ -1,4 +1,10 @@
-CREATE OR REPLACE PROCEDURE             "UM_F_COMM_PERSON_P" AUTHID CURRENT_USER IS
+DROP PROCEDURE CSMRT_OWNER.UM_F_COMM_PERSON_P
+/
+
+--
+-- UM_F_COMM_PERSON_P  (Procedure) 
+--
+CREATE OR REPLACE PROCEDURE CSMRT_OWNER."UM_F_COMM_PERSON_P" AUTHID CURRENT_USER IS
 
 ------------------------------------------------------------------------
 --George Adams
@@ -55,52 +61,52 @@ strMessage01    := 'Disabling Indexes for table CSMRT_OWNER.UM_F_COMM_PERSON';
 COMMON_OWNER.SMT_LOG.PUT_MESSAGE(i_Message => strMessage01);
 COMMON_OWNER.SMT_INDEX.ALL_UNUSABLE('CSMRT_OWNER','UM_F_COMM_PERSON');
 
-strSqlDynamic   := 'alter table CSMRT_OWNER.UM_F_COMM_PERSON disable constraint PK_UM_F_COMM_PERSON';
-strSqlCommand   := 'SMT_UTILITY.EXECUTE_IMMEDIATE: ' || strSqlDynamic;
-COMMON_OWNER.SMT_UTILITY.EXECUTE_IMMEDIATE
-                (
-                i_SqlStatement          => strSqlDynamic,
-                i_MaxTries              => 10,
-                i_WaitSeconds           => 10,
-                o_Tries                 => intTries
-                );
-				
+--strSqlDynamic   := 'alter table CSMRT_OWNER.UM_F_COMM_PERSON disable constraint PK_UM_F_COMM_PERSON';
+--strSqlCommand   := 'SMT_UTILITY.EXECUTE_IMMEDIATE: ' || strSqlDynamic;
+--COMMON_OWNER.SMT_UTILITY.EXECUTE_IMMEDIATE
+--                (
+--                i_SqlStatement          => strSqlDynamic,
+--                i_MaxTries              => 10,
+--                i_WaitSeconds           => 10,
+--                o_Tries                 => intTries
+--                );
+
 strMessage01    := 'Inserting data into CSMRT_OWNER.UM_F_COMM_PERSON';
 COMMON_OWNER.SMT_LOG.PUT_MESSAGE(i_Message => strMessage01);
 
-strSqlCommand   := 'insert into CSMRT_OWNER.UM_F_COMM_PERSON';				
+strSqlCommand   := 'insert into CSMRT_OWNER.UM_F_COMM_PERSON';
 insert /*+ append parallel(8) enable_parallel_dml */ into CSMRT_OWNER.UM_F_COMM_PERSON
 with CATG as (
-select /*+ parallel(8) inline */ 
-       INSTITUTION, 
-       COMM_CATEGORY, 
-       EFFDT, 
-       SRC_SYS_ID, 
-       DESCR, 
+select /*+ parallel(8) inline */
+       INSTITUTION,
+       COMM_CATEGORY,
+       EFFDT,
+       SRC_SYS_ID,
+       DESCR,
        DESCRSHORT,
-       ROW_NUMBER() OVER (PARTITION BY INSTITUTION, COMM_CATEGORY, SRC_SYS_ID 
+       ROW_NUMBER() OVER (PARTITION BY INSTITUTION, COMM_CATEGORY, SRC_SYS_ID
                               ORDER BY EFFDT desc) CATG_ORDER
   from CSSTG_OWNER.PS_COMM_CATG_TBL
  where DATA_ORIGIN <> 'D'
 ),
 CTXT as (
 select /*+ parallel(8) inline */
-       INSTITUTION, 
-       COMM_CONTEXT, 
-       EFFDT, 
-       SRC_SYS_ID, 
-       DESCR, 
-       DESCRSHORT, 
-       ROW_NUMBER() OVER (PARTITION BY INSTITUTION, COMM_CONTEXT, SRC_SYS_ID 
+       INSTITUTION,
+       COMM_CONTEXT,
+       EFFDT,
+       SRC_SYS_ID,
+       DESCR,
+       DESCRSHORT,
+       ROW_NUMBER() OVER (PARTITION BY INSTITUTION, COMM_CONTEXT, SRC_SYS_ID
                               ORDER BY EFFDT desc) CTXT_ORDER
   from CSSTG_OWNER.PS_COMM_CTXT_TBL
  where DATA_ORIGIN <> 'D'
 )
 select /*+ parallel(8) */
-       C.COMMON_ID,           
-       C.SEQ_3C,             
-       C.SRC_SYS_ID,    
-       C.INSTITUTION,             
+       C.COMMON_ID,
+       C.SEQ_3C,
+       C.SRC_SYS_ID,
+       C.INSTITUTION,
        nvl(I.INSTITUTION_SID, 2147483646) INSTITUTION_SID,
        nvl(P1.PERSON_SID, 2147483646) PERSON_SID,
        nvl(AF.ADMIN_FUNC_SID, 2147483646) ADMIN_FUNC_SID,
@@ -108,48 +114,48 @@ select /*+ parallel(8) */
        nvl(P2.PERSON_SID, 2147483646) PERSON_ASSIGNED_SID,
        nvl(P3.PERSON_SID, 2147483646) PERSON_COMPLETED_SID,
        nvl(V.VAR_DATA_SID, 2147483646) VAR_DATA_SID,
-       C.CHECKLIST_SEQ_3C,  
-       C.CHECKLIST_SEQ,     
-       C.COMM_CATEGORY, 
-       nvl(CATG.DESCRSHORT,'-') COMM_CATEGORY_SD,  
-       nvl(CATG.DESCR,'-') COMM_CATEGORY_LD,    
-       C.COMM_CONTEXT, 
-       nvl(CTXT.DESCRSHORT,'-') COMM_CONTEXT_SD, 
-       nvl(CTXT.DESCR,'-') COMM_CONTEXT_LD, 
-       C.COMM_DT, 
-       C.COMM_DTTM,     
+       C.CHECKLIST_SEQ_3C,
+       C.CHECKLIST_SEQ,
+       C.COMM_CATEGORY,
+       nvl(CATG.DESCRSHORT,'-') COMM_CATEGORY_SD,
+       nvl(CATG.DESCR,'-') COMM_CATEGORY_LD,
+       C.COMM_CONTEXT,
+       nvl(CTXT.DESCRSHORT,'-') COMM_CONTEXT_SD,
+       nvl(CTXT.DESCR,'-') COMM_CONTEXT_LD,
+       C.COMM_DT,
+       C.COMM_DTTM,
        C.COMM_METHOD,
-       C.COMPLETED_COMM COMPLETED_COMM_FLG, 
-       C.COMPLETED_DT, 
+       C.COMPLETED_COMM COMPLETED_COMM_FLG,
+       C.COMPLETED_DT,
        C.COMMENT_PRINT_FLAG,
-       C.JOINT_COMM JOINT_COMM_FLG, 
-       C.LETTER_PRINTED_DT, 
-       C.ORG_CONTACT,       
-       C.OUTCOME_REASON,  
-       C.PROCESS_INSTANCE, 
-       C.SA_ID_TYPE,       
-       C.SCC_COMM_LANG, 
-       C.SCC_COMM_MTHD, 
-       C.SCC_COMM_PROC, 
-       C.SCC_LETTER_CD, 
-       nvl(L.DESCRSHORT,'-') SCC_LETTER_SD, 
+       C.JOINT_COMM JOINT_COMM_FLG,
+       C.LETTER_PRINTED_DT,
+       C.ORG_CONTACT,
+       C.OUTCOME_REASON,
+       C.PROCESS_INSTANCE,
+       C.SA_ID_TYPE,
+       C.SCC_COMM_LANG,
+       C.SCC_COMM_MTHD,
+       C.SCC_COMM_PROC,
+       C.SCC_LETTER_CD,
+       nvl(L.DESCRSHORT,'-') SCC_LETTER_SD,
        nvl(L.DESCR,'-') SCC_LETTER_LD,
-       C.UNSUCCESSFUL UNSUCCESSFUL_FLG, 
-       C.VAR_DATA_SEQ, 
-       'N' LOAD_ERROR, 
-       'S' DATA_ORIGIN, 
-       SYSDATE CREATED_EW_DTTM, 
-       SYSDATE LASTUPD_EW_DTTM, 
-       1234 BATCH_SID, 
-       C.COMM_COMMENTS 
+       C.UNSUCCESSFUL UNSUCCESSFUL_FLG,
+       C.VAR_DATA_SEQ,
+       'N' LOAD_ERROR,
+       'S' DATA_ORIGIN,
+       SYSDATE CREATED_EW_DTTM,
+       SYSDATE LASTUPD_EW_DTTM,
+       1234 BATCH_SID,
+       C.COMM_COMMENTS
   from CSSTG_OWNER.PS_COMMUNICATION C
-  left outer join CATG 
-    on C.INSTITUTION = CATG.INSTITUTION 
+  left outer join CATG
+    on C.INSTITUTION = CATG.INSTITUTION
    and C.COMM_CATEGORY = CATG.COMM_CATEGORY
    and C.SRC_SYS_ID = CATG.SRC_SYS_ID
-   and nvl(CATG_ORDER,1) = 1 
-  left outer join CTXT 
-    on C.INSTITUTION = CTXT.INSTITUTION 
+   and nvl(CATG_ORDER,1) = 1
+  left outer join CTXT
+    on C.INSTITUTION = CTXT.INSTITUTION
    and C.COMM_CONTEXT = CTXT.COMM_CONTEXT
    and C.SRC_SYS_ID = CTXT.SRC_SYS_ID
    and nvl(CTXT_ORDER,1) = 1
@@ -211,16 +217,16 @@ COMMON_OWNER.SMT_PROCESS_LOG.PROCESS_DETAIL
 strMessage01    := 'Enabling Indexes for table CSMRT_OWNER.UM_F_COMM_PERSON';
 COMMON_OWNER.SMT_LOG.PUT_MESSAGE(i_Message => strMessage01);
 
-strSqlDynamic   := 'alter table CSMRT_OWNER.UM_F_COMM_PERSON enable constraint PK_UM_F_COMM_PERSON';
-strSqlCommand   := 'SMT_UTILITY.EXECUTE_IMMEDIATE: ' || strSqlDynamic;
-COMMON_OWNER.SMT_UTILITY.EXECUTE_IMMEDIATE
-                (
-                i_SqlStatement          => strSqlDynamic,
-                i_MaxTries              => 10,
-                i_WaitSeconds           => 10,
-                o_Tries                 => intTries
-                );
-				
+--strSqlDynamic   := 'alter table CSMRT_OWNER.UM_F_COMM_PERSON enable constraint PK_UM_F_COMM_PERSON';
+--strSqlCommand   := 'SMT_UTILITY.EXECUTE_IMMEDIATE: ' || strSqlDynamic;
+--COMMON_OWNER.SMT_UTILITY.EXECUTE_IMMEDIATE
+--                (
+--                i_SqlStatement          => strSqlDynamic,
+--                i_MaxTries              => 10,
+--                i_WaitSeconds           => 10,
+--                o_Tries                 => intTries
+--                );
+
 COMMON_OWNER.SMT_INDEX.ALL_REBUILD('CSMRT_OWNER','UM_F_COMM_PERSON');
 
 strSqlCommand := 'SMT_PROCESS_LOG.PROCESS_SUCCESS';

@@ -1,4 +1,10 @@
-CREATE OR REPLACE PROCEDURE             "UM_F_FA_STDNT_WS_AWARDS_P" AUTHID CURRENT_USER IS
+DROP PROCEDURE CSMRT_OWNER.UM_F_FA_STDNT_WS_AWARDS_P
+/
+
+--
+-- UM_F_FA_STDNT_WS_AWARDS_P  (Procedure) 
+--
+CREATE OR REPLACE PROCEDURE CSMRT_OWNER."UM_F_FA_STDNT_WS_AWARDS_P" AUTHID CURRENT_USER IS
 
 ------------------------------------------------------------------------
 -- George Adams
@@ -41,21 +47,6 @@ COMMON_OWNER.SMT_PROCESS_LOG.PROCESS_INIT
                 o_ProcessSid            => intProcessSid
         );
 
-strMessage01    := 'Disabling Indexes for table CSMRT_OWNER.UM_F_FA_STDNT_WS_AWARDS';
-COMMON_OWNER.SMT_LOG.PUT_MESSAGE(i_Message => strMessage01);
-COMMON_OWNER.SMT_INDEX.ALL_UNUSABLE('CSMRT_OWNER','UM_F_FA_STDNT_WS_AWARDS');
-
---alter table UM_F_FA_STDNT_WS_AWARDS disable constraint PK_UM_F_FA_STDNT_WS_AWARDS;
-strSqlDynamic   := 'alter table CSMRT_OWNER.UM_F_FA_STDNT_WS_AWARDS disable constraint PK_UM_F_FA_STDNT_WS_AWARDS';
-strSqlCommand   := 'SMT_UTILITY.EXECUTE_IMMEDIATE: ' || strSqlDynamic;
-COMMON_OWNER.SMT_UTILITY.EXECUTE_IMMEDIATE
-                (
-                i_SqlStatement          => strSqlDynamic,
-                i_MaxTries              => 10,
-                i_WaitSeconds           => 10,
-                o_Tries                 => intTries
-                );
-				
 strMessage01    := 'Truncating table CSMRT_OWNER.UM_F_FA_STDNT_WS_AWARDS';
 COMMON_OWNER.SMT_LOG.PUT_MESSAGE(i_Message => strMessage01);
 
@@ -69,26 +60,41 @@ COMMON_OWNER.SMT_UTILITY.EXECUTE_IMMEDIATE
                 o_Tries                 => intTries
                 );
 
+strMessage01    := 'Disabling Indexes for table CSMRT_OWNER.UM_F_FA_STDNT_WS_AWARDS';
+COMMON_OWNER.SMT_LOG.PUT_MESSAGE(i_Message => strMessage01);
+COMMON_OWNER.SMT_INDEX.ALL_UNUSABLE('CSMRT_OWNER','UM_F_FA_STDNT_WS_AWARDS');
+
+----alter table UM_F_FA_STDNT_WS_AWARDS disable constraint PK_UM_F_FA_STDNT_WS_AWARDS;
+--strSqlDynamic   := 'alter table CSMRT_OWNER.UM_F_FA_STDNT_WS_AWARDS disable constraint PK_UM_F_FA_STDNT_WS_AWARDS';
+--strSqlCommand   := 'SMT_UTILITY.EXECUTE_IMMEDIATE: ' || strSqlDynamic;
+--COMMON_OWNER.SMT_UTILITY.EXECUTE_IMMEDIATE
+--                (
+--                i_SqlStatement          => strSqlDynamic,
+--                i_MaxTries              => 10,
+--                i_WaitSeconds           => 10,
+--                o_Tries                 => intTries
+--                );
+
 strMessage01    := 'Inserting data into CSMRT_OWNER.UM_F_FA_STDNT_WS_AWARDS';
 COMMON_OWNER.SMT_LOG.PUT_MESSAGE(i_Message => strMessage01);
 
-strSqlCommand   := 'insert into CSMRT_OWNER.UM_F_FA_STDNT_WS_AWARDS';				
-insert into CSMRT_OWNER.UM_F_FA_STDNT_WS_AWARDS
-select 
-A.INSTITUTION INSTITUTION_CD, A.ACAD_CAREER ACAD_CAR_CD, A.AID_YEAR, A.EMPLID PERSON_ID, A.ITEM_TYPE, A.SEQNO, A.EFFDT, A.SRC_SYS_ID, 
-nvl(I.INSTITUTION_SID, 2147483646) INSTITUTION_SID, 
-nvl(C.ACAD_CAR_SID, 2147483646) ACAD_CAR_SID, 
-nvl(P.PERSON_SID, 2147483646) PERSON_SID, 
-nvl(T.ITEM_TYPE_SID, 2147483646) ITEM_TYPE_SID, 
-ACCOUNT, ACTION_DT, AWARD_STATUS, COMMENTS_MSGS, 
-COMMUNITY_SERVICE, 
+strSqlCommand   := 'insert into CSMRT_OWNER.UM_F_FA_STDNT_WS_AWARDS';
+insert /*+ append enable_parallel_dml parallel(8) */ into CSMRT_OWNER.UM_F_FA_STDNT_WS_AWARDS
+select
+A.INSTITUTION INSTITUTION_CD, A.ACAD_CAREER ACAD_CAR_CD, A.AID_YEAR, A.EMPLID PERSON_ID, A.ITEM_TYPE, A.SEQNO, A.EFFDT, A.SRC_SYS_ID,
+nvl(I.INSTITUTION_SID, 2147483646) INSTITUTION_SID,
+nvl(C.ACAD_CAR_SID, 2147483646) ACAD_CAR_SID,
+nvl(P.PERSON_SID, 2147483646) PERSON_SID,
+nvl(T.ITEM_TYPE_SID, 2147483646) ITEM_TYPE_SID,
+ACCOUNT, ACTION_DT, AWARD_STATUS, COMMENTS_MSGS,
+COMMUNITY_SERVICE,
 nvl((SELECT min(X.XLATLONGNAME)
        FROM UM_D_XLATITEM X
       WHERE X.FIELDNAME = 'COMMUNITY_SERVICE'
-        AND X.FIELDVALUE = COMMUNITY_SERVICE), '-') COMMUNITY_SERVICE_LD,   -- Sept 2016 
-EFF_STATUS, EMAILID, EMPLOYER, EMPL_RCD, END_DT, HOURLY_RT, JOBID, JOB_REC_EFFDT, JOB_REC_EFFSEQ, PHONE, SUPERVISOR_NAME, 
-UM_EXEMPT, UM_SEC_ACCOUNT, UM_THIRD_ACCOUNT, UM_FOURTH_ACCOUNT, 
-WS_PLACEMENT_STAT, 
+        AND X.FIELDVALUE = COMMUNITY_SERVICE), '-') COMMUNITY_SERVICE_LD,   -- Sept 2016
+EFF_STATUS, EMAILID, EMPLOYER, EMPL_RCD, END_DT, HOURLY_RT, JOBID, JOB_REC_EFFDT, JOB_REC_EFFSEQ, PHONE, SUPERVISOR_NAME,
+UM_EXEMPT, UM_SEC_ACCOUNT, UM_THIRD_ACCOUNT, UM_FOURTH_ACCOUNT,
+WS_PLACEMENT_STAT,
 nvl((SELECT MIN (X.XLATLONGNAME)
        FROM UM_D_XLATITEM X
       WHERE X.FIELDNAME = 'WS_PLACEMENT_STAT'
@@ -142,16 +148,16 @@ COMMON_OWNER.SMT_PROCESS_LOG.PROCESS_DETAIL
 strMessage01    := 'Enabling Indexes for table CSMRT_OWNER.UM_F_FA_STDNT_WS_AWARDS';
 COMMON_OWNER.SMT_LOG.PUT_MESSAGE(i_Message => strMessage01);
 
-strSqlDynamic   := 'alter table CSMRT_OWNER.UM_F_FA_STDNT_WS_AWARDS enable constraint PK_UM_F_FA_STDNT_WS_AWARDS';
-strSqlCommand   := 'SMT_UTILITY.EXECUTE_IMMEDIATE: ' || strSqlDynamic;
-COMMON_OWNER.SMT_UTILITY.EXECUTE_IMMEDIATE
-                (
-                i_SqlStatement          => strSqlDynamic,
-                i_MaxTries              => 10,
-                i_WaitSeconds           => 10,
-                o_Tries                 => intTries
-                );
-				
+--strSqlDynamic   := 'alter table CSMRT_OWNER.UM_F_FA_STDNT_WS_AWARDS enable constraint PK_UM_F_FA_STDNT_WS_AWARDS';
+--strSqlCommand   := 'SMT_UTILITY.EXECUTE_IMMEDIATE: ' || strSqlDynamic;
+--COMMON_OWNER.SMT_UTILITY.EXECUTE_IMMEDIATE
+--                (
+--                i_SqlStatement          => strSqlDynamic,
+--                i_MaxTries              => 10,
+--                i_WaitSeconds           => 10,
+--                o_Tries                 => intTries
+--                );
+
 COMMON_OWNER.SMT_INDEX.ALL_REBUILD('CSMRT_OWNER','UM_F_FA_STDNT_WS_AWARDS');
 
 strSqlCommand := 'SMT_PROCESS_LOG.PROCESS_SUCCESS';

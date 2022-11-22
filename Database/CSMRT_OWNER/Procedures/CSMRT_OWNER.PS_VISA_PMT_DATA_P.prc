@@ -1,4 +1,10 @@
-CREATE OR REPLACE PROCEDURE             "PS_VISA_PMT_DATA_P" AUTHID CURRENT_USER IS
+DROP PROCEDURE CSMRT_OWNER.PS_VISA_PMT_DATA_P
+/
+
+--
+-- PS_VISA_PMT_DATA_P  (Procedure) 
+--
+CREATE OR REPLACE PROCEDURE CSMRT_OWNER."PS_VISA_PMT_DATA_P" AUTHID CURRENT_USER IS
 
 ------------------------------------------------------------------------
 --

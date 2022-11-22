@@ -1,4 +1,10 @@
-CREATE OR REPLACE PROCEDURE             "PS_REG_REGION_TBL_P" AUTHID CURRENT_USER IS
+DROP PROCEDURE CSMRT_OWNER.PS_REG_REGION_TBL_P
+/
+
+--
+-- PS_REG_REGION_TBL_P  (Procedure) 
+--
+CREATE OR REPLACE PROCEDURE CSMRT_OWNER."PS_REG_REGION_TBL_P" AUTHID CURRENT_USER IS
 
 ------------------------------------------------------------------------
 -- George Adams

@@ -1,4 +1,10 @@
-CREATE OR REPLACE PROCEDURE             "UM_M_AF_STDNT_ENRL_BDL_P" AUTHID CURRENT_USER IS
+DROP PROCEDURE CSMRT_OWNER.UM_M_AF_STDNT_ENRL_BDL_P
+/
+
+--
+-- UM_M_AF_STDNT_ENRL_BDL_P  (Procedure) 
+--
+CREATE OR REPLACE PROCEDURE CSMRT_OWNER."UM_M_AF_STDNT_ENRL_BDL_P" AUTHID CURRENT_USER IS
 
 ------------------------------------------------------------------------
 -- James Doucette

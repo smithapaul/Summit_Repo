@@ -1,4 +1,10 @@
-CREATE OR REPLACE PROCEDURE             "PSTREENODE_P" AUTHID CURRENT_USER IS
+DROP PROCEDURE CSMRT_OWNER.PSTREENODE_P
+/
+
+--
+-- PSTREENODE_P  (Procedure) 
+--
+CREATE OR REPLACE PROCEDURE CSMRT_OWNER."PSTREENODE_P" AUTHID CURRENT_USER IS
 
 
 ------------------------------------------------------------------------

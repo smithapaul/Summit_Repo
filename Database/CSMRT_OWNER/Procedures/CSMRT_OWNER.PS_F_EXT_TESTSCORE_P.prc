@@ -1,4 +1,10 @@
-CREATE OR REPLACE PROCEDURE             "PS_F_EXT_TESTSCORE_P" AUTHID CURRENT_USER IS
+DROP PROCEDURE CSMRT_OWNER.PS_F_EXT_TESTSCORE_P
+/
+
+--
+-- PS_F_EXT_TESTSCORE_P  (Procedure) 
+--
+CREATE OR REPLACE PROCEDURE CSMRT_OWNER."PS_F_EXT_TESTSCORE_P" AUTHID CURRENT_USER IS
 
 ------------------------------------------------------------------------
 -- George Adams
@@ -41,21 +47,6 @@ COMMON_OWNER.SMT_PROCESS_LOG.PROCESS_INIT
                 o_ProcessSid            => intProcessSid
         );
 
-strMessage01    := 'Disabling Indexes for table CSMRT_OWNER.PS_F_EXT_TESTSCORE';
-COMMON_OWNER.SMT_LOG.PUT_MESSAGE(i_Message => strMessage01);
-COMMON_OWNER.SMT_INDEX.ALL_UNUSABLE('CSMRT_OWNER','PS_F_EXT_TESTSCORE');
-
---alter table PS_F_EXT_TESTSCORE disable constraint PK_PS_F_EXT_TESTSCORE;
-strSqlDynamic   := 'alter table CSMRT_OWNER.PS_F_EXT_TESTSCORE disable constraint PK_PS_F_EXT_TESTSCORE';
-strSqlCommand   := 'SMT_UTILITY.EXECUTE_IMMEDIATE: ' || strSqlDynamic;
-COMMON_OWNER.SMT_UTILITY.EXECUTE_IMMEDIATE
-                (
-                i_SqlStatement          => strSqlDynamic,
-                i_MaxTries              => 10,
-                i_WaitSeconds           => 10,
-                o_Tries                 => intTries
-                );
-				
 strMessage01    := 'Truncating table CSMRT_OWNER.PS_F_EXT_TESTSCORE';
 COMMON_OWNER.SMT_LOG.PUT_MESSAGE(i_Message => strMessage01);
 
@@ -69,11 +60,25 @@ COMMON_OWNER.SMT_UTILITY.EXECUTE_IMMEDIATE
                 o_Tries                 => intTries
                 );
 
+strMessage01    := 'Disabling Indexes for table CSMRT_OWNER.PS_F_EXT_TESTSCORE';
+COMMON_OWNER.SMT_LOG.PUT_MESSAGE(i_Message => strMessage01);
+COMMON_OWNER.SMT_INDEX.ALL_UNUSABLE('CSMRT_OWNER','PS_F_EXT_TESTSCORE');
+
+--strSqlDynamic   := 'alter table CSMRT_OWNER.PS_F_EXT_TESTSCORE disable constraint PK_PS_F_EXT_TESTSCORE';
+--strSqlCommand   := 'SMT_UTILITY.EXECUTE_IMMEDIATE: ' || strSqlDynamic;
+--COMMON_OWNER.SMT_UTILITY.EXECUTE_IMMEDIATE
+--                (
+--                i_SqlStatement          => strSqlDynamic,
+--                i_MaxTries              => 10,
+--                i_WaitSeconds           => 10,
+--                o_Tries                 => intTries
+--                );
+				
 strMessage01    := 'Inserting data into CSMRT_OWNER.PS_F_EXT_TESTSCORE';
 COMMON_OWNER.SMT_LOG.PUT_MESSAGE(i_Message => strMessage01);
 
 strSqlCommand   := 'insert into CSMRT_OWNER.PS_F_EXT_TESTSCORE';				
-insert /*+ append */ into CSMRT_OWNER.PS_F_EXT_TESTSCORE
+insert /*+ append enable_parallel_dml parallel(8) */ into CSMRT_OWNER.PS_F_EXT_TESTSCORE
 with T1 as (
 select /*+ parallel(8) inline */
        EMPLID, TEST_ID, TEST_COMPONENT, TEST_DT, LS_DATA_SOURCE, SRC_SYS_ID, 
@@ -160,27 +165,18 @@ COMMON_OWNER.SMT_PROCESS_LOG.PROCESS_DETAIL
                 i_RowCount          => intRowCount
         );
 
-strSqlCommand := 'SMT_PROCESS_LOG.PROCESS_DETAIL';
-COMMON_OWNER.SMT_PROCESS_LOG.PROCESS_DETAIL
-        (
-                i_TargetTableName   => 'PS_F_EXT_TESTSCORE',
-                i_Action            => 'UPDATE',
-                i_RowCount          => intRowCount
-        );
-
 strMessage01    := 'Enabling Indexes for table CSMRT_OWNER.PS_F_EXT_TESTSCORE';
 COMMON_OWNER.SMT_LOG.PUT_MESSAGE(i_Message => strMessage01);
---alter table PS_F_EXT_TESTSCORE enable constraint PK_PS_F_EXT_TESTSCORE;
 
-strSqlDynamic   := 'alter table CSMRT_OWNER.PS_F_EXT_TESTSCORE enable constraint PK_PS_F_EXT_TESTSCORE';
-strSqlCommand   := 'SMT_UTILITY.EXECUTE_IMMEDIATE: ' || strSqlDynamic;
-COMMON_OWNER.SMT_UTILITY.EXECUTE_IMMEDIATE
-                (
-                i_SqlStatement          => strSqlDynamic,
-                i_MaxTries              => 10,
-                i_WaitSeconds           => 10,
-                o_Tries                 => intTries
-                );
+--strSqlDynamic   := 'alter table CSMRT_OWNER.PS_F_EXT_TESTSCORE enable constraint PK_PS_F_EXT_TESTSCORE';
+--strSqlCommand   := 'SMT_UTILITY.EXECUTE_IMMEDIATE: ' || strSqlDynamic;
+--COMMON_OWNER.SMT_UTILITY.EXECUTE_IMMEDIATE
+--                (
+--                i_SqlStatement          => strSqlDynamic,
+--                i_MaxTries              => 10,
+--                i_WaitSeconds           => 10,
+--                o_Tries                 => intTries
+--                );
 				
 COMMON_OWNER.SMT_INDEX.ALL_REBUILD('CSMRT_OWNER','PS_F_EXT_TESTSCORE');
 

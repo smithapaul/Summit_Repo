@@ -1,4 +1,10 @@
-CREATE OR REPLACE PROCEDURE             "UMOL_TERM_S2_P" AUTHID CURRENT_USER IS
+DROP PROCEDURE CSMRT_OWNER.UMOL_TERM_S2_P
+/
+
+--
+-- UMOL_TERM_S2_P  (Procedure) 
+--
+CREATE OR REPLACE PROCEDURE CSMRT_OWNER."UMOL_TERM_S2_P" AUTHID CURRENT_USER IS
 
 ------------------------------------------------------------------------
 -- Jim Doucette

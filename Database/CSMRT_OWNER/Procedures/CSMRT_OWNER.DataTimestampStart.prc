@@ -1,4 +1,10 @@
-CREATE OR REPLACE PROCEDURE             "DataTimestampStart"
+DROP PROCEDURE CSMRT_OWNER."DataTimestampStart"
+/
+
+--
+-- "DataTimestampStart"  (Procedure) 
+--
+CREATE OR REPLACE PROCEDURE CSMRT_OWNER."DataTimestampStart"
 
         (
                i_MartId                in  Varchar2

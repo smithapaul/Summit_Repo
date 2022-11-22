@@ -1,4 +1,10 @@
-CREATE OR REPLACE PROCEDURE             "UM_F_SF_STDNT_EQUTN_VAR_P" AUTHID CURRENT_USER IS
+DROP PROCEDURE CSMRT_OWNER.UM_F_SF_STDNT_EQUTN_VAR_P
+/
+
+--
+-- UM_F_SF_STDNT_EQUTN_VAR_P  (Procedure) 
+--
+CREATE OR REPLACE PROCEDURE CSMRT_OWNER."UM_F_SF_STDNT_EQUTN_VAR_P" AUTHID CURRENT_USER IS
 
 ------------------------------------------------------------------------
 -- George Adams
@@ -41,20 +47,6 @@ COMMON_OWNER.SMT_PROCESS_LOG.PROCESS_INIT
                 o_ProcessSid            => intProcessSid
         );
 
-strMessage01    := 'Disabling Indexes for table CSMRT_OWNER.UM_F_SF_STDNT_EQUTN_VAR';
-COMMON_OWNER.SMT_LOG.PUT_MESSAGE(i_Message => strMessage01);
-COMMON_OWNER.SMT_INDEX.ALL_UNUSABLE('CSMRT_OWNER','UM_F_SF_STDNT_EQUTN_VAR');
-
-strSqlDynamic   := 'alter table CSMRT_OWNER.UM_F_SF_STDNT_EQUTN_VAR disable constraint PK_UM_F_SF_STDNT_EQUTN_VAR';
-strSqlCommand   := 'SMT_UTILITY.EXECUTE_IMMEDIATE: ' || strSqlDynamic;
-COMMON_OWNER.SMT_UTILITY.EXECUTE_IMMEDIATE
-                (
-                i_SqlStatement          => strSqlDynamic,
-                i_MaxTries              => 10,
-                i_WaitSeconds           => 10,
-                o_Tries                 => intTries
-                );
-				
 strMessage01    := 'Truncating table CSMRT_OWNER.UM_F_SF_STDNT_EQUTN_VAR';
 COMMON_OWNER.SMT_LOG.PUT_MESSAGE(i_Message => strMessage01);
 
@@ -68,20 +60,34 @@ COMMON_OWNER.SMT_UTILITY.EXECUTE_IMMEDIATE
                 o_Tries                 => intTries
                 );
 
+strMessage01    := 'Disabling Indexes for table CSMRT_OWNER.UM_F_SF_STDNT_EQUTN_VAR';
+COMMON_OWNER.SMT_LOG.PUT_MESSAGE(i_Message => strMessage01);
+COMMON_OWNER.SMT_INDEX.ALL_UNUSABLE('CSMRT_OWNER','UM_F_SF_STDNT_EQUTN_VAR');
+
+--strSqlDynamic   := 'alter table CSMRT_OWNER.UM_F_SF_STDNT_EQUTN_VAR disable constraint PK_UM_F_SF_STDNT_EQUTN_VAR';
+--strSqlCommand   := 'SMT_UTILITY.EXECUTE_IMMEDIATE: ' || strSqlDynamic;
+--COMMON_OWNER.SMT_UTILITY.EXECUTE_IMMEDIATE
+--                (
+--                i_SqlStatement          => strSqlDynamic,
+--                i_MaxTries              => 10,
+--                i_WaitSeconds           => 10,
+--                o_Tries                 => intTries
+--                );
+
 strMessage01    := 'Inserting data into CSMRT_OWNER.UM_F_SF_STDNT_EQUTN_VAR';
 COMMON_OWNER.SMT_LOG.PUT_MESSAGE(i_Message => strMessage01);
 
-strSqlCommand   := 'insert into CSMRT_OWNER.UM_F_SF_STDNT_EQUTN_VAR';				
-insert into CSMRT_OWNER.UM_F_SF_STDNT_EQUTN_VAR
+strSqlCommand   := 'insert into CSMRT_OWNER.UM_F_SF_STDNT_EQUTN_VAR';
+insert /*+ append enable_parallel_dml parallel(8) */ into CSMRT_OWNER.UM_F_SF_STDNT_EQUTN_VAR
 select
-A.INSTITUTION INSTITUTION_CD, A.BILLING_CAREER, A.STRM TERM_CD, A.EMPLID PERSON_ID, A.SRC_SYS_ID, 
-nvl(I.INSTITUTION_SID, 2147483646) INSTITUTION_SID, 
-nvl(C.ACAD_CAR_SID, 2147483646) BILL_CAR_SID, 
-nvl(T.TERM_SID, 2147483646) TERM_SID, 
-nvl(P.PERSON_SID, 2147483646) PERSON_SID, 
-VARIABLE_CHAR1, VARIABLE_CHAR2, VARIABLE_CHAR3, VARIABLE_CHAR4, VARIABLE_CHAR5, VARIABLE_CHAR6, VARIABLE_CHAR7, VARIABLE_CHAR8, VARIABLE_CHAR9, VARIABLE_CHAR10, 
-VARIABLE_FLAG1, VARIABLE_FLAG2, VARIABLE_FLAG3, VARIABLE_FLAG4, VARIABLE_FLAG5, VARIABLE_FLAG6, VARIABLE_FLAG7, VARIABLE_FLAG8, VARIABLE_FLAG9, VARIABLE_FLAG10, 
-VARIABLE_NUM1, VARIABLE_NUM2, VARIABLE_NUM3, VARIABLE_NUM4, VARIABLE_NUM5, VARIABLE_NUM6, VARIABLE_NUM7, VARIABLE_NUM8, VARIABLE_NUM9, VARIABLE_NUM10, 
+A.INSTITUTION INSTITUTION_CD, A.BILLING_CAREER, A.STRM TERM_CD, A.EMPLID PERSON_ID, A.SRC_SYS_ID,
+nvl(I.INSTITUTION_SID, 2147483646) INSTITUTION_SID,
+nvl(C.ACAD_CAR_SID, 2147483646) BILL_CAR_SID,
+nvl(T.TERM_SID, 2147483646) TERM_SID,
+nvl(P.PERSON_SID, 2147483646) PERSON_SID,
+VARIABLE_CHAR1, VARIABLE_CHAR2, VARIABLE_CHAR3, VARIABLE_CHAR4, VARIABLE_CHAR5, VARIABLE_CHAR6, VARIABLE_CHAR7, VARIABLE_CHAR8, VARIABLE_CHAR9, VARIABLE_CHAR10,
+VARIABLE_FLAG1, VARIABLE_FLAG2, VARIABLE_FLAG3, VARIABLE_FLAG4, VARIABLE_FLAG5, VARIABLE_FLAG6, VARIABLE_FLAG7, VARIABLE_FLAG8, VARIABLE_FLAG9, VARIABLE_FLAG10,
+VARIABLE_NUM1, VARIABLE_NUM2, VARIABLE_NUM3, VARIABLE_NUM4, VARIABLE_NUM5, VARIABLE_NUM6, VARIABLE_NUM7, VARIABLE_NUM8, VARIABLE_NUM9, VARIABLE_NUM10,
 'N', 'S', sysdate, sysdate, 1234
  from CSSTG_OWNER.PS_STDNT_EQUTN_VAR A
  left outer join PS_D_INSTITUTION I
@@ -130,16 +136,16 @@ COMMON_OWNER.SMT_PROCESS_LOG.PROCESS_DETAIL
 strMessage01    := 'Enabling Indexes for table CSMRT_OWNER.UM_F_SF_STDNT_EQUTN_VAR';
 COMMON_OWNER.SMT_LOG.PUT_MESSAGE(i_Message => strMessage01);
 
-strSqlDynamic   := 'alter table CSMRT_OWNER.UM_F_SF_STDNT_EQUTN_VAR enable constraint PK_UM_F_SF_STDNT_EQUTN_VAR';
-strSqlCommand   := 'SMT_UTILITY.EXECUTE_IMMEDIATE: ' || strSqlDynamic;
-COMMON_OWNER.SMT_UTILITY.EXECUTE_IMMEDIATE
-                (
-                i_SqlStatement          => strSqlDynamic,
-                i_MaxTries              => 10,
-                i_WaitSeconds           => 10,
-                o_Tries                 => intTries
-                );
-				
+--strSqlDynamic   := 'alter table CSMRT_OWNER.UM_F_SF_STDNT_EQUTN_VAR enable constraint PK_UM_F_SF_STDNT_EQUTN_VAR';
+--strSqlCommand   := 'SMT_UTILITY.EXECUTE_IMMEDIATE: ' || strSqlDynamic;
+--COMMON_OWNER.SMT_UTILITY.EXECUTE_IMMEDIATE
+--                (
+--                i_SqlStatement          => strSqlDynamic,
+--                i_MaxTries              => 10,
+--                i_WaitSeconds           => 10,
+--                o_Tries                 => intTries
+--                );
+
 COMMON_OWNER.SMT_INDEX.ALL_REBUILD('CSMRT_OWNER','UM_F_SF_STDNT_EQUTN_VAR');
 
 strSqlCommand := 'SMT_PROCESS_LOG.PROCESS_SUCCESS';

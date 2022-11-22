@@ -1,4 +1,10 @@
-CREATE OR REPLACE PROCEDURE             "UM_M_AF_STDNT_ADM_AMH_P" AUTHID CURRENT_USER IS
+DROP PROCEDURE CSMRT_OWNER.UM_M_AF_STDNT_ADM_AMH_P
+/
+
+--
+-- UM_M_AF_STDNT_ADM_AMH_P  (Procedure) 
+--
+CREATE OR REPLACE PROCEDURE CSMRT_OWNER."UM_M_AF_STDNT_ADM_AMH_P" AUTHID CURRENT_USER IS
 
    ------------------------------------------------------------------------
    -- Kieu Tran

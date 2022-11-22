@@ -1,4 +1,10 @@
-CREATE OR REPLACE PROCEDURE             "UM_F_ADM_APPL_PRSPCT_CPPS_P" AUTHID CURRENT_USER IS
+DROP PROCEDURE CSMRT_OWNER.UM_F_ADM_APPL_PRSPCT_CPPS_P
+/
+
+--
+-- UM_F_ADM_APPL_PRSPCT_CPPS_P  (Procedure) 
+--
+CREATE OR REPLACE PROCEDURE CSMRT_OWNER."UM_F_ADM_APPL_PRSPCT_CPPS_P" AUTHID CURRENT_USER IS
 
 ------------------------------------------------------------------------
 --George Adams
@@ -37,20 +43,6 @@ COMMON_OWNER.SMT_PROCESS_LOG.PROCESS_INIT
                 o_ProcessSid            => intProcessSid
         );
 
-strMessage01    := 'Disabling Indexes for table CSMRT_OWNER.UM_F_ADM_APPL_PRSPCT_CPPS';
-COMMON_OWNER.SMT_LOG.PUT_MESSAGE(i_Message => strMessage01);
-COMMON_OWNER.SMT_INDEX.ALL_UNUSABLE('CSMRT_OWNER','UM_F_ADM_APPL_PRSPCT_CPPS');
-
-strSqlDynamic   := 'alter table CSMRT_OWNER.UM_F_ADM_APPL_PRSPCT_CPPS disable constraint PK_UM_F_ADM_APPL_PRSPCT_CPPS';
-strSqlCommand   := 'SMT_UTILITY.EXECUTE_IMMEDIATE: ' || strSqlDynamic;
-COMMON_OWNER.SMT_UTILITY.EXECUTE_IMMEDIATE
-                (
-                i_SqlStatement          => strSqlDynamic,
-                i_MaxTries              => 10,
-                i_WaitSeconds           => 10,
-                o_Tries                 => intTries
-                );
-				
 strMessage01    := 'Truncating table CSMRT_OWNER.UM_F_ADM_APPL_PRSPCT_CPPS';
 COMMON_OWNER.SMT_LOG.PUT_MESSAGE(i_Message => strMessage01);
 
@@ -64,16 +56,30 @@ COMMON_OWNER.SMT_UTILITY.EXECUTE_IMMEDIATE
                 o_Tries                 => intTries
                 );
 
+strMessage01    := 'Disabling Indexes for table CSMRT_OWNER.UM_F_ADM_APPL_PRSPCT_CPPS';
+COMMON_OWNER.SMT_LOG.PUT_MESSAGE(i_Message => strMessage01);
+COMMON_OWNER.SMT_INDEX.ALL_UNUSABLE('CSMRT_OWNER','UM_F_ADM_APPL_PRSPCT_CPPS');
+
+--strSqlDynamic   := 'alter table CSMRT_OWNER.UM_F_ADM_APPL_PRSPCT_CPPS disable constraint PK_UM_F_ADM_APPL_PRSPCT_CPPS';
+--strSqlCommand   := 'SMT_UTILITY.EXECUTE_IMMEDIATE: ' || strSqlDynamic;
+--COMMON_OWNER.SMT_UTILITY.EXECUTE_IMMEDIATE
+--                (
+--                i_SqlStatement          => strSqlDynamic,
+--                i_MaxTries              => 10,
+--                i_WaitSeconds           => 10,
+--                o_Tries                 => intTries
+--                );
+
 strMessage01    := 'Inserting data into CSMRT_OWNER.UM_F_ADM_APPL_PRSPCT_CPPS';
 COMMON_OWNER.SMT_LOG.PUT_MESSAGE(i_Message => strMessage01);
 
-strSqlCommand   := 'insert into CSMRT_OWNER.UM_F_ADM_APPL_PRSPCT_CPPS';				
-insert /*+ append */ into UM_F_ADM_APPL_PRSPCT_CPPS
+strSqlCommand   := 'insert into CSMRT_OWNER.UM_F_ADM_APPL_PRSPCT_CPPS';
+insert /*+ append enable_parallel_dml parallel(8) */ into UM_F_ADM_APPL_PRSPCT_CPPS
 with DSP as (
-select /*+ INLINE PARALLEL(8) */ distinct R.INSTITUTION_CD, R.ACAD_CAR_CD, R.PERSON_ID, R.ADM_APPL_NBR, R.SRC_SYS_ID, 1 DSP_CNT 
+select /*+ INLINE PARALLEL(8) */ distinct R.INSTITUTION_CD, R.ACAD_CAR_CD, R.PERSON_ID, R.ADM_APPL_NBR, R.SRC_SYS_ID, 1 DSP_CNT
   from PS_R_ADM_RECRTR R
  where R.RECRT_CTGRY_ID = 'DSP')
-   SELECT /*+ INLINE PARALLEL(8) */ distinct 
+   SELECT /*+ INLINE PARALLEL(8) */ distinct
           A.ADM_APPL_SID,
           NVL (C.PRSPCT_CAR_SID, 2147483646) PRSPCT_CAR_SID,
           A.SRC_SYS_ID,
@@ -99,7 +105,7 @@ select /*+ INLINE PARALLEL(8) */ distinct R.INSTITUTION_CD, R.ACAD_CAR_CD, R.PER
 --                 AND C.PERSON_SID = A.APPLCNT_SID
 --                 AND R.RFRL_DTL = 'DSP'),
 --             0)
-          nvl(DSP.DSP_CNT,0) PRSPCT_DSP_CNT         -- Jan 2017 
+          nvl(DSP.DSP_CNT,0) PRSPCT_DSP_CNT         -- Jan 2017
      FROM UM_F_ADM_APPL_STAT A
           LEFT OUTER JOIN UM_D_PRSPCT_CAR C
              ON     A.APPLCNT_SID = C.PERSON_SID
@@ -118,8 +124,8 @@ select /*+ INLINE PARALLEL(8) */ distinct R.INSTITUTION_CD, R.ACAD_CAR_CD, R.PER
              ON     SPLAN.PRSPCT_PLAN_SID = PLAN.PRSPCT_PLAN_SID
                 AND NVL (SPLAN.DATA_ORIGIN, '-') <> 'D'
           left outer join DSP
-            on A.INSTITUTION_CD = DSP.INSTITUTION_CD 
-           and A.ACAD_CAR_CD = DSP.ACAD_CAR_CD 
+            on A.INSTITUTION_CD = DSP.INSTITUTION_CD
+           and A.ACAD_CAR_CD = DSP.ACAD_CAR_CD
            and A.PERSON_ID = DSP.PERSON_ID
            and A.ADM_APPL_NBR = DSP.ADM_APPL_NBR
            and A.SRC_SYS_ID = DSP.SRC_SYS_ID
@@ -141,16 +147,16 @@ COMMON_OWNER.SMT_PROCESS_LOG.PROCESS_DETAIL
 strMessage01    := 'Enabling Indexes for table CSMRT_OWNER.UM_F_ADM_APPL_PRSPCT_CPPS';
 COMMON_OWNER.SMT_LOG.PUT_MESSAGE(i_Message => strMessage01);
 
-strSqlDynamic   := 'alter table CSMRT_OWNER.UM_F_ADM_APPL_PRSPCT_CPPS enable constraint PK_UM_F_ADM_APPL_PRSPCT_CPPS';
-strSqlCommand   := 'SMT_UTILITY.EXECUTE_IMMEDIATE: ' || strSqlDynamic;
-COMMON_OWNER.SMT_UTILITY.EXECUTE_IMMEDIATE
-                (
-                i_SqlStatement          => strSqlDynamic,
-                i_MaxTries              => 10,
-                i_WaitSeconds           => 10,
-                o_Tries                 => intTries
-                );
-				
+--strSqlDynamic   := 'alter table CSMRT_OWNER.UM_F_ADM_APPL_PRSPCT_CPPS enable constraint PK_UM_F_ADM_APPL_PRSPCT_CPPS';
+--strSqlCommand   := 'SMT_UTILITY.EXECUTE_IMMEDIATE: ' || strSqlDynamic;
+--COMMON_OWNER.SMT_UTILITY.EXECUTE_IMMEDIATE
+--                (
+--                i_SqlStatement          => strSqlDynamic,
+--                i_MaxTries              => 10,
+--                i_WaitSeconds           => 10,
+--                o_Tries                 => intTries
+--                );
+
 COMMON_OWNER.SMT_INDEX.ALL_REBUILD('CSMRT_OWNER','UM_F_ADM_APPL_PRSPCT_CPPS');
 
 strSqlCommand := 'SMT_PROCESS_LOG.PROCESS_SUCCESS';

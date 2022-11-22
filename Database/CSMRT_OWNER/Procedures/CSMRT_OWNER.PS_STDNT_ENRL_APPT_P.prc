@@ -1,4 +1,10 @@
-CREATE OR REPLACE PROCEDURE             "PS_STDNT_ENRL_APPT_P" AUTHID CURRENT_USER IS
+DROP PROCEDURE CSMRT_OWNER.PS_STDNT_ENRL_APPT_P
+/
+
+--
+-- PS_STDNT_ENRL_APPT_P  (Procedure) 
+--
+CREATE OR REPLACE PROCEDURE CSMRT_OWNER."PS_STDNT_ENRL_APPT_P" AUTHID CURRENT_USER IS
 
 ------------------------------------------------------------------------
 -- George Adams

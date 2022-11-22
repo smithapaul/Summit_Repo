@@ -1,4 +1,10 @@
-CREATE OR REPLACE PROCEDURE             REBUILD_SID_BITMAPS_P IS
+DROP PROCEDURE CSMRT_OWNER.REBUILD_SID_BITMAPS_P
+/
+
+--
+-- REBUILD_SID_BITMAPS_P  (Procedure) 
+--
+CREATE OR REPLACE PROCEDURE CSMRT_OWNER.REBUILD_SID_BITMAPS_P IS
    bitmap_cur            SYS_REFCURSOR;
    v_sql_str             varchar2(2000);
    v_bitmap_total        number;

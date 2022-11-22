@@ -1,4 +1,10 @@
-CREATE OR REPLACE PROCEDURE             "PS_AUDIT_ISIR_CHNG_P" AUTHID CURRENT_USER IS
+DROP PROCEDURE CSMRT_OWNER.PS_AUDIT_ISIR_CHNG_P
+/
+
+--
+-- PS_AUDIT_ISIR_CHNG_P  (Procedure) 
+--
+CREATE OR REPLACE PROCEDURE CSMRT_OWNER."PS_AUDIT_ISIR_CHNG_P" AUTHID CURRENT_USER IS
 
 ------------------------------------------------------------------------
 -- George Adams

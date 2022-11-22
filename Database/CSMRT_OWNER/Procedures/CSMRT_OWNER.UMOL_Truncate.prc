@@ -1,4 +1,10 @@
-CREATE OR REPLACE PROCEDURE             "UMOL_Truncate"
+DROP PROCEDURE CSMRT_OWNER."UMOL_Truncate"
+/
+
+--
+-- "UMOL_Truncate"  (Procedure) 
+--
+CREATE OR REPLACE PROCEDURE CSMRT_OWNER."UMOL_Truncate"
         (
                 i_Owner         in  Varchar2,
                 i_Table         in  Varchar2,

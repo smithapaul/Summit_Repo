@@ -1,4 +1,10 @@
-CREATE OR REPLACE PROCEDURE             "PS_TRNSFR_COMP_P" AUTHID CURRENT_USER IS
+DROP PROCEDURE CSMRT_OWNER.PS_TRNSFR_COMP_P
+/
+
+--
+-- PS_TRNSFR_COMP_P  (Procedure) 
+--
+CREATE OR REPLACE PROCEDURE CSMRT_OWNER."PS_TRNSFR_COMP_P" AUTHID CURRENT_USER IS
 
 
 ------------------------------------------------------------------------

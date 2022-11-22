@@ -1,10 +1,16 @@
-CREATE OR REPLACE PROCEDURE             "UM_F_STDNT_P" AUTHID CURRENT_USER IS
+DROP PROCEDURE CSMRT_OWNER.UM_F_STDNT_P
+/
+
+--
+-- UM_F_STDNT_P  (Procedure) 
+--
+CREATE OR REPLACE PROCEDURE CSMRT_OWNER."UM_F_STDNT_P" AUTHID CURRENT_USER IS
 
 ------------------------------------------------------------------------
 --George Adams
 --Loads table          -- UM_F_STDNT
 --UM_F_STDNT       -- PS_D_INSTITUTION, PS_D_ACAD, PS_D_PERSON;
---V01 12/4/2018        -- srikanth ,pabbu converted to proc from sql 
+--V01 12/4/2018        -- srikanth ,pabbu converted to proc from sql
 
 ------------------------------------------------------------------------
 
@@ -39,20 +45,6 @@ COMMON_OWNER.SMT_PROCESS_LOG.PROCESS_INIT
                 o_ProcessSid            => intProcessSid
         );
 
-strMessage01    := 'Disabling Indexes for table CSMRT_OWNER.UM_F_STDNT';
-COMMON_OWNER.SMT_LOG.PUT_MESSAGE(i_Message => strMessage01);
-COMMON_OWNER.SMT_INDEX.ALL_UNUSABLE('CSMRT_OWNER','UM_F_STDNT');
-
-strSqlDynamic   := 'alter table CSMRT_OWNER.UM_F_STDNT disable constraint PK_UM_F_STDNT';
-strSqlCommand   := 'SMT_UTILITY.EXECUTE_IMMEDIATE: ' || strSqlDynamic;
-COMMON_OWNER.SMT_UTILITY.EXECUTE_IMMEDIATE
-                (
-                i_SqlStatement          => strSqlDynamic,
-                i_MaxTries              => 10,
-                i_WaitSeconds           => 10,
-                o_Tries                 => intTries
-                );
-				
 strMessage01    := 'Truncating table CSMRT_OWNER.UM_F_STDNT';
 COMMON_OWNER.SMT_LOG.PUT_MESSAGE(i_Message => strMessage01);
 
@@ -66,60 +58,74 @@ COMMON_OWNER.SMT_UTILITY.EXECUTE_IMMEDIATE
                 o_Tries                 => intTries
                 );
 
+strMessage01    := 'Disabling Indexes for table CSMRT_OWNER.UM_F_STDNT';
+COMMON_OWNER.SMT_LOG.PUT_MESSAGE(i_Message => strMessage01);
+COMMON_OWNER.SMT_INDEX.ALL_UNUSABLE('CSMRT_OWNER','UM_F_STDNT');
+
+--strSqlDynamic   := 'alter table CSMRT_OWNER.UM_F_STDNT disable constraint PK_UM_F_STDNT';
+--strSqlCommand   := 'SMT_UTILITY.EXECUTE_IMMEDIATE: ' || strSqlDynamic;
+--COMMON_OWNER.SMT_UTILITY.EXECUTE_IMMEDIATE
+--                (
+--                i_SqlStatement          => strSqlDynamic,
+--                i_MaxTries              => 10,
+--                i_WaitSeconds           => 10,
+--                o_Tries                 => intTries
+--                );
+
 strMessage01    := 'Inserting data into CSMRT_OWNER.UM_F_STDNT';
 COMMON_OWNER.SMT_LOG.PUT_MESSAGE(i_Message => strMessage01);
 
-strSqlCommand   := 'insert into CSMRT_OWNER.UM_F_STDNT';				
-insert /*+ append */ into UM_F_STDNT 
+strSqlCommand   := 'insert into CSMRT_OWNER.UM_F_STDNT';
+insert /*+ append enable_parallel_dml parallel(8) */ into UM_F_STDNT
 WITH A AS (
-SELECT /*+ INLINE PARALLEL(8) */ DISTINCT 
+SELECT /*+ INLINE PARALLEL(8) */ DISTINCT
        INSTITUTION, ACAD_CAREER, EMPLID, SRC_SYS_ID, 1 ADM_CNT, 0 SR_CNT, 0 PRSPCT_CNT
   FROM CSSTG_OWNER.PS_ADM_APPL_PROG
  WHERE DATA_ORIGIN <> 'D'
  UNION ALL
-SELECT /*+ INLINE PARALLEL(8) */ DISTINCT 
+SELECT /*+ INLINE PARALLEL(8) */ DISTINCT
        INSTITUTION, ACAD_CAREER, EMPLID, SRC_SYS_ID, 0 ADM_CNT, 1 SR_CNT, 0 PRSPCT_CNT
   FROM CSSTG_OWNER.PS_ACAD_PROG
- WHERE DATA_ORIGIN <> 'D' 
+ WHERE DATA_ORIGIN <> 'D'
   UNION ALL
- SELECT /*+ INLINE PARALLEL(8) */ DISTINCT 
+ SELECT /*+ INLINE PARALLEL(8) */ DISTINCT
         INSTITUTION, ACAD_CAREER, EMPLID, SRC_SYS_ID, 0 ADM_CNT, 0 SR_CNT, 1 PRSPCT_CNT
    FROM CSSTG_OWNER.PS_ADM_PRSPCT_CAR
   WHERE DATA_ORIGIN <> 'D'
-)  
-SELECT /*+ INLINE PARALLEL(8) */ 
+)
+SELECT /*+ INLINE PARALLEL(8) */
        A.INSTITUTION INSTITUTION_CD,
-	   A.ACAD_CAREER ACAD_CAR_CD, 
-	   A.EMPLID PERSON_ID, 
+	   A.ACAD_CAREER ACAD_CAR_CD,
+	   A.EMPLID PERSON_ID,
 	   A.SRC_SYS_ID,
        nvl(I.INSTITUTION_SID,2147483646) INSTITUTION_SID,
        nvl(C.ACAD_CAR_SID,2147483646) ACAD_CAR_SID,
-       nvl(P.PERSON_SID,2147483646) PERSON_SID,  	   
-       SUM(A.ADM_CNT) ADM_CNT, 
-	   SUM(A.SR_CNT) SR_CNT, 
+       nvl(P.PERSON_SID,2147483646) PERSON_SID,
+       SUM(A.ADM_CNT) ADM_CNT,
+	   SUM(A.SR_CNT) SR_CNT,
 	   SUM(A.PRSPCT_CNT) PRSPCT_CNT,
 	   'N' LOAD_ERROR,
-	   'S' DATA_ORIGIN, 
-       SYSDATE CREATED_EW_DTTM, 
+	   'S' DATA_ORIGIN,
+       SYSDATE CREATED_EW_DTTM,
        SYSDATE LASTUPD_EW_DTTM,
 	   '1234' BATCH_SID
   FROM A
 --  left outer join PS_D_INSTITUTION I
-  join PS_D_INSTITUTION I   -- Nov 2019 
+  join PS_D_INSTITUTION I   -- Nov 2019
     on A.INSTITUTION = I.INSTITUTION_CD
    and A.SRC_SYS_ID = I.SRC_SYS_ID
    and I.DATA_ORIGIN <>'D'
 --  left outer join PS_D_ACAD_CAR C
-  join PS_D_ACAD_CAR C      -- Nov 2019 
+  join PS_D_ACAD_CAR C      -- Nov 2019
     on A.INSTITUTION = C.INSTITUTION_CD
    and A.ACAD_CAREER = C.ACAD_CAR_CD
    and A.SRC_SYS_ID = C.SRC_SYS_ID
-   and C.DATA_ORIGIN <> 'D' 
+   and C.DATA_ORIGIN <> 'D'
 --  left outer join PS_D_PERSON P
-  join UM_D_PERSON_AGG P    -- Nov 2019 
+  join UM_D_PERSON_AGG P    -- Nov 2019
     on A.EMPLID = P.PERSON_ID
    and A.SRC_SYS_ID = P.SRC_SYS_ID
-   and P.DATA_ORIGIN <> 'D' 
+   and P.DATA_ORIGIN <> 'D'
  GROUP BY A.INSTITUTION, A.EMPLID, A.ACAD_CAREER, A.SRC_SYS_ID,I.INSTITUTION_SID,C.ACAD_CAR_SID,P.PERSON_SID
 ;
 
@@ -151,16 +157,16 @@ COMMON_OWNER.SMT_PROCESS_LOG.PROCESS_DETAIL
 strMessage01    := 'Enabling Indexes for table CSMRT_OWNER.UM_F_STDNT';
 COMMON_OWNER.SMT_LOG.PUT_MESSAGE(i_Message => strMessage01);
 
-strSqlDynamic   := 'alter table CSMRT_OWNER.UM_F_STDNT enable constraint PK_UM_F_STDNT';
-strSqlCommand   := 'SMT_UTILITY.EXECUTE_IMMEDIATE: ' || strSqlDynamic;
-COMMON_OWNER.SMT_UTILITY.EXECUTE_IMMEDIATE
-                (
-                i_SqlStatement          => strSqlDynamic,
-                i_MaxTries              => 10,
-                i_WaitSeconds           => 10,
-                o_Tries                 => intTries
-                );
-				
+--strSqlDynamic   := 'alter table CSMRT_OWNER.UM_F_STDNT enable constraint PK_UM_F_STDNT';
+--strSqlCommand   := 'SMT_UTILITY.EXECUTE_IMMEDIATE: ' || strSqlDynamic;
+--COMMON_OWNER.SMT_UTILITY.EXECUTE_IMMEDIATE
+--                (
+--                i_SqlStatement          => strSqlDynamic,
+--                i_MaxTries              => 10,
+--                i_WaitSeconds           => 10,
+--                o_Tries                 => intTries
+--                );
+
 COMMON_OWNER.SMT_INDEX.ALL_REBUILD('CSMRT_OWNER','UM_F_STDNT');
 
 strSqlCommand := 'SMT_PROCESS_LOG.PROCESS_SUCCESS';

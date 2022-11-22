@@ -1,4 +1,10 @@
-CREATE OR REPLACE PROCEDURE             "UM_F_EXT_TESTSCORE_P" AUTHID CURRENT_USER IS
+DROP PROCEDURE CSMRT_OWNER.UM_F_EXT_TESTSCORE_P
+/
+
+--
+-- UM_F_EXT_TESTSCORE_P  (Procedure) 
+--
+CREATE OR REPLACE PROCEDURE CSMRT_OWNER."UM_F_EXT_TESTSCORE_P" AUTHID CURRENT_USER IS
 
 ------------------------------------------------------------------------
 --George Adams
@@ -37,20 +43,6 @@ COMMON_OWNER.SMT_PROCESS_LOG.PROCESS_INIT
                 o_ProcessSid            => intProcessSid
         );
 
-strMessage01    := 'Disabling Indexes for table CSMRT_OWNER.UM_F_EXT_TESTSCORE';
-COMMON_OWNER.SMT_LOG.PUT_MESSAGE(i_Message => strMessage01);
-COMMON_OWNER.SMT_INDEX.ALL_UNUSABLE('CSMRT_OWNER','UM_F_EXT_TESTSCORE');
-
-strSqlDynamic   := 'alter table CSMRT_OWNER.UM_F_EXT_TESTSCORE disable constraint PK_UM_F_EXT_TESTSCORE';
-strSqlCommand   := 'SMT_UTILITY.EXECUTE_IMMEDIATE: ' || strSqlDynamic;
-COMMON_OWNER.SMT_UTILITY.EXECUTE_IMMEDIATE
-                (
-                i_SqlStatement          => strSqlDynamic,
-                i_MaxTries              => 10,
-                i_WaitSeconds           => 10,
-                o_Tries                 => intTries
-                );
-				
 strMessage01    := 'Truncating table CSMRT_OWNER.UM_F_EXT_TESTSCORE';
 COMMON_OWNER.SMT_LOG.PUT_MESSAGE(i_Message => strMessage01);
 
@@ -64,22 +56,36 @@ COMMON_OWNER.SMT_UTILITY.EXECUTE_IMMEDIATE
                 o_Tries                 => intTries
                 );
 
+strMessage01    := 'Disabling Indexes for table CSMRT_OWNER.UM_F_EXT_TESTSCORE';
+COMMON_OWNER.SMT_LOG.PUT_MESSAGE(i_Message => strMessage01);
+COMMON_OWNER.SMT_INDEX.ALL_UNUSABLE('CSMRT_OWNER','UM_F_EXT_TESTSCORE');
+
+--strSqlDynamic   := 'alter table CSMRT_OWNER.UM_F_EXT_TESTSCORE disable constraint PK_UM_F_EXT_TESTSCORE';
+--strSqlCommand   := 'SMT_UTILITY.EXECUTE_IMMEDIATE: ' || strSqlDynamic;
+--COMMON_OWNER.SMT_UTILITY.EXECUTE_IMMEDIATE
+--                (
+--                i_SqlStatement          => strSqlDynamic,
+--                i_MaxTries              => 10,
+--                i_WaitSeconds           => 10,
+--                o_Tries                 => intTries
+--                );
+
 strMessage01    := 'Inserting data into CSMRT_OWNER.UM_F_EXT_TESTSCORE';
 COMMON_OWNER.SMT_LOG.PUT_MESSAGE(i_Message => strMessage01);
 
-strSqlCommand   := 'insert into CSMRT_OWNER.UM_F_EXT_TESTSCORE';				
-insert /*+ append */ into UM_F_EXT_TESTSCORE 
-with K as 
+strSqlCommand   := 'insert into CSMRT_OWNER.UM_F_EXT_TESTSCORE';
+insert /*+ append enable_parallel_dml parallel(8) */ into UM_F_EXT_TESTSCORE
+with K as
 (SELECT /*+ INLINE PARALLEL(8) */ DISTINCT APPLCNT_SID PERSON_SID, SRC_SYS_ID
    FROM PS_F_ADM_APPL_STAT
   UNION
- SELECT /*+ INLINE PARALLEL(8) */ DISTINCT PERSON_SID, SRC_SYS_ID 
+ SELECT /*+ INLINE PARALLEL(8) */ DISTINCT PERSON_SID, SRC_SYS_ID
    FROM UM_F_ACAD_PROG
   WHERE PERSON_SID <> 2147483646
   UNION
- SELECT /*+ INLINE PARALLEL(8) */ DISTINCT PERSON_SID, SRC_SYS_ID 
+ SELECT /*+ INLINE PARALLEL(8) */ DISTINCT PERSON_SID, SRC_SYS_ID
    FROM UM_D_PRSPCT_CAR
-  where DATA_ORIGIN <> 'D'),        -- Aug 2019 
+  where DATA_ORIGIN <> 'D'),        -- Aug 2019
 T1 as
 (select /*+ INLINE PARALLEL(8) */
  K.PERSON_SID,
@@ -87,9 +93,9 @@ T1 as
  nvl(EXT_TST_DT,to_date('01-JAN-1900')) EXT_TST_DT,
  nvl(TST_DATA_SRC_SID,2147483646) TST_DATA_SRC_SID,
  K.SRC_SYS_ID,
- nvl(EMPLID,'-') PERSON_ID,  
- nvl(EXT_TST_ID,'-') TEST_ID,  
- nvl(EXT_TST_CMPNT_ID,'-') TEST_CMPNT_ID, 
+ nvl(EMPLID,'-') PERSON_ID,
+ nvl(EXT_TST_ID,'-') TEST_ID,
+ nvl(EXT_TST_CMPNT_ID,'-') TEST_CMPNT_ID,
  nvl(TST_DATA_SRC_ID,'-') TEST_DATA_SRC_ID,
  nvl(EXT_ACAD_LVL_SID,2147483646) EXT_ACAD_LVL_SID,
  NUMERIC_SCORE,
@@ -106,7 +112,7 @@ T1 as
   left outer join PS_F_EXT_TESTSCORE F
     on K.PERSON_SID = F.PERSON_SID
    and K.SRC_SYS_ID = F.SRC_SYS_ID
-   and nvl(F.DATA_ORIGIN,'-') <> 'D'    -- Aug 2019 
+   and nvl(F.DATA_ORIGIN,'-') <> 'D'    -- Aug 2019
 ),
 T2 as
 (select /*+ INLINE PARALLEL(8) */
@@ -115,9 +121,9 @@ T2 as
  EXT_TST_DT,
  TST_DATA_SRC_SID,
  SRC_SYS_ID,
- PERSON_ID,  
- TEST_ID,  
- TEST_CMPNT_ID, 
+ PERSON_ID,
+ TEST_ID,
+ TEST_CMPNT_ID,
  TEST_DATA_SRC_ID,
  EXT_ACAD_LVL_SID,
  NUMERIC_SCORE,
@@ -132,11 +138,11 @@ T2 as
  CONV_FLG,
  ROW_NUMBER() OVER (PARTITION BY PERSON_SID, TEST_ID, SRC_SYS_ID
                         ORDER BY EXT_TST_DT DESC, EXT_TST_CMPNT_SID DESC, TST_DATA_SRC_SID DESC) TEST_ID_DT_ORDER,
- SUM(case when TEST_ID = 'GRE' and TEST_CMPNT_ID = 'ANLY' 
+ SUM(case when TEST_ID = 'GRE' and TEST_CMPNT_ID = 'ANLY'
            and ((VALID_TEST_SCORE > 6 and EXT_TST_DT >= '01-AUG-2011')
-            or  (VALID_TEST_SCORE <= 6 and EXT_TST_DT < '01-AUG-2011')) 
+            or  (VALID_TEST_SCORE <= 6 and EXT_TST_DT < '01-AUG-2011'))
           then NULL
-     else VALID_TEST_SCORE end) OVER (PARTITION BY PERSON_SID, TEST_ID, EXT_TST_DT, SRC_SYS_ID) TEST_SUM, 
+     else VALID_TEST_SCORE end) OVER (PARTITION BY PERSON_SID, TEST_ID, EXT_TST_DT, SRC_SYS_ID) TEST_SUM,
  CASE WHEN (TEST_DATA_SRC_ID = 'ACT')
         OR (TEST_DATA_SRC_ID = 'TSC' AND TEST_ID = 'IELTS')
         OR (TEST_DATA_SRC_ID = 'ETS' AND TEST_ID <> 'IELTS') THEN 1
@@ -161,9 +167,9 @@ T3 as
  EXT_TST_DT,
  TST_DATA_SRC_SID,
  SRC_SYS_ID,
- PERSON_ID, 
- TEST_ID, 
- TEST_CMPNT_ID, 
+ PERSON_ID,
+ TEST_ID,
+ TEST_CMPNT_ID,
  TEST_DATA_SRC_ID,
  EXT_ACAD_LVL_SID,
  NUMERIC_SCORE,
@@ -175,13 +181,13 @@ T3 as
  MAX_SCORE,
  MIN_SCORE,
  CONV_FLG,
- ROW_NUMBER() OVER (PARTITION BY PERSON_SID, EXT_TST_CMPNT_SID, SRC_SYS_ID 
+ ROW_NUMBER() OVER (PARTITION BY PERSON_SID, EXT_TST_CMPNT_SID, SRC_SYS_ID
                         ORDER BY VALID_TEST_SCORE DESC NULLS LAST, EXT_TST_DT DESC, TEST_SOURCE_ORDER, TST_DATA_SRC_SID) TEST_CMPNT_ORDER,
  ROW_NUMBER () OVER (PARTITION BY PERSON_SID, EXT_TST_CMPNT_SID, SRC_SYS_ID
-                         ORDER BY TEST_ID_DT_ORDER) TEST_DT_ORDER, 
+                         ORDER BY TEST_ID_DT_ORDER) TEST_DT_ORDER,
  ROW_NUMBER () OVER (PARTITION BY PERSON_SID, EXT_TST_CMPNT_SID, SRC_SYS_ID
                          ORDER BY TEST_SUM DESC, TEST_ID_DT_ORDER) TEST_SUM_ORDER,
- TEST_SOURCE_ORDER 
+ TEST_SOURCE_ORDER
  from T2
 )
  select /*+ PARALLEL(8) */
@@ -190,9 +196,9 @@ T3 as
  EXT_TST_DT,
  TST_DATA_SRC_SID,
  SRC_SYS_ID,
- PERSON_ID, 
- TEST_ID, 
- TEST_CMPNT_ID, 
+ PERSON_ID,
+ TEST_ID,
+ TEST_CMPNT_ID,
  TEST_DATA_SRC_ID,
  EXT_ACAD_LVL_SID,
  NUMERIC_SCORE,
@@ -204,19 +210,19 @@ T3 as
  MAX_SCORE,
  MIN_SCORE,
  TEST_CMPNT_ORDER,
- TEST_DT_ORDER, 
+ TEST_DT_ORDER,
  TEST_SUM_ORDER,
  TEST_SOURCE_ORDER,
           (CASE
               WHEN TEST_CMPNT_ORDER = 1
-               AND EXT_TST_DT > '01-JAN-1900' 
+               AND EXT_TST_DT > '01-JAN-1900'
                AND (NUMERIC_SCORE between MIN_SCORE and MAX_SCORE
                     or MIN_SCORE - MAX_SCORE = 0) THEN 'Y'
               ELSE 'N'
            END) BEST_SCORE_FLG,
           (CASE
               WHEN TEST_CMPNT_ORDER = 1
-               AND EXT_TST_DT > '01-JAN-1900' 
+               AND EXT_TST_DT > '01-JAN-1900'
                AND (NUMERIC_SCORE between MIN_SCORE and MAX_SCORE
                     or MIN_SCORE - MAX_SCORE = 0) THEN 'Y'
               ELSE 'N'
@@ -263,16 +269,16 @@ COMMON_OWNER.SMT_PROCESS_LOG.PROCESS_DETAIL
 strMessage01    := 'Enabling Indexes for table CSMRT_OWNER.UM_F_EXT_TESTSCORE';
 COMMON_OWNER.SMT_LOG.PUT_MESSAGE(i_Message => strMessage01);
 
-strSqlDynamic   := 'alter table CSMRT_OWNER.UM_F_EXT_TESTSCORE enable constraint PK_UM_F_EXT_TESTSCORE';
-strSqlCommand   := 'SMT_UTILITY.EXECUTE_IMMEDIATE: ' || strSqlDynamic;
-COMMON_OWNER.SMT_UTILITY.EXECUTE_IMMEDIATE
-                (
-                i_SqlStatement          => strSqlDynamic,
-                i_MaxTries              => 10,
-                i_WaitSeconds           => 10,
-                o_Tries                 => intTries
-                );
-				
+--strSqlDynamic   := 'alter table CSMRT_OWNER.UM_F_EXT_TESTSCORE enable constraint PK_UM_F_EXT_TESTSCORE';
+--strSqlCommand   := 'SMT_UTILITY.EXECUTE_IMMEDIATE: ' || strSqlDynamic;
+--COMMON_OWNER.SMT_UTILITY.EXECUTE_IMMEDIATE
+--                (
+--                i_SqlStatement          => strSqlDynamic,
+--                i_MaxTries              => 10,
+--                i_WaitSeconds           => 10,
+--                o_Tries                 => intTries
+--                );
+
 COMMON_OWNER.SMT_INDEX.ALL_REBUILD('CSMRT_OWNER','UM_F_EXT_TESTSCORE');
 
 strSqlCommand := 'SMT_PROCESS_LOG.PROCESS_SUCCESS';

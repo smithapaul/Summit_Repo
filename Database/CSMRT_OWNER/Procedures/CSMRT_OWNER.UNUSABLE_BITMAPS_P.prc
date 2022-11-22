@@ -1,4 +1,10 @@
-CREATE OR REPLACE PROCEDURE             UNUSABLE_BITMAPS_P IS
+DROP PROCEDURE CSMRT_OWNER.UNUSABLE_BITMAPS_P
+/
+
+--
+-- UNUSABLE_BITMAPS_P  (Procedure) 
+--
+CREATE OR REPLACE PROCEDURE CSMRT_OWNER.UNUSABLE_BITMAPS_P IS
    bitmap_cur            SYS_REFCURSOR;
    v_sql_str             varchar2(2000);
    v_bitmap_total        number;

@@ -1,4 +1,10 @@
-CREATE OR REPLACE PROCEDURE             "UM_M_AF_STDNT_ENRL_AMH_P" AUTHID CURRENT_USER IS
+DROP PROCEDURE CSMRT_OWNER.UM_M_AF_STDNT_ENRL_AMH_P
+/
+
+--
+-- UM_M_AF_STDNT_ENRL_AMH_P  (Procedure) 
+--
+CREATE OR REPLACE PROCEDURE CSMRT_OWNER."UM_M_AF_STDNT_ENRL_AMH_P" AUTHID CURRENT_USER IS
 
    ------------------------------------------------------------------------
    -- James Doucette
@@ -108,6 +114,17 @@ CREATE OR REPLACE PROCEDURE             "UM_M_AF_STDNT_ENRL_AMH_P" AUTHID CURREN
           ENROLL_CNT,
           ONLINE_CNT,
           CE_CNT,
+          BIRTHDATE,
+          SEX,
+          ETHNIC_GRP_CD,
+          CITIZENSHIP_STATUS,
+          CITIZENSHIP_STATUS_LD,
+          UM_CITIZENSHIP,
+          UM_CITIZENSHIP_LD,
+          MILITARY_STATUS,
+          MILITARY_STATUS_LD,
+          UM_PRIMARY_STATE,
+          UM_PRIMARY_POSTAL,
           SYSDATE CREATED_EW_DTTM
      from CSSTG_OWNER.UM_AF_AMH_STUDENT_ENROLL_S2
    ;

@@ -1,4 +1,10 @@
-CREATE OR REPLACE PROCEDURE             "BB_USERS_S2_P" AUTHID CURRENT_USER IS
+DROP PROCEDURE CSMRT_OWNER.BB_USERS_S2_P
+/
+
+--
+-- BB_USERS_S2_P  (Procedure) 
+--
+CREATE OR REPLACE PROCEDURE CSMRT_OWNER."BB_USERS_S2_P" AUTHID CURRENT_USER IS
 
 ------------------------------------------------------------------------
 -- Jim Doucette

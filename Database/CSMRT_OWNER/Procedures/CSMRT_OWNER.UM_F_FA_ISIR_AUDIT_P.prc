@@ -1,4 +1,10 @@
-CREATE OR REPLACE PROCEDURE             "UM_F_FA_ISIR_AUDIT_P" AUTHID CURRENT_USER IS
+DROP PROCEDURE CSMRT_OWNER.UM_F_FA_ISIR_AUDIT_P
+/
+
+--
+-- UM_F_FA_ISIR_AUDIT_P  (Procedure) 
+--
+CREATE OR REPLACE PROCEDURE CSMRT_OWNER."UM_F_FA_ISIR_AUDIT_P" AUTHID CURRENT_USER IS
 
 ------------------------------------------------------------------------
 -- George Adams
@@ -39,20 +45,6 @@ COMMON_OWNER.SMT_PROCESS_LOG.PROCESS_INIT
                 o_ProcessSid            => intProcessSid
         );
 
-strMessage01    := 'Disabling Indexes for table CSMRT_OWNER.UM_F_FA_ISIR_AUDIT';
-COMMON_OWNER.SMT_LOG.PUT_MESSAGE(i_Message => strMessage01);
-COMMON_OWNER.SMT_INDEX.ALL_UNUSABLE('CSMRT_OWNER','UM_F_FA_ISIR_AUDIT');
-
-strSqlDynamic   := 'alter table CSMRT_OWNER.UM_F_FA_ISIR_AUDIT disable constraint PK_UM_F_FA_ISIR_AUDIT';
-strSqlCommand   := 'SMT_UTILITY.EXECUTE_IMMEDIATE: ' || strSqlDynamic;
-COMMON_OWNER.SMT_UTILITY.EXECUTE_IMMEDIATE
-                (
-                i_SqlStatement          => strSqlDynamic,
-                i_MaxTries              => 10,
-                i_WaitSeconds           => 10,
-                o_Tries                 => intTries
-                );
-				
 strMessage01    := 'Truncating table CSMRT_OWNER.UM_F_FA_ISIR_AUDIT';
 COMMON_OWNER.SMT_LOG.PUT_MESSAGE(i_Message => strMessage01);
 
@@ -66,10 +58,24 @@ COMMON_OWNER.SMT_UTILITY.EXECUTE_IMMEDIATE
                 o_Tries                 => intTries
                 );
 
+strMessage01    := 'Disabling Indexes for table CSMRT_OWNER.UM_F_FA_ISIR_AUDIT';
+COMMON_OWNER.SMT_LOG.PUT_MESSAGE(i_Message => strMessage01);
+COMMON_OWNER.SMT_INDEX.ALL_UNUSABLE('CSMRT_OWNER','UM_F_FA_ISIR_AUDIT');
+
+--strSqlDynamic   := 'alter table CSMRT_OWNER.UM_F_FA_ISIR_AUDIT disable constraint PK_UM_F_FA_ISIR_AUDIT';
+--strSqlCommand   := 'SMT_UTILITY.EXECUTE_IMMEDIATE: ' || strSqlDynamic;
+--COMMON_OWNER.SMT_UTILITY.EXECUTE_IMMEDIATE
+--                (
+--                i_SqlStatement          => strSqlDynamic,
+--                i_MaxTries              => 10,
+--                i_WaitSeconds           => 10,
+--                o_Tries                 => intTries
+--                );
+
 strMessage01    := 'Inserting data into CSMRT_OWNER.UM_F_FA_ISIR_AUDIT';
 COMMON_OWNER.SMT_LOG.PUT_MESSAGE(i_Message => strMessage01);
 
-strSqlCommand   := 'insert into CSMRT_OWNER.UM_F_FA_ISIR_AUDIT';				
+strSqlCommand   := 'insert into CSMRT_OWNER.UM_F_FA_ISIR_AUDIT';
 insert /*+ append parallel(16) enable_parallel_dml */ into CSMRT_OWNER.UM_F_FA_ISIR_AUDIT
 select /*+ inline parallel(16) */
        A.EMPLID PERSON_ID, A.INSTITUTION INSTITUTION_CD, A.AID_YEAR, A.DTTM_STAMP, A.ISIR_FIELD_NUM, A.SRC_SYS_ID,
@@ -122,16 +128,16 @@ COMMON_OWNER.SMT_PROCESS_LOG.PROCESS_DETAIL
 strMessage01    := 'Enabling Indexes for table CSMRT_OWNER.UM_F_FA_ISIR_AUDIT';
 COMMON_OWNER.SMT_LOG.PUT_MESSAGE(i_Message => strMessage01);
 
-strSqlDynamic   := 'alter table CSMRT_OWNER.UM_F_FA_ISIR_AUDIT enable constraint PK_UM_F_FA_ISIR_AUDIT';
-strSqlCommand   := 'SMT_UTILITY.EXECUTE_IMMEDIATE: ' || strSqlDynamic;
-COMMON_OWNER.SMT_UTILITY.EXECUTE_IMMEDIATE
-                (
-                i_SqlStatement          => strSqlDynamic,
-                i_MaxTries              => 10,
-                i_WaitSeconds           => 10,
-                o_Tries                 => intTries
-                );
-				
+--strSqlDynamic   := 'alter table CSMRT_OWNER.UM_F_FA_ISIR_AUDIT enable constraint PK_UM_F_FA_ISIR_AUDIT';
+--strSqlCommand   := 'SMT_UTILITY.EXECUTE_IMMEDIATE: ' || strSqlDynamic;
+--COMMON_OWNER.SMT_UTILITY.EXECUTE_IMMEDIATE
+--                (
+--                i_SqlStatement          => strSqlDynamic,
+--                i_MaxTries              => 10,
+--                i_WaitSeconds           => 10,
+--                o_Tries                 => intTries
+--                );
+
 COMMON_OWNER.SMT_INDEX.ALL_REBUILD('CSMRT_OWNER','UM_F_FA_ISIR_AUDIT');
 
 strSqlCommand := 'SMT_PROCESS_LOG.PROCESS_SUCCESS';

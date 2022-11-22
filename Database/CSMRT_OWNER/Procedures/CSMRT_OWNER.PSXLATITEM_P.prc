@@ -1,4 +1,10 @@
-CREATE OR REPLACE PROCEDURE             "PSXLATITEM_P" AUTHID CURRENT_USER IS
+DROP PROCEDURE CSMRT_OWNER.PSXLATITEM_P
+/
+
+--
+-- PSXLATITEM_P  (Procedure) 
+--
+CREATE OR REPLACE PROCEDURE CSMRT_OWNER."PSXLATITEM_P" AUTHID CURRENT_USER IS
 
 
 ------------------------------------------------------------------------

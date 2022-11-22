@@ -1,4 +1,10 @@
-CREATE OR REPLACE PROCEDURE             "UM_F_FA_STDNT_AID_ISIR_P" AUTHID CURRENT_USER IS
+DROP PROCEDURE CSMRT_OWNER.UM_F_FA_STDNT_AID_ISIR_P
+/
+
+--
+-- UM_F_FA_STDNT_AID_ISIR_P  (Procedure) 
+--
+CREATE OR REPLACE PROCEDURE CSMRT_OWNER."UM_F_FA_STDNT_AID_ISIR_P" AUTHID CURRENT_USER IS
 
 ------------------------------------------------------------------------
 -- George Adams
@@ -41,20 +47,6 @@ COMMON_OWNER.SMT_PROCESS_LOG.PROCESS_INIT
                 o_ProcessSid            => intProcessSid
         );
 
-strMessage01    := 'Disabling Indexes for table CSMRT_OWNER.UM_F_FA_STDNT_AID_ISIR';
-COMMON_OWNER.SMT_LOG.PUT_MESSAGE(i_Message => strMessage01);
-COMMON_OWNER.SMT_INDEX.ALL_UNUSABLE('CSMRT_OWNER','UM_F_FA_STDNT_AID_ISIR');
-
-strSqlDynamic   := 'alter table CSMRT_OWNER.UM_F_FA_STDNT_AID_ISIR disable constraint PK_UM_F_FA_STDNT_AID_ISIR';
-strSqlCommand   := 'SMT_UTILITY.EXECUTE_IMMEDIATE: ' || strSqlDynamic;
-COMMON_OWNER.SMT_UTILITY.EXECUTE_IMMEDIATE
-                (
-                i_SqlStatement          => strSqlDynamic,
-                i_MaxTries              => 10,
-                i_WaitSeconds           => 10,
-                o_Tries                 => intTries
-                );
-				
 strMessage01    := 'Truncating table CSMRT_OWNER.UM_F_FA_STDNT_AID_ISIR';
 COMMON_OWNER.SMT_LOG.PUT_MESSAGE(i_Message => strMessage01);
 
@@ -68,11 +60,25 @@ COMMON_OWNER.SMT_UTILITY.EXECUTE_IMMEDIATE
                 o_Tries                 => intTries
                 );
 
+strMessage01    := 'Disabling Indexes for table CSMRT_OWNER.UM_F_FA_STDNT_AID_ISIR';
+COMMON_OWNER.SMT_LOG.PUT_MESSAGE(i_Message => strMessage01);
+COMMON_OWNER.SMT_INDEX.ALL_UNUSABLE('CSMRT_OWNER','UM_F_FA_STDNT_AID_ISIR');
+
+--strSqlDynamic   := 'alter table CSMRT_OWNER.UM_F_FA_STDNT_AID_ISIR disable constraint PK_UM_F_FA_STDNT_AID_ISIR';
+--strSqlCommand   := 'SMT_UTILITY.EXECUTE_IMMEDIATE: ' || strSqlDynamic;
+--COMMON_OWNER.SMT_UTILITY.EXECUTE_IMMEDIATE
+--                (
+--                i_SqlStatement          => strSqlDynamic,
+--                i_MaxTries              => 10,
+--                i_WaitSeconds           => 10,
+--                o_Tries                 => intTries
+--                );
+
 strMessage01    := 'Inserting data into CSMRT_OWNER.UM_F_FA_STDNT_AID_ISIR';
 COMMON_OWNER.SMT_LOG.PUT_MESSAGE(i_Message => strMessage01);
 
-strSqlCommand   := 'insert into CSMRT_OWNER.UM_F_FA_STDNT_AID_ISIR';				
-insert /*+ APPEND */ into UM_F_FA_STDNT_AID_ISIR
+strSqlCommand   := 'insert into CSMRT_OWNER.UM_F_FA_STDNT_AID_ISIR';
+insert /*+ append enable_parallel_dml parallel(8) */ into UM_F_FA_STDNT_AID_ISIR
     WITH
         STDNT
         AS
@@ -593,8 +599,8 @@ insert /*+ APPEND */ into UM_F_FA_STDNT_AID_ISIR
                     XLATSHORTNAME
                FROM UM_D_XLATITEM
               WHERE SRC_SYS_ID = 'CS90'),
-SRVC as (select /*+ INLINE */ 
-                INSTITUTION_SID, PERSON_SID, min(PERSON_SID) MIN_PERSON_SID    -- Mar 2019 
+SRVC as (select /*+ INLINE */
+                INSTITUTION_SID, PERSON_SID, min(PERSON_SID) MIN_PERSON_SID    -- Mar 2019
            from UM_D_PERSON_SRVC_IND
           where DATA_ORIGIN <> 'D'
           group by INSTITUTION_SID, PERSON_SID)
@@ -620,7 +626,7 @@ SRVC as (select /*+ INLINE */
 --                       AND S.DATA_ORIGIN <> 'D'),
 --               2147483646)
 --               PERSON_SRVC_IND_SID,
-           nvl(SRVC.MIN_PERSON_SID, 2147483646) PERSON_SRVC_IND_SID,    -- Mar 2019  
+           nvl(SRVC.MIN_PERSON_SID, 2147483646) PERSON_SRVC_IND_SID,    -- Mar 2019
            STAID.FED_DEPEND_STAT,
            NVL (X1.XLATLONGNAME, '')
                FED_DEPEND_STAT_LD,
@@ -1116,7 +1122,7 @@ SRVC as (select /*+ INLINE */
                   AND STAID.AID_YEAR = ISIR.AID_YEAR
                   AND PKG_PLAN.PKG_PLAN_ORDER = 1
            left outer join SRVC
-             on I.INSTITUTION_SID = SRVC.INSTITUTION_SID      -- Mar 2019 
+             on I.INSTITUTION_SID = SRVC.INSTITUTION_SID      -- Mar 2019
             and P.PERSON_SID = SRVC.PERSON_SID
            LEFT OUTER JOIN XL X1
                ON     X1.FIELDNAME = 'FED_DEPEND_STAT'
@@ -1365,7 +1371,7 @@ SRVC as (select /*+ INLINE */
            LEFT OUTER JOIN XL X78
                ON     X78.FIELDNAME = 'SFA_SPL_CIRCUM_FLG'
                   AND X78.FIELDVALUE = ISIR.SFA_SPL_CIRCUM_FLG_ISIR
-;                  
+;
 
 strSqlCommand   := 'SET intRowCount';
 intRowCount     := SQL%ROWCOUNT;
@@ -1395,16 +1401,16 @@ COMMON_OWNER.SMT_PROCESS_LOG.PROCESS_DETAIL
 strMessage01    := 'Enabling Indexes for table CSMRT_OWNER.UM_F_FA_STDNT_AID_ISIR';
 COMMON_OWNER.SMT_LOG.PUT_MESSAGE(i_Message => strMessage01);
 
-strSqlDynamic   := 'alter table CSMRT_OWNER.UM_F_FA_STDNT_AID_ISIR enable constraint PK_UM_F_FA_STDNT_AID_ISIR';
-strSqlCommand   := 'SMT_UTILITY.EXECUTE_IMMEDIATE: ' || strSqlDynamic;
-COMMON_OWNER.SMT_UTILITY.EXECUTE_IMMEDIATE
-                (
-                i_SqlStatement          => strSqlDynamic,
-                i_MaxTries              => 10,
-                i_WaitSeconds           => 10,
-                o_Tries                 => intTries
-                );
-				
+--strSqlDynamic   := 'alter table CSMRT_OWNER.UM_F_FA_STDNT_AID_ISIR enable constraint PK_UM_F_FA_STDNT_AID_ISIR';
+--strSqlCommand   := 'SMT_UTILITY.EXECUTE_IMMEDIATE: ' || strSqlDynamic;
+--COMMON_OWNER.SMT_UTILITY.EXECUTE_IMMEDIATE
+--                (
+--                i_SqlStatement          => strSqlDynamic,
+--                i_MaxTries              => 10,
+--                i_WaitSeconds           => 10,
+--                o_Tries                 => intTries
+--                );
+
 COMMON_OWNER.SMT_INDEX.ALL_REBUILD('CSMRT_OWNER','UM_F_FA_STDNT_AID_ISIR');
 
 strSqlCommand := 'SMT_PROCESS_LOG.PROCESS_SUCCESS';

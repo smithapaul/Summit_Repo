@@ -1,4 +1,10 @@
-CREATE OR REPLACE PROCEDURE             "UM_AF_PRD_AMH_STDNT_ENRL_S1_P"
+DROP PROCEDURE CSMRT_OWNER.UM_AF_PRD_AMH_STDNT_ENRL_S1_P
+/
+
+--
+-- UM_AF_PRD_AMH_STDNT_ENRL_S1_P  (Procedure) 
+--
+CREATE OR REPLACE PROCEDURE CSMRT_OWNER."UM_AF_PRD_AMH_STDNT_ENRL_S1_P"
         (
                 i_ContextBlock          in  Varchar2    Default Null,
                 i_UploadId              in  Varchar2,

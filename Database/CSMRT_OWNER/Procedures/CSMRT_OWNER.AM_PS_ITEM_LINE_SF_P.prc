@@ -1,0 +1,585 @@
+DROP PROCEDURE CSMRT_OWNER.AM_PS_ITEM_LINE_SF_P
+/
+
+--
+-- AM_PS_ITEM_LINE_SF_P  (Procedure) 
+--
+CREATE OR REPLACE PROCEDURE CSMRT_OWNER.AM_PS_ITEM_LINE_SF_P IS
+
+--------------------------------------------------------------------------------
+-- George Adams
+--
+-- Loads stage table PS_ITEM_LINE_SF from PeopleSoft table PS_ITEM_LINE_SF.
+--
+-- V01  SMT-xxxx 04/04/2017,    Jim Doucette
+--                              Converted from PS_ITEM_LINE_SF.SQL
+--
+--------------------------------------------------------------------------------
+
+        strMartId                       Varchar2(50)    := 'CSW';
+        strProcessName                  Varchar2(100)   := 'AM_PS_ITEM_LINE_SF';
+        intProcessSid                   Integer;
+        dtProcessStart                  Date            := SYSDATE;
+        strMessage01                    Varchar2(4000);
+        strMessage02                    Varchar2(512);
+        strMessage03                    Varchar2(512)   :='';
+        strNewLine                      Varchar2(2)     := chr(13) || chr(10);
+        strSqlCommand                   Varchar2(32767) :='';
+        strSqlDynamic                   Varchar2(32767) :='';
+        strClientInfo                   Varchar2(100);
+        strDELETE_FLG                   Varchar2(1);
+        intRowCount                     Integer;
+        intTotalRowCount                Integer         := 0;
+        intOLD_MAX_SCN                  Integer         := 0;
+        intNEW_MAX_SCN                  Integer         := 0;
+        numSqlCode                      Number;
+        strSqlErrm                      Varchar2(4000);
+        intTries                        Integer;
+
+BEGIN
+
+strSqlCommand := 'DBMS_APPLICATION_INFO.SET_CLIENT_INFO';
+DBMS_APPLICATION_INFO.SET_CLIENT_INFO (strProcessName);
+
+strSqlCommand := 'SMT_PROCESS_LOG.PROCESS_INIT';
+COMMON_OWNER.SMT_PROCESS_LOG.PROCESS_INIT
+        (
+                i_MartId                => strMartId,
+                i_ProcessName           => strProcessName,
+                i_ProcessStartTime      => dtProcessStart,
+                o_ProcessSid            => intProcessSid
+        );
+
+strMessage01    := 'Updating AMSTG_OWNER.UM_STAGE_JOBS';
+COMMON_OWNER.SMT_LOG.PUT_MESSAGE(i_Message => strMessage01);
+
+strSqlCommand   := 'update START_DT on AMSTG_OWNER.UM_STAGE_JOBS';
+update AMSTG_OWNER.UM_STAGE_JOBS
+   set TABLE_STATUS = 'Reading',
+       START_DT = SYSDATE,
+       END_DT = NULL
+ where TABLE_NAME = 'PS_ITEM_LINE_SF'
+;
+
+strSqlCommand := 'commit';
+commit;
+
+strMessage01    := 'Updating AMSTG_OWNER.UM_STAGE_JOBS';
+COMMON_OWNER.SMT_LOG.PUT_MESSAGE(i_Message => strMessage01);
+
+strSqlCommand   := 'update NEW_MAX_SCN on AMSTG_OWNER.UM_STAGE_JOBS';
+update AMSTG_OWNER.UM_STAGE_JOBS
+   set TABLE_STATUS = 'Merging',
+       NEW_MAX_SCN = (select /*+ full(S) */ max(ORA_ROWSCN) from SYSADM.PS_ITEM_LINE_SF@AMSOURCE S)
+ where TABLE_NAME = 'PS_ITEM_LINE_SF'
+;
+
+strSqlCommand := 'commit';
+commit;
+
+strMessage01    := 'Selecting variables from AMSTG_OWNER.UM_STAGE_JOBS';
+COMMON_OWNER.SMT_LOG.PUT_MESSAGE(i_Message => strMessage01);
+
+select DELETE_FLG, 
+       OLD_MAX_SCN, 
+       NEW_MAX_SCN
+  into strDELETE_FLG,
+       intOLD_MAX_SCN,
+       intNEW_MAX_SCN
+  from AMSTG_OWNER.UM_STAGE_JOBS
+ where TABLE_NAME = 'PS_ITEM_LINE_SF'
+;
+
+strMessage01    := 'Merging data into AMSTG_OWNER.PS_ITEM_LINE_SF';
+COMMON_OWNER.SMT_LOG.PUT_MESSAGE(i_Message => strMessage01);
+
+strSqlCommand   := 'merge into AMSTG_OWNER.PS_ITEM_LINE_SF';
+merge /*+ use_hash(S,T) parallel(8) enable_parallel_dml */ into AMSTG_OWNER.PS_ITEM_LINE_SF T
+using (select /*+ full(S) */ 
+nvl(trim(BUSINESS_UNIT),'-') BUSINESS_UNIT,
+nvl(trim(COMMON_ID),'-') COMMON_ID,
+nvl(trim(SA_ID_TYPE),'-') SA_ID_TYPE,
+nvl(trim(ITEM_NBR),'-') ITEM_NBR,
+nvl(LINE_SEQ_NBR,0) LINE_SEQ_NBR,
+nvl(trim(EMPLID),'-') EMPLID,
+nvl(trim(ACCOUNT_NBR),'-') ACCOUNT_NBR,
+nvl(trim(ACCOUNT_TERM),'-') ACCOUNT_TERM,
+to_date(to_char(POSTED_DATE,'MM/DD/YYYY HH24:MI:SS'),'MM/DD/YYYY HH24:MI:SS') POSTED_DATE,
+to_date(to_char(ITEM_EFFECTIVE_DT,'MM/DD/YYYY HH24:MI:SS'),'MM/DD/YYYY HH24:MI:SS') ITEM_EFFECTIVE_DT,
+to_date(to_char(GL_POSTING_DTTM,'MM/DD/YYYY HH24:MI:SS'),'MM/DD/YYYY HH24:MI:SS') GL_POSTING_DTTM,
+to_date(to_char(BILLING_DT,'MM/DD/YYYY HH24:MI:SS'),'MM/DD/YYYY HH24:MI:SS') BILLING_DT,
+to_date(to_char(DUE_DT,'MM/DD/YYYY HH24:MI:SS'),'MM/DD/YYYY HH24:MI:SS') DUE_DT,
+nvl(trim(REF1_DESCR),'-') REF1_DESCR,
+nvl(LINE_AMT,0) LINE_AMT,
+nvl(DUE_AMT,0) DUE_AMT,
+nvl(DISPUTE_AMT,0) DISPUTE_AMT,
+to_date(to_char(DISPUTE_DT,'MM/DD/YYYY HH24:MI:SS'),'MM/DD/YYYY HH24:MI:SS') DISPUTE_DT,
+nvl(trim(ACAD_CAREER),'-') ACAD_CAREER,
+nvl(STDNT_CAR_NBR,0) STDNT_CAR_NBR,
+nvl(trim(ITEM_TERM),'-') ITEM_TERM,
+nvl(trim(SESSION_CODE),'-') SESSION_CODE,
+nvl(CLASS_NBR,0) CLASS_NBR,
+nvl(trim(FINANCE_CHARGE),'-') FINANCE_CHARGE,
+to_date(to_char(ENCUMBRANCE_DT,'MM/DD/YYYY HH24:MI:SS'),'MM/DD/YYYY HH24:MI:SS') ENCUMBRANCE_DT,
+nvl(ENCUMBERED_AMT,0) ENCUMBERED_AMT,
+nvl(trim(FEE_CD),'-') FEE_CD,
+nvl(trim(SEL_GROUP),'-') SEL_GROUP,
+to_date(to_char(POSTED_DATETIME,'MM/DD/YYYY HH24:MI:SS'),'MM/DD/YYYY HH24:MI:SS') POSTED_DATETIME,
+nvl(trim(OPRID),'-') OPRID,
+nvl(trim(LINE_STATUS),'-') LINE_STATUS,
+nvl(trim(LINE_ACTION),'-') LINE_ACTION,
+nvl(trim(LINE_REASON_CD),'-') LINE_REASON_CD,
+to_date(to_char(AGING_DT,'MM/DD/YYYY HH24:MI:SS'),'MM/DD/YYYY HH24:MI:SS') AGING_DT,
+nvl(PAYMENT_ID_NBR,0) PAYMENT_ID_NBR,
+nvl(trim(AGING_FLG),'-') AGING_FLG,
+nvl(trim(DUE_DATE_BY),'-') DUE_DATE_BY,
+nvl(trim(DESCR),'-') DESCR,
+nvl(trim(ORIGINAL_ACCT_TERM),'-') ORIGINAL_ACCT_TERM,
+nvl(trim(AGING2_FLAG),'-') AGING2_FLAG,
+nvl(DEPOSIT_NBR,0) DEPOSIT_NBR,
+nvl(REFUND_NBR,0) REFUND_NBR,
+nvl(trim(EXT_ORG_ID),'-') EXT_ORG_ID,
+nvl(trim(REFUND_EMPLID),'-') REFUND_EMPLID,
+nvl(trim(CONTRACT_NUM),'-') CONTRACT_NUM,
+nvl(COLLECTION_ID,0) COLLECTION_ID,
+nvl(trim(ORG_GROUP_ID_SF),'-') ORG_GROUP_ID_SF,
+nvl(ORG_GROUP_LINE_NBR,0) ORG_GROUP_LINE_NBR,
+to_date(to_char(GRP_TIMESTAMP,'MM/DD/YYYY HH24:MI:SS'),'MM/DD/YYYY HH24:MI:SS') GRP_TIMESTAMP,
+nvl(trim(ITEM_TYPE_CD),'-') ITEM_TYPE_CD,
+to_date(to_char(ACTUAL_BILLING_DT,'MM/DD/YYYY HH24:MI:SS'),'MM/DD/YYYY HH24:MI:SS') ACTUAL_BILLING_DT,
+nvl(trim(BILLING_FLAG),'-') BILLING_FLAG,
+nvl(trim(COMPANY),'-') COMPANY,
+nvl(trim(PAYGROUP),'-') PAYGROUP,
+to_date(to_char(PAY_END_DT,'MM/DD/YYYY HH24:MI:SS'),'MM/DD/YYYY HH24:MI:SS') PAY_END_DT,
+nvl(trim(OFF_CYCLE),'-') OFF_CYCLE,
+nvl(PAGE_NUM,0) PAGE_NUM,
+nvl(LINE_NUM,0) LINE_NUM,
+nvl(PAYCHECK_NBR,0) PAYCHECK_NBR,
+nvl(trim(SENT_HRNRA_FLAG),'-') SENT_HRNRA_FLAG,
+to_date(to_char(AGING_LATE_FEES_DT,'MM/DD/YYYY HH24:MI:SS'),'MM/DD/YYYY HH24:MI:SS') AGING_LATE_FEES_DT,
+nvl(trim(LINE_REVERSAL_IND),'-') LINE_REVERSAL_IND,
+nvl(trim(T4_SENT_FLG),'-') T4_SENT_FLG,
+to_date(to_char(CLASS_PRICE_DTTM,'MM/DD/YYYY HH24:MI:SS'),'MM/DD/YYYY HH24:MI:SS') CLASS_PRICE_DTTM,
+nvl(trim(TRACER_NBR),'-') TRACER_NBR,
+to_date(to_char(ORIG_DUE_DATE,'MM/DD/YYYY HH24:MI:SS'),'MM/DD/YYYY HH24:MI:SS') ORIG_DUE_DATE,
+nvl(trim(SCC_ROW_ADD_OPRID),'-') SCC_ROW_ADD_OPRID,
+to_date(to_char(SCC_ROW_ADD_DTTM,'MM/DD/YYYY HH24:MI:SS'),'MM/DD/YYYY HH24:MI:SS') SCC_ROW_ADD_DTTM,
+nvl(trim(SCC_ROW_UPD_OPRID),'-') SCC_ROW_UPD_OPRID,
+to_date(to_char(SCC_ROW_UPD_DTTM,'MM/DD/YYYY HH24:MI:SS'),'MM/DD/YYYY HH24:MI:SS') SCC_ROW_UPD_DTTM,
+nvl(trim(SSF_ITEM_NBR_STCHG),'-') SSF_ITEM_NBR_STCHG
+  from SYSADM.PS_ITEM_LINE_SF@AMSOURCE S
+-- where ORA_ROWSCN > (select OLD_MAX_SCN from AMSTG_OWNER.UM_STAGE_JOBS where TABLE_NAME = 'PS_ITEM_LINE_SF')
+ where ORA_ROWSCN > intOLD_MAX_SCN 
+   and COMMON_ID between '00000000' and '99999999'
+   and length(COMMON_ID) = 8 ) S   
+   on (T.BUSINESS_UNIT = S.BUSINESS_UNIT
+  and  T.COMMON_ID = S.COMMON_ID
+  and  T.SA_ID_TYPE = S.SA_ID_TYPE
+  and  T.ITEM_NBR = S.ITEM_NBR
+  and  T.LINE_SEQ_NBR = S.LINE_SEQ_NBR
+  and  T.SRC_SYS_ID = 'CS90') 
+ when matched then update set 
+T.EMPLID = S.EMPLID,
+T.ACCOUNT_NBR = S.ACCOUNT_NBR,
+T.ACCOUNT_TERM = S.ACCOUNT_TERM,
+T.POSTED_DATE = S.POSTED_DATE,
+T.ITEM_EFFECTIVE_DT = S.ITEM_EFFECTIVE_DT,
+T.GL_POSTING_DTTM = S.GL_POSTING_DTTM,
+T.BILLING_DT = S.BILLING_DT,
+T.DUE_DT = S.DUE_DT,
+T.REF1_DESCR = S.REF1_DESCR,
+T.LINE_AMT = S.LINE_AMT,
+T.DUE_AMT = S.DUE_AMT,
+T.DISPUTE_AMT = S.DISPUTE_AMT,
+T.DISPUTE_DT = S.DISPUTE_DT,
+T.ACAD_CAREER = S.ACAD_CAREER,
+T.STDNT_CAR_NBR = S.STDNT_CAR_NBR,
+T.ITEM_TERM = S.ITEM_TERM,
+T.SESSION_CODE = S.SESSION_CODE,
+T.CLASS_NBR = S.CLASS_NBR,
+T.FINANCE_CHARGE = S.FINANCE_CHARGE,
+T.ENCUMBRANCE_DT = S.ENCUMBRANCE_DT,
+T.ENCUMBERED_AMT = S.ENCUMBERED_AMT,
+T.FEE_CD = S.FEE_CD,
+T.SEL_GROUP = S.SEL_GROUP,
+T.POSTED_DATETIME = S.POSTED_DATETIME,
+T.OPRID = S.OPRID,
+T.LINE_STATUS = S.LINE_STATUS,
+T.LINE_ACTION = S.LINE_ACTION,
+T.LINE_REASON_CD = S.LINE_REASON_CD,
+T.AGING_DT = S.AGING_DT,
+T.PAYMENT_ID_NBR = S.PAYMENT_ID_NBR,
+T.AGING_FLG = S.AGING_FLG,
+T.DUE_DATE_BY = S.DUE_DATE_BY,
+T.DESCR = S.DESCR,
+T.ORIGINAL_ACCT_TERM = S.ORIGINAL_ACCT_TERM,
+T.AGING2_FLAG = S.AGING2_FLAG,
+T.DEPOSIT_NBR = S.DEPOSIT_NBR,
+T.REFUND_NBR = S.REFUND_NBR,
+T.EXT_ORG_ID = S.EXT_ORG_ID,
+T.REFUND_EMPLID = S.REFUND_EMPLID,
+T.CONTRACT_NUM = S.CONTRACT_NUM,
+T.COLLECTION_ID = S.COLLECTION_ID,
+T.ORG_GROUP_ID_SF = S.ORG_GROUP_ID_SF,
+T.ORG_GROUP_LINE_NBR = S.ORG_GROUP_LINE_NBR,
+T.GRP_TIMESTAMP = S.GRP_TIMESTAMP,
+T.ITEM_TYPE_CD = S.ITEM_TYPE_CD,
+T.ACTUAL_BILLING_DT = S.ACTUAL_BILLING_DT,
+T.BILLING_FLAG = S.BILLING_FLAG,
+T.COMPANY = S.COMPANY,
+T.PAYGROUP = S.PAYGROUP,
+T.PAY_END_DT = S.PAY_END_DT,
+T.OFF_CYCLE = S.OFF_CYCLE,
+T.PAGE_NUM = S.PAGE_NUM,
+T.LINE_NUM = S.LINE_NUM,
+T.PAYCHECK_NBR = S.PAYCHECK_NBR,
+T.SENT_HRNRA_FLAG = S.SENT_HRNRA_FLAG,
+T.AGING_LATE_FEES_DT = S.AGING_LATE_FEES_DT,
+T.LINE_REVERSAL_IND = S.LINE_REVERSAL_IND,
+T.T4_SENT_FLG = S.T4_SENT_FLG,
+T.CLASS_PRICE_DTTM = S.CLASS_PRICE_DTTM,
+T.TRACER_NBR = S.TRACER_NBR,
+T.ORIG_DUE_DATE = S.ORIG_DUE_DATE,
+T.SCC_ROW_ADD_OPRID = S.SCC_ROW_ADD_OPRID,
+T.SCC_ROW_ADD_DTTM = S.SCC_ROW_ADD_DTTM,
+T.SCC_ROW_UPD_OPRID = S.SCC_ROW_UPD_OPRID,
+T.SCC_ROW_UPD_DTTM = S.SCC_ROW_UPD_DTTM,
+T.SSF_ITEM_NBR_STCHG = S.SSF_ITEM_NBR_STCHG,
+      T.DATA_ORIGIN = 'S',
+      T.LASTUPD_EW_DTTM = SYSDATE,
+      T.BATCH_SID   = 1234
+where 
+T.EMPLID <> S.EMPLID or
+T.ACCOUNT_NBR <> S.ACCOUNT_NBR or
+T.ACCOUNT_TERM <> S.ACCOUNT_TERM or
+nvl(T.POSTED_DATE,to_date('01-JAN-1900')) <> nvl(S.POSTED_DATE,to_date('01-JAN-1900')) or
+nvl(T.ITEM_EFFECTIVE_DT,to_date('01-JAN-1900')) <> nvl(S.ITEM_EFFECTIVE_DT,to_date('01-JAN-1900')) or
+nvl(T.GL_POSTING_DTTM,to_date('01-JAN-1900')) <> nvl(S.GL_POSTING_DTTM,to_date('01-JAN-1900')) or
+nvl(T.BILLING_DT,to_date('01-JAN-1900')) <> nvl(S.BILLING_DT,to_date('01-JAN-1900')) or
+nvl(T.DUE_DT,to_date('01-JAN-1900')) <> nvl(S.DUE_DT,to_date('01-JAN-1900')) or
+T.REF1_DESCR <> S.REF1_DESCR or
+T.LINE_AMT <> S.LINE_AMT or
+T.DUE_AMT <> S.DUE_AMT or
+T.DISPUTE_AMT <> S.DISPUTE_AMT or
+nvl(T.DISPUTE_DT,to_date('01-JAN-1900')) <> nvl(S.DISPUTE_DT,to_date('01-JAN-1900')) or
+T.ACAD_CAREER <> S.ACAD_CAREER or
+T.STDNT_CAR_NBR <> S.STDNT_CAR_NBR or
+T.ITEM_TERM <> S.ITEM_TERM or
+T.SESSION_CODE <> S.SESSION_CODE or
+T.CLASS_NBR <> S.CLASS_NBR or
+T.FINANCE_CHARGE <> S.FINANCE_CHARGE or
+nvl(T.ENCUMBRANCE_DT,to_date('01-JAN-1900')) <> nvl(S.ENCUMBRANCE_DT,to_date('01-JAN-1900')) or
+T.ENCUMBERED_AMT <> S.ENCUMBERED_AMT or
+T.FEE_CD <> S.FEE_CD or
+T.SEL_GROUP <> S.SEL_GROUP or
+nvl(trim(T.POSTED_DATETIME),0) <> nvl(trim(S.POSTED_DATETIME),0) or
+T.OPRID <> S.OPRID or
+T.LINE_STATUS <> S.LINE_STATUS or
+T.LINE_ACTION <> S.LINE_ACTION or
+T.LINE_REASON_CD <> S.LINE_REASON_CD or
+nvl(T.AGING_DT,to_date('01-JAN-1900')) <> nvl(S.AGING_DT,to_date('01-JAN-1900')) or
+T.PAYMENT_ID_NBR <> S.PAYMENT_ID_NBR or
+T.AGING_FLG <> S.AGING_FLG or
+T.DUE_DATE_BY <> S.DUE_DATE_BY or
+T.DESCR <> S.DESCR or
+T.ORIGINAL_ACCT_TERM <> S.ORIGINAL_ACCT_TERM or
+T.AGING2_FLAG <> S.AGING2_FLAG or
+T.DEPOSIT_NBR <> S.DEPOSIT_NBR or
+T.REFUND_NBR <> S.REFUND_NBR or
+T.EXT_ORG_ID <> S.EXT_ORG_ID or
+T.REFUND_EMPLID <> S.REFUND_EMPLID or
+T.CONTRACT_NUM <> S.CONTRACT_NUM or
+T.COLLECTION_ID <> S.COLLECTION_ID or
+T.ORG_GROUP_ID_SF <> S.ORG_GROUP_ID_SF or
+T.ORG_GROUP_LINE_NBR <> S.ORG_GROUP_LINE_NBR or
+nvl(trim(T.GRP_TIMESTAMP),0) <> nvl(trim(S.GRP_TIMESTAMP),0) or
+T.ITEM_TYPE_CD <> S.ITEM_TYPE_CD or
+nvl(T.ACTUAL_BILLING_DT,to_date('01-JAN-1900')) <> nvl(S.ACTUAL_BILLING_DT,to_date('01-JAN-1900')) or
+T.BILLING_FLAG <> S.BILLING_FLAG or
+T.COMPANY <> S.COMPANY or
+T.PAYGROUP <> S.PAYGROUP or
+nvl(T.PAY_END_DT,to_date('01-JAN-1900')) <> nvl(S.PAY_END_DT,to_date('01-JAN-1900')) or
+T.OFF_CYCLE <> S.OFF_CYCLE or
+T.PAGE_NUM <> S.PAGE_NUM or
+T.LINE_NUM <> S.LINE_NUM or
+T.PAYCHECK_NBR <> S.PAYCHECK_NBR or
+T.SENT_HRNRA_FLAG <> S.SENT_HRNRA_FLAG or
+nvl(T.AGING_LATE_FEES_DT,to_date('01-JAN-1900')) <> nvl(S.AGING_LATE_FEES_DT,to_date('01-JAN-1900')) or
+T.LINE_REVERSAL_IND <> S.LINE_REVERSAL_IND or
+T.T4_SENT_FLG <> S.T4_SENT_FLG or
+nvl(T.CLASS_PRICE_DTTM,to_date('01-JAN-1900')) <> nvl(S.CLASS_PRICE_DTTM,to_date('01-JAN-1900')) or
+T.TRACER_NBR <> S.TRACER_NBR or
+nvl(trim(T.ORIG_DUE_DATE),0) <> nvl(trim(S.ORIG_DUE_DATE),0) or
+T.SCC_ROW_ADD_OPRID <> S.SCC_ROW_ADD_OPRID or
+nvl(T.SCC_ROW_ADD_DTTM,to_date('01-JAN-1900')) <> nvl(S.SCC_ROW_ADD_DTTM,to_date('01-JAN-1900')) or
+T.SCC_ROW_UPD_OPRID <> S.SCC_ROW_UPD_OPRID or
+nvl(T.SCC_ROW_UPD_DTTM,to_date('01-JAN-1900')) <> nvl(S.SCC_ROW_UPD_DTTM,to_date('01-JAN-1900')) or
+T.SSF_ITEM_NBR_STCHG <> S.SSF_ITEM_NBR_STCHG or
+      T.DATA_ORIGIN = 'D'
+ when not matched then
+insert (
+T.BUSINESS_UNIT,
+T.COMMON_ID,
+T.SA_ID_TYPE,
+T.ITEM_NBR,
+T.LINE_SEQ_NBR,
+T.SRC_SYS_ID,
+T.EMPLID,
+T.ACCOUNT_NBR,
+T.ACCOUNT_TERM,
+T.POSTED_DATE,
+T.ITEM_EFFECTIVE_DT,
+T.GL_POSTING_DTTM,
+T.BILLING_DT,
+T.DUE_DT,
+T.REF1_DESCR,
+T.LINE_AMT,
+T.DUE_AMT,
+T.DISPUTE_AMT,
+T.DISPUTE_DT,
+T.ACAD_CAREER,
+T.STDNT_CAR_NBR,
+T.ITEM_TERM,
+T.SESSION_CODE,
+T.CLASS_NBR,
+T.FINANCE_CHARGE,
+T.ENCUMBRANCE_DT,
+T.ENCUMBERED_AMT,
+T.FEE_CD,
+T.SEL_GROUP,
+T.POSTED_DATETIME,
+T.OPRID,
+T.LINE_STATUS,
+T.LINE_ACTION,
+T.LINE_REASON_CD,
+T.AGING_DT,
+T.PAYMENT_ID_NBR,
+T.AGING_FLG,
+T.DUE_DATE_BY,
+T.DESCR,
+T.ORIGINAL_ACCT_TERM,
+T.AGING2_FLAG,
+T.DEPOSIT_NBR,
+T.REFUND_NBR,
+T.EXT_ORG_ID,
+T.REFUND_EMPLID,
+T.CONTRACT_NUM,
+T.COLLECTION_ID,
+T.ORG_GROUP_ID_SF,
+T.ORG_GROUP_LINE_NBR,
+T.GRP_TIMESTAMP,
+T.ITEM_TYPE_CD,
+T.ACTUAL_BILLING_DT,
+T.BILLING_FLAG,
+T.COMPANY,
+T.PAYGROUP,
+T.PAY_END_DT,
+T.OFF_CYCLE,
+T.PAGE_NUM,
+T.LINE_NUM,
+T.PAYCHECK_NBR,
+T.SENT_HRNRA_FLAG,
+T.AGING_LATE_FEES_DT,
+T.LINE_REVERSAL_IND,
+T.T4_SENT_FLG,
+T.CLASS_PRICE_DTTM,
+T.TRACER_NBR,
+T.ORIG_DUE_DATE,
+T.SCC_ROW_ADD_OPRID,
+T.SCC_ROW_ADD_DTTM,
+T.SCC_ROW_UPD_OPRID,
+T.SCC_ROW_UPD_DTTM,
+T.SSF_ITEM_NBR_STCHG,
+T.LOAD_ERROR,
+T.DATA_ORIGIN,
+T.CREATED_EW_DTTM,
+T.LASTUPD_EW_DTTM,
+T.BATCH_SID)
+values (
+S.BUSINESS_UNIT,
+S.COMMON_ID,
+S.SA_ID_TYPE,
+S.ITEM_NBR,
+S.LINE_SEQ_NBR,
+'CS90', 
+S.EMPLID,
+S.ACCOUNT_NBR,
+S.ACCOUNT_TERM,
+S.POSTED_DATE,
+S.ITEM_EFFECTIVE_DT,
+S.GL_POSTING_DTTM,
+S.BILLING_DT,
+S.DUE_DT,
+S.REF1_DESCR,
+S.LINE_AMT,
+S.DUE_AMT,
+S.DISPUTE_AMT,
+S.DISPUTE_DT,
+S.ACAD_CAREER,
+S.STDNT_CAR_NBR,
+S.ITEM_TERM,
+S.SESSION_CODE,
+S.CLASS_NBR,
+S.FINANCE_CHARGE,
+S.ENCUMBRANCE_DT,
+S.ENCUMBERED_AMT,
+S.FEE_CD,
+S.SEL_GROUP,
+S.POSTED_DATETIME,
+S.OPRID,
+S.LINE_STATUS,
+S.LINE_ACTION,
+S.LINE_REASON_CD,
+S.AGING_DT,
+S.PAYMENT_ID_NBR,
+S.AGING_FLG,
+S.DUE_DATE_BY,
+S.DESCR,
+S.ORIGINAL_ACCT_TERM,
+S.AGING2_FLAG,
+S.DEPOSIT_NBR,
+S.REFUND_NBR,
+S.EXT_ORG_ID,
+S.REFUND_EMPLID,
+S.CONTRACT_NUM,
+S.COLLECTION_ID,
+S.ORG_GROUP_ID_SF,
+S.ORG_GROUP_LINE_NBR,
+S.GRP_TIMESTAMP,
+S.ITEM_TYPE_CD,
+S.ACTUAL_BILLING_DT,
+S.BILLING_FLAG,
+S.COMPANY,
+S.PAYGROUP,
+S.PAY_END_DT,
+S.OFF_CYCLE,
+S.PAGE_NUM,
+S.LINE_NUM,
+S.PAYCHECK_NBR,
+S.SENT_HRNRA_FLAG,
+S.AGING_LATE_FEES_DT,
+S.LINE_REVERSAL_IND,
+S.T4_SENT_FLG,
+S.CLASS_PRICE_DTTM,
+S.TRACER_NBR,
+S.ORIG_DUE_DATE,
+S.SCC_ROW_ADD_OPRID,
+S.SCC_ROW_ADD_DTTM,
+S.SCC_ROW_UPD_OPRID,
+S.SCC_ROW_UPD_DTTM,
+S.SSF_ITEM_NBR_STCHG,
+      'N', 
+      'S', 
+      sysdate, 
+      sysdate,
+      1234)
+;
+
+strSqlCommand   := 'SET intRowCount';
+intRowCount     := SQL%ROWCOUNT;
+
+strSqlCommand := 'commit';
+commit;
+
+strMessage01    := '# of PS_ITEM_LINE_SF rows merged: ' || TO_CHAR(intRowCount,'999,999,999,999');
+COMMON_OWNER.SMT_LOG.PUT_MESSAGE(i_Message => strMessage01);
+
+strSqlCommand := 'SMT_PROCESS_LOG.PROCESS_DETAIL';
+COMMON_OWNER.SMT_PROCESS_LOG.PROCESS_DETAIL
+        (
+                i_TargetTableName   => 'PS_ITEM_LINE_SF',
+                i_Action            => 'MERGE',
+                i_RowCount          => intRowCount
+        );
+
+If strDELETE_FLG = 'Y' then
+
+strMessage01    := 'Updating AMSTG_OWNER.UM_STAGE_JOBS';
+COMMON_OWNER.SMT_LOG.PUT_MESSAGE(i_Message => strMessage01);
+
+strSqlCommand   := 'update TABLE_STATUS on AMSTG_OWNER.UM_STAGE_JOBS';
+update AMSTG_OWNER.UM_STAGE_JOBS
+   set TABLE_STATUS = 'Deleting',
+       OLD_MAX_SCN = NEW_MAX_SCN
+ where TABLE_NAME = 'PS_ITEM_LINE_SF';
+
+strSqlCommand := 'commit';
+commit;
+
+strMessage01    := 'Updating DATA_ORIGIN on AMSTG_OWNER.PS_ITEM_LINE_SF';
+COMMON_OWNER.SMT_LOG.PUT_MESSAGE(i_Message => strMessage01);
+
+strSqlCommand   := 'update DATA_ORIGIN on AMSTG_OWNER.PS_ITEM_LINE_SF';
+update /*+ parallel(8) enable_parallel_dml */ AMSTG_OWNER.PS_ITEM_LINE_SF T
+   set T.DATA_ORIGIN = 'D',
+       T.LASTUPD_EW_DTTM = SYSDATE
+ where T.DATA_ORIGIN <> 'D'
+   and exists 
+(select 1 from 
+(select BUSINESS_UNIT, COMMON_ID, SA_ID_TYPE, ITEM_NBR, LINE_SEQ_NBR
+   from AMSTG_OWNER.PS_ITEM_LINE_SF T2
+--  where (select DELETE_FLG from AMSTG_OWNER.UM_STAGE_JOBS where TABLE_NAME = 'PS_ITEM_LINE_SF') = 'Y'
+  minus
+ select /*+ full(S2) */ BUSINESS_UNIT, COMMON_ID, SA_ID_TYPE, ITEM_NBR, LINE_SEQ_NBR
+   from SYSADM.PS_ITEM_LINE_SF@AMSOURCE S2
+--  where (select DELETE_FLG from AMSTG_OWNER.UM_STAGE_JOBS where TABLE_NAME = 'PS_ITEM_LINE_SF') = 'Y'
+   ) S
+ where T.BUSINESS_UNIT = S.BUSINESS_UNIT
+   and T.COMMON_ID = S.COMMON_ID
+   and T.SA_ID_TYPE = S.SA_ID_TYPE
+   and T.ITEM_NBR = S.ITEM_NBR
+   and T.LINE_SEQ_NBR = S.LINE_SEQ_NBR
+   and T.SRC_SYS_ID = 'CS90' 
+   ) 
+;
+
+strSqlCommand   := 'SET intRowCount';
+intRowCount     := SQL%ROWCOUNT;
+
+strSqlCommand := 'commit';
+commit;
+
+strMessage01    := '# of PS_ITEM_LINE_SF rows updated: ' || TO_CHAR(intRowCount,'999,999,999,999');
+COMMON_OWNER.SMT_LOG.PUT_MESSAGE(i_Message => strMessage01);
+
+strSqlCommand := 'SMT_PROCESS_LOG.PROCESS_DETAIL';
+COMMON_OWNER.SMT_PROCESS_LOG.PROCESS_DETAIL
+        (
+                i_TargetTableName   => 'PS_ITEM_LINE_SF',
+                i_Action            => 'UPDATE',
+                i_RowCount          => intRowCount
+        );
+
+End if;
+
+strMessage01    := 'Updating AMSTG_OWNER.UM_STAGE_JOBS';
+COMMON_OWNER.SMT_LOG.PUT_MESSAGE(i_Message => strMessage01);
+
+strSqlCommand   := 'update END_DT on AMSTG_OWNER.UM_STAGE_JOBS';
+
+update AMSTG_OWNER.UM_STAGE_JOBS
+   set TABLE_STATUS = 'Complete',
+       END_DT = SYSDATE
+ where TABLE_NAME = 'PS_ITEM_LINE_SF'
+;
+
+strSqlCommand := 'commit';
+commit;
+
+strSqlCommand := 'SMT_PROCESS_LOG.PROCESS_SUCCESS';
+COMMON_OWNER.SMT_PROCESS_LOG.PROCESS_SUCCESS;
+
+strMessage01    := strProcessName || ' is complete.';
+COMMON_OWNER.SMT_LOG.PUT_MESSAGE(i_Message => strMessage01);
+
+EXCEPTION
+    WHEN OTHERS THEN
+        COMMON_OWNER.SMT_PROCESS_LOG.PROCESS_EXCEPTION
+                (
+                        i_SqlCommand   => strSqlCommand,
+                        i_SqlCode      => SQLCODE,
+                        i_SqlErrm      => SQLERRM
+                );
+
+END AM_PS_ITEM_LINE_SF_P;
+/

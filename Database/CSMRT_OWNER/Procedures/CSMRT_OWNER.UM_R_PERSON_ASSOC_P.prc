@@ -1,4 +1,10 @@
-CREATE OR REPLACE PROCEDURE             "UM_R_PERSON_ASSOC_P" AUTHID CURRENT_USER IS
+DROP PROCEDURE CSMRT_OWNER.UM_R_PERSON_ASSOC_P
+/
+
+--
+-- UM_R_PERSON_ASSOC_P  (Procedure) 
+--
+CREATE OR REPLACE PROCEDURE CSMRT_OWNER."UM_R_PERSON_ASSOC_P" AUTHID CURRENT_USER IS
 
 ------------------------------------------------------------------------
 --George Adams
@@ -54,15 +60,15 @@ strMessage01    := 'Disabling Indexes for table CSMRT_OWNER.UM_R_PERSON_ASSOC';
 COMMON_OWNER.SMT_LOG.PUT_MESSAGE(i_Message => strMessage01);
 COMMON_OWNER.SMT_INDEX.ALL_UNUSABLE('CSMRT_OWNER','UM_R_PERSON_ASSOC');
 
-strSqlDynamic   := 'alter table CSMRT_OWNER.UM_R_PERSON_ASSOC disable constraint PK_UM_R_PERSON_ASSOC';
-strSqlCommand   := 'SMT_UTILITY.EXECUTE_IMMEDIATE: ' || strSqlDynamic;
-COMMON_OWNER.SMT_UTILITY.EXECUTE_IMMEDIATE
-                (
-                i_SqlStatement          => strSqlDynamic,
-                i_MaxTries              => 10,
-                i_WaitSeconds           => 10,
-                o_Tries                 => intTries
-                );
+--strSqlDynamic   := 'alter table CSMRT_OWNER.UM_R_PERSON_ASSOC disable constraint PK_UM_R_PERSON_ASSOC';
+--strSqlCommand   := 'SMT_UTILITY.EXECUTE_IMMEDIATE: ' || strSqlDynamic;
+--COMMON_OWNER.SMT_UTILITY.EXECUTE_IMMEDIATE
+--                (
+--                i_SqlStatement          => strSqlDynamic,
+--                i_MaxTries              => 10,
+--                i_WaitSeconds           => 10,
+--                o_Tries                 => intTries
+--                );
 
 strMessage01    := 'Inserting data into CSMRT_OWNER.UM_R_PERSON_ASSOC';
 COMMON_OWNER.SMT_LOG.PUT_MESSAGE(i_Message => strMessage01);
@@ -101,7 +107,7 @@ select /*+ INLINE parallel(8) no_merge */
  group by INSTITUTION_CD, PERSON_ID, SRC_SYS_ID),
        Q4 as (
 select /*+ INLINE parallel(8)  */
-       CAMPUS, PERSON_SID_BDL
+       distinct CAMPUS, PERSON_SID_BDL
   from HRMRT_OWNER.D_IS_INTERNATIONAL I,
        HRMRT_OWNER.D_IS_SNAPSHOT_CONTROL C
  where I.SNAPSHOT_DATE = C.SNAPSHOT_DATE
@@ -337,15 +343,15 @@ COMMON_OWNER.SMT_PROCESS_LOG.PROCESS_DETAIL
 strMessage01    := 'Enabling Indexes for table CSMRT_OWNER.UM_R_PERSON_ASSOC';
 COMMON_OWNER.SMT_LOG.PUT_MESSAGE(i_Message => strMessage01);
 
-strSqlDynamic   := 'alter table CSMRT_OWNER.UM_R_PERSON_ASSOC enable constraint PK_UM_R_PERSON_ASSOC';
-strSqlCommand   := 'SMT_UTILITY.EXECUTE_IMMEDIATE: ' || strSqlDynamic;
-COMMON_OWNER.SMT_UTILITY.EXECUTE_IMMEDIATE
-                (
-                i_SqlStatement          => strSqlDynamic,
-                i_MaxTries              => 10,
-                i_WaitSeconds           => 10,
-                o_Tries                 => intTries
-                );
+--strSqlDynamic   := 'alter table CSMRT_OWNER.UM_R_PERSON_ASSOC enable constraint PK_UM_R_PERSON_ASSOC';
+--strSqlCommand   := 'SMT_UTILITY.EXECUTE_IMMEDIATE: ' || strSqlDynamic;
+--COMMON_OWNER.SMT_UTILITY.EXECUTE_IMMEDIATE
+--                (
+--                i_SqlStatement          => strSqlDynamic,
+--                i_MaxTries              => 10,
+--                i_WaitSeconds           => 10,
+--                o_Tries                 => intTries
+--                );
 
 COMMON_OWNER.SMT_INDEX.ALL_REBUILD('CSMRT_OWNER','UM_R_PERSON_ASSOC');
 

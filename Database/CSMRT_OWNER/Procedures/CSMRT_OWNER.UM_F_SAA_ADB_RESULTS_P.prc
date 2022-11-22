@@ -1,4 +1,10 @@
-CREATE OR REPLACE PROCEDURE             "UM_F_SAA_ADB_RESULTS_P" AUTHID CURRENT_USER IS
+DROP PROCEDURE CSMRT_OWNER.UM_F_SAA_ADB_RESULTS_P
+/
+
+--
+-- UM_F_SAA_ADB_RESULTS_P  (Procedure) 
+--
+CREATE OR REPLACE PROCEDURE CSMRT_OWNER."UM_F_SAA_ADB_RESULTS_P" AUTHID CURRENT_USER IS
 
 ------------------------------------------------------------------------
 -- George Adams
@@ -41,21 +47,6 @@ COMMON_OWNER.SMT_PROCESS_LOG.PROCESS_INIT
                 o_ProcessSid            => intProcessSid
         );
 
-strMessage01    := 'Disabling Indexes for table CSMRT_OWNER.UM_F_SAA_ADB_RESULTS';
-COMMON_OWNER.SMT_LOG.PUT_MESSAGE(i_Message => strMessage01);
-COMMON_OWNER.SMT_INDEX.ALL_UNUSABLE('CSMRT_OWNER','UM_F_SAA_ADB_RESULTS', TRUE);
-
-strSqlDynamic   := 'alter table CSMRT_OWNER.UM_F_SAA_ADB_RESULTS disable constraint PK_UM_F_SAA_ADB_RESULTS';
-strSqlCommand   := 'SMT_UTILITY.EXECUTE_IMMEDIATE: ' || strSqlDynamic;
-COMMON_OWNER.SMT_UTILITY.EXECUTE_IMMEDIATE
-                (
-                i_SqlStatement          => strSqlDynamic,
-                i_MaxTries              => 10,
-                i_WaitSeconds           => 10,
-                o_Tries                 => intTries
-                );
-				
-				
 strMessage01    := 'Truncating table CSMRT_OWNER.UM_F_SAA_ADB_RESULTS';
 COMMON_OWNER.SMT_LOG.PUT_MESSAGE(i_Message => strMessage01);
 
@@ -69,21 +60,35 @@ COMMON_OWNER.SMT_UTILITY.EXECUTE_IMMEDIATE
                 o_Tries                 => intTries
                 );
 
+strMessage01    := 'Disabling Indexes for table CSMRT_OWNER.UM_F_SAA_ADB_RESULTS';
+COMMON_OWNER.SMT_LOG.PUT_MESSAGE(i_Message => strMessage01);
+COMMON_OWNER.SMT_INDEX.ALL_UNUSABLE('CSMRT_OWNER','UM_F_SAA_ADB_RESULTS', TRUE);
+
+--strSqlDynamic   := 'alter table CSMRT_OWNER.UM_F_SAA_ADB_RESULTS disable constraint PK_UM_F_SAA_ADB_RESULTS';
+--strSqlCommand   := 'SMT_UTILITY.EXECUTE_IMMEDIATE: ' || strSqlDynamic;
+--COMMON_OWNER.SMT_UTILITY.EXECUTE_IMMEDIATE
+--                (
+--                i_SqlStatement          => strSqlDynamic,
+--                i_MaxTries              => 10,
+--                i_WaitSeconds           => 10,
+--                o_Tries                 => intTries
+--                );
+
 strMessage01    := 'Inserting data into CSMRT_OWNER.UM_F_SAA_ADB_RESULTS';
 COMMON_OWNER.SMT_LOG.PUT_MESSAGE(i_Message => strMessage01);
 
-strSqlCommand   := 'insert into CSMRT_OWNER.UM_F_SAA_ADB_RESULTS';				
-insert /*+ append */ into UM_F_SAA_ADB_RESULTS
+strSqlCommand   := 'insert into CSMRT_OWNER.UM_F_SAA_ADB_RESULTS';
+insert /*+ append enable_parallel_dml parallel(8) */ into UM_F_SAA_ADB_RESULTS
 with XL as (select /*+ materialize */
                    FIELDNAME, FIELDVALUE, SRC_SYS_ID, XLATLONGNAME, XLATSHORTNAME
               from UM_D_XLATITEM
              where SRC_SYS_ID = 'CS90'),
  RT as (
-select distinct EMPLID, ANALYSIS_DB_SEQ, SAA_CAREER_RPT, SRC_SYS_ID, INSTITUTION, SAA_RPT_DTTM_STAMP  
+select distinct EMPLID, ANALYSIS_DB_SEQ, SAA_CAREER_RPT, SRC_SYS_ID, INSTITUTION, SAA_RPT_DTTM_STAMP
   from CSSTG_OWNER.PS_SAA_ADB_REPORT REP
-),  
+),
 TERM as (
-select INSTITUTION_CD, ACAD_CAR_CD, TERM_CD, EFF_START_DT, EFF_END_DT, TERM_SID 
+select INSTITUTION_CD, ACAD_CAR_CD, TERM_CD, EFF_START_DT, EFF_END_DT, TERM_SID
   from UM_D_TERM_VW
  where TERM_CD between '1010' and '9000'
    and substr(TERM_CD,-2,2) not in ('50','90')
@@ -91,26 +96,26 @@ select INSTITUTION_CD, ACAD_CAR_CD, TERM_CD, EFF_START_DT, EFF_END_DT, TERM_SID
 ),
  DT as (
 select /*+ parallel(8) inline */
-       distinct RT.EMPLID PERSON_ID, RT.ANALYSIS_DB_SEQ, RT.SAA_CAREER_RPT ACAD_CAR_CD, RT.SRC_SYS_ID, 
+       distinct RT.EMPLID PERSON_ID, RT.ANALYSIS_DB_SEQ, RT.SAA_CAREER_RPT ACAD_CAR_CD, RT.SRC_SYS_ID,
                 RT.INSTITUTION INSTITUTION_CD, TERM.TERM_CD, TERM.TERM_SID
-  from RT 
+  from RT
   left outer join TERM
     on RT.INSTITUTION = TERM.INSTITUTION_CD
    and RT.SAA_CAREER_RPT = TERM.ACAD_CAR_CD
    and trunc(RT.SAA_RPT_DTTM_STAMP) between TERM.EFF_START_DT and TERM.EFF_END_DT
 ),
  ST as (
-select /*+ parallel(8) inline */ 
+select /*+ parallel(8) inline */
        distinct INSTITUTION_CD, ACAD_CAR_CD, TERM_CD, PERSON_ID, TERM_SID
   from UM_F_STDNT_TERM ST
  where TERM_ACTV_FLG = 'Y'
 ),
  MT as (
 select /*+ parallel(8) inline */
-       DT.PERSON_ID, DT.ANALYSIS_DB_SEQ, DT.ACAD_CAR_CD, DT.SRC_SYS_ID, 
-       DT.INSTITUTION_CD, DT.TERM_CD||DT.TERM_SID DT_TERM, min(ST.TERM_CD||ST.TERM_SID) MIN_ST_TERM  
+       DT.PERSON_ID, DT.ANALYSIS_DB_SEQ, DT.ACAD_CAR_CD, DT.SRC_SYS_ID,
+       DT.INSTITUTION_CD, DT.TERM_CD||DT.TERM_SID DT_TERM, min(ST.TERM_CD||ST.TERM_SID) MIN_ST_TERM
   from DT
-  left outer join ST 
+  left outer join ST
     on DT.INSTITUTION_CD = ST.INSTITUTION_CD
    and DT.ACAD_CAR_CD = ST.ACAD_CAR_CD
    and DT.TERM_CD <= ST.TERM_CD
@@ -120,11 +125,11 @@ select /*+ parallel(8) inline */
 ),
 MT2 as (
 select /*+ parallel(8) inline */
-       PERSON_ID, ANALYSIS_DB_SEQ, ACAD_CAR_CD, SRC_SYS_ID, 
-       coalesce(to_number(trim(substr(MIN_ST_TERM,5,9))), to_number(trim(substr(DT_TERM,5,9)))) TERM_SID  
+       PERSON_ID, ANALYSIS_DB_SEQ, ACAD_CAR_CD, SRC_SYS_ID,
+       coalesce(to_number(trim(substr(MIN_ST_TERM,5,9))), to_number(trim(substr(DT_TERM,5,9)))) TERM_SID
   from MT
 )
-select /*+ parallel(8) inline */ 
+select /*+ parallel(8) inline */
 REP.EMPLID,
 REP.ANALYSIS_DB_SEQ,
 REP.SAA_CAREER_RPT,
@@ -144,22 +149,22 @@ nvl(PL.ACAD_PLAN_SID,2147483646) ACAD_PLAN_SID,
 nvl(SP.ACAD_SPLAN_SID,2147483646) ACAD_SPLAN_SID,
 REP.RPT_DATE,
 REP.RPT_TYPE,
-nvl(X1.XLATSHORTNAME,'-') RPT_TYPE_SD, 
+nvl(X1.XLATSHORTNAME,'-') RPT_TYPE_SD,
 nvl(X1.XLATLONGNAME,'-') RPT_TYPE_LD,
-REP.SAA_RPT_IDENTIFIER,     -- New dim PS_SAA_IDENT_TBL? 
-REP.TSCRPT_TYPE,            -- New dim PS_TRANSCRIPT_TYPE? 
+REP.SAA_RPT_IDENTIFIER,     -- New dim PS_SAA_IDENT_TBL?
+REP.TSCRPT_TYPE,            -- New dim PS_TRANSCRIPT_TYPE?
 REP.SAA_RPT_DTTM_STAMP,
 RES.ENTRY_R_TYPE,
 RES.ITEM_R_STATUS,
-nvl(X3.XLATSHORTNAME,'-') ITEM_R_STATUS_SD, 
+nvl(X3.XLATSHORTNAME,'-') ITEM_R_STATUS_SD,
 nvl(X3.XLATLONGNAME,'-') ITEM_R_STATUS_LD,
 RES.RQ_DATE,
 RES.RQRMNT_LIST_SEQ,
 RES.REQ_LINE_TYPE,
-nvl(X2.XLATSHORTNAME,'-') REQ_LINE_TYPE_SD, 
+nvl(X2.XLATSHORTNAME,'-') REQ_LINE_TYPE_SD,
 nvl(X2.XLATLONGNAME,'-') REQ_LINE_TYPE_LD,
 RES.UNITS_REQUIRED,
-RES.SAA_UNITS_USED, 
+RES.SAA_UNITS_USED,
 RES.UNITS_NEEDED,
 RES.CRSES_REQUIRED,
 RES.SAA_CRSES_USED,
@@ -202,29 +207,29 @@ SYSDATE CREATED_EW_DTTM
     on REP.INSTITUTION = PR.INSTITUTION_CD
    and RES.ACAD_PROG = PR.ACAD_PROG_CD
    and RES.SRC_SYS_ID = PR.SRC_SYS_ID
-   and PR.EFFDT_ORDER = 1 
+   and PR.EFFDT_ORDER = 1
   left outer join UM_D_ACAD_PLAN PL
     on REP.INSTITUTION = PL.INSTITUTION_CD
    and RES.ACAD_PLAN = PL.ACAD_PLAN_CD
    and RES.SRC_SYS_ID = PL.SRC_SYS_ID
-   and PL.EFFDT_ORDER = 1 
+   and PL.EFFDT_ORDER = 1
   left outer join UM_D_ACAD_SPLAN SP
     on REP.INSTITUTION = SP.INSTITUTION_CD
    and RES.ACAD_PLAN = SP.ACAD_PLAN_CD
    and RES.ACAD_SUB_PLAN = SP.ACAD_SPLAN_CD
    and RES.SRC_SYS_ID = SP.SRC_SYS_ID
-   and SP.EFFDT_ORDER = 1 
+   and SP.EFFDT_ORDER = 1
   left outer join XL X1
     on X1.FIELDNAME = 'RPT_TYPE'
-   and X1.FIELDVALUE = REP.RPT_TYPE 
+   and X1.FIELDVALUE = REP.RPT_TYPE
    and X1.SRC_SYS_ID = REP.SRC_SYS_ID
   left outer join XL X2
     on X2.FIELDNAME = 'REQ_LINE_TYPE'
-   and X2.FIELDVALUE = RES.REQ_LINE_TYPE 
+   and X2.FIELDVALUE = RES.REQ_LINE_TYPE
    and X2.SRC_SYS_ID = RES.SRC_SYS_ID
   left outer join XL X3
     on X3.FIELDNAME = 'ITEM_R_STATUS'
-   and X3.FIELDVALUE = RES.ITEM_R_STATUS 
+   and X3.FIELDVALUE = RES.ITEM_R_STATUS
    and X3.SRC_SYS_ID = RES.SRC_SYS_ID
  where trunc(REP.SAA_RPT_DTTM_STAMP) >= SYSDATE-90
 ;
@@ -257,16 +262,16 @@ COMMON_OWNER.SMT_PROCESS_LOG.PROCESS_DETAIL
 strMessage01    := 'Enabling Indexes for table CSMRT_OWNER.UM_F_SAA_ADB_RESULTS';
 COMMON_OWNER.SMT_LOG.PUT_MESSAGE(i_Message => strMessage01);
 
-strSqlDynamic   := 'alter table CSMRT_OWNER.UM_F_SAA_ADB_RESULTS enable constraint PK_UM_F_SAA_ADB_RESULTS';
-strSqlCommand   := 'SMT_UTILITY.EXECUTE_IMMEDIATE: ' || strSqlDynamic;
-COMMON_OWNER.SMT_UTILITY.EXECUTE_IMMEDIATE
-                (
-                i_SqlStatement          => strSqlDynamic,
-                i_MaxTries              => 10,
-                i_WaitSeconds           => 10,
-                o_Tries                 => intTries
-                );
-				
+--strSqlDynamic   := 'alter table CSMRT_OWNER.UM_F_SAA_ADB_RESULTS enable constraint PK_UM_F_SAA_ADB_RESULTS';
+--strSqlCommand   := 'SMT_UTILITY.EXECUTE_IMMEDIATE: ' || strSqlDynamic;
+--COMMON_OWNER.SMT_UTILITY.EXECUTE_IMMEDIATE
+--                (
+--                i_SqlStatement          => strSqlDynamic,
+--                i_MaxTries              => 10,
+--                i_WaitSeconds           => 10,
+--                o_Tries                 => intTries
+--                );
+
 COMMON_OWNER.SMT_INDEX.ALL_REBUILD('CSMRT_OWNER','UM_F_SAA_ADB_RESULTS');
 
 strSqlCommand := 'SMT_PROCESS_LOG.PROCESS_SUCCESS';

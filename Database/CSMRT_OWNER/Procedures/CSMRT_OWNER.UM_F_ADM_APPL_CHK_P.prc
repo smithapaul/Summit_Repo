@@ -1,4 +1,10 @@
-CREATE OR REPLACE PROCEDURE             "UM_F_ADM_APPL_CHK_P" AUTHID CURRENT_USER IS
+DROP PROCEDURE CSMRT_OWNER.UM_F_ADM_APPL_CHK_P
+/
+
+--
+-- UM_F_ADM_APPL_CHK_P  (Procedure) 
+--
+CREATE OR REPLACE PROCEDURE CSMRT_OWNER."UM_F_ADM_APPL_CHK_P" AUTHID CURRENT_USER IS
 
 ------------------------------------------------------------------------
 --George Adams
@@ -38,20 +44,6 @@ COMMON_OWNER.SMT_PROCESS_LOG.PROCESS_INIT
                 o_ProcessSid            => intProcessSid
         );
 
-strMessage01    := 'Disabling Indexes for table CSMRT_OWNER.UM_F_ADM_APPL_CHK';
-COMMON_OWNER.SMT_LOG.PUT_MESSAGE(i_Message => strMessage01);
-COMMON_OWNER.SMT_INDEX.ALL_UNUSABLE('CSMRT_OWNER','UM_F_ADM_APPL_CHK');
-
-strSqlDynamic   := 'alter table CSMRT_OWNER.UM_F_ADM_APPL_CHK disable constraint PK_UM_F_ADM_APPL_CHK';
-strSqlCommand   := 'SMT_UTILITY.EXECUTE_IMMEDIATE: ' || strSqlDynamic;
-COMMON_OWNER.SMT_UTILITY.EXECUTE_IMMEDIATE
-                (
-                i_SqlStatement          => strSqlDynamic,
-                i_MaxTries              => 10,
-                i_WaitSeconds           => 10,
-                o_Tries                 => intTries
-                );
-				
 strMessage01    := 'Truncating table CSMRT_OWNER.UM_F_ADM_APPL_CHK';
 COMMON_OWNER.SMT_LOG.PUT_MESSAGE(i_Message => strMessage01);
 
@@ -65,17 +57,31 @@ COMMON_OWNER.SMT_UTILITY.EXECUTE_IMMEDIATE
                 o_Tries                 => intTries
                 );
 
+strMessage01    := 'Disabling Indexes for table CSMRT_OWNER.UM_F_ADM_APPL_CHK';
+COMMON_OWNER.SMT_LOG.PUT_MESSAGE(i_Message => strMessage01);
+COMMON_OWNER.SMT_INDEX.ALL_UNUSABLE('CSMRT_OWNER','UM_F_ADM_APPL_CHK');
+
+--strSqlDynamic   := 'alter table CSMRT_OWNER.UM_F_ADM_APPL_CHK disable constraint PK_UM_F_ADM_APPL_CHK';
+--strSqlCommand   := 'SMT_UTILITY.EXECUTE_IMMEDIATE: ' || strSqlDynamic;
+--COMMON_OWNER.SMT_UTILITY.EXECUTE_IMMEDIATE
+--                (
+--                i_SqlStatement          => strSqlDynamic,
+--                i_MaxTries              => 10,
+--                i_WaitSeconds           => 10,
+--                o_Tries                 => intTries
+--                );
+
 strMessage01    := 'Inserting data into CSMRT_OWNER.UM_F_ADM_APPL_CHK';
 COMMON_OWNER.SMT_LOG.PUT_MESSAGE(i_Message => strMessage01);
 
-strSqlCommand   := 'insert into CSMRT_OWNER.UM_F_ADM_APPL_CHK';				
-insert /*+ append */ into CSMRT_OWNER.UM_F_ADM_APPL_CHK
+strSqlCommand   := 'insert into CSMRT_OWNER.UM_F_ADM_APPL_CHK';
+insert /*+ append enable_parallel_dml parallel(8) */ into CSMRT_OWNER.UM_F_ADM_APPL_CHK
    WITH ADM
-        AS (SELECT /*+ parallel(8) inline */ DISTINCT 
+        AS (SELECT /*+ parallel(8) inline */ DISTINCT
                    APPLCNT_SID, ADM_APPL_NBR, SRC_SYS_ID
               FROM UM_F_ADM_APPL_STAT),
-        VAR 
-        AS (SELECT /*+ parallel(8) inline */ DISTINCT 
+        VAR
+        AS (SELECT /*+ parallel(8) inline */ DISTINCT
                    COMMON_ID, ADM_APPL_NBR, VAR_DATA_SID
               FROM PS_D_VAR_DATA
              WHERE ADMIN_FUNCTION = 'ADMP' AND DATA_ORIGIN <> 'D'),
@@ -140,11 +146,11 @@ insert /*+ append */ into CSMRT_OWNER.UM_F_ADM_APPL_CHK
           NVL (CHK.RESPONSIBLE_SID, 2147483646) RESPONSIBLE_SID,
           NVL (CHK.VAR_DATA_SID, 2147483646) VAR_DATA_SID,
 --          TO_DATE (CHK.CHKLIST_DT_SID, 'YYYYMMDD') CHKLIST_DT,
-          CHK.CHKLIST_DT, 
+          CHK.CHKLIST_DT,
           CHK.CHKLIST_TM,
           CHK.DUE_AMT,
 --          TO_DATE (CHK.DUE_DT_SID, 'YYYYMMDD') DUE_DT,
-          CHK.DUE_DT, 
+          CHK.DUE_DT,
           CHK.ITEM_DUE_DT,
           CHK.DUE_AMT ITEM_DUE_AMT,
           CHK.ITEM_RESPONSIBLE_ID,
@@ -154,7 +160,7 @@ insert /*+ append */ into CSMRT_OWNER.UM_F_ADM_APPL_CHK
           CHK.ITEM_STATUS_DT,
           CHK.ITEM_STATUS_CHANGE_ID,
 --          TO_DATE (CHK.STATUS_DT_SID, 'YYYYMMDD') STATUS_DT,
-          CHK.STATUS_DT, 
+          CHK.STATUS_DT,
           CHK.TRACKING_SEQ,
           CHK.ASSOC_ID,
           CHK.NAME,
@@ -188,16 +194,16 @@ COMMON_OWNER.SMT_PROCESS_LOG.PROCESS_DETAIL
 strMessage01    := 'Enabling Indexes for table CSMRT_OWNER.UM_F_ADM_APPL_CHK';
 COMMON_OWNER.SMT_LOG.PUT_MESSAGE(i_Message => strMessage01);
 
-strSqlDynamic   := 'alter table CSMRT_OWNER.UM_F_ADM_APPL_CHK enable constraint PK_UM_F_ADM_APPL_CHK';
-strSqlCommand   := 'SMT_UTILITY.EXECUTE_IMMEDIATE: ' || strSqlDynamic;
-COMMON_OWNER.SMT_UTILITY.EXECUTE_IMMEDIATE
-                (
-                i_SqlStatement          => strSqlDynamic,
-                i_MaxTries              => 10,
-                i_WaitSeconds           => 10,
-                o_Tries                 => intTries
-                );
-				
+--strSqlDynamic   := 'alter table CSMRT_OWNER.UM_F_ADM_APPL_CHK enable constraint PK_UM_F_ADM_APPL_CHK';
+--strSqlCommand   := 'SMT_UTILITY.EXECUTE_IMMEDIATE: ' || strSqlDynamic;
+--COMMON_OWNER.SMT_UTILITY.EXECUTE_IMMEDIATE
+--                (
+--                i_SqlStatement          => strSqlDynamic,
+--                i_MaxTries              => 10,
+--                i_WaitSeconds           => 10,
+--                o_Tries                 => intTries
+--                );
+
 COMMON_OWNER.SMT_INDEX.ALL_REBUILD('CSMRT_OWNER','UM_F_ADM_APPL_CHK');
 
 strSqlCommand := 'SMT_PROCESS_LOG.PROCESS_SUCCESS';

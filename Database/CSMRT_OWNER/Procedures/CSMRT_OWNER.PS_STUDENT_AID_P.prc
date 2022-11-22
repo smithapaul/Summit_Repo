@@ -1,4 +1,10 @@
-CREATE OR REPLACE PROCEDURE             "PS_STUDENT_AID_P" AUTHID CURRENT_USER IS
+DROP PROCEDURE CSMRT_OWNER.PS_STUDENT_AID_P
+/
+
+--
+-- PS_STUDENT_AID_P  (Procedure) 
+--
+CREATE OR REPLACE PROCEDURE CSMRT_OWNER."PS_STUDENT_AID_P" AUTHID CURRENT_USER IS
 
 ------------------------------------------------------------------------
 -- George Adams

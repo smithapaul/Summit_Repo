@@ -1,4 +1,10 @@
-CREATE OR REPLACE PROCEDURE             "UM_F_STDNT_GRADE_RSTR_P" AUTHID CURRENT_USER IS
+DROP PROCEDURE CSMRT_OWNER.UM_F_STDNT_GRADE_RSTR_P
+/
+
+--
+-- UM_F_STDNT_GRADE_RSTR_P  (Procedure) 
+--
+CREATE OR REPLACE PROCEDURE CSMRT_OWNER."UM_F_STDNT_GRADE_RSTR_P" AUTHID CURRENT_USER IS
 
 ------------------------------------------------------------------------
 -- George Adams
@@ -37,20 +43,6 @@ COMMON_OWNER.SMT_PROCESS_LOG.PROCESS_INIT
                 o_ProcessSid            => intProcessSid
         );
 
-strMessage01    := 'Disabling Indexes for table CSMRT_OWNER.UM_F_STDNT_GRADE_RSTR';
-COMMON_OWNER.SMT_LOG.PUT_MESSAGE(i_Message => strMessage01);
-COMMON_OWNER.SMT_INDEX.ALL_UNUSABLE('CSMRT_OWNER','UM_F_STDNT_GRADE_RSTR');
-
-strSqlDynamic   := 'alter table CSMRT_OWNER.UM_F_STDNT_GRADE_RSTR disable constraint PK_UM_F_STDNT_GRADE_RSTR';
-strSqlCommand   := 'SMT_UTILITY.EXECUTE_IMMEDIATE: ' || strSqlDynamic;
-COMMON_OWNER.SMT_UTILITY.EXECUTE_IMMEDIATE
-                (
-                i_SqlStatement          => strSqlDynamic,
-                i_MaxTries              => 10,
-                i_WaitSeconds           => 10,
-                o_Tries                 => intTries
-                );
-				
 strMessage01    := 'Truncating table CSMRT_OWNER.UM_F_STDNT_GRADE_RSTR';
 COMMON_OWNER.SMT_LOG.PUT_MESSAGE(i_Message => strMessage01);
 
@@ -64,14 +56,28 @@ COMMON_OWNER.SMT_UTILITY.EXECUTE_IMMEDIATE
                 o_Tries                 => intTries
                 );
 
+strMessage01    := 'Disabling Indexes for table CSMRT_OWNER.UM_F_STDNT_GRADE_RSTR';
+COMMON_OWNER.SMT_LOG.PUT_MESSAGE(i_Message => strMessage01);
+COMMON_OWNER.SMT_INDEX.ALL_UNUSABLE('CSMRT_OWNER','UM_F_STDNT_GRADE_RSTR');
+
+--strSqlDynamic   := 'alter table CSMRT_OWNER.UM_F_STDNT_GRADE_RSTR disable constraint PK_UM_F_STDNT_GRADE_RSTR';
+--strSqlCommand   := 'SMT_UTILITY.EXECUTE_IMMEDIATE: ' || strSqlDynamic;
+--COMMON_OWNER.SMT_UTILITY.EXECUTE_IMMEDIATE
+--                (
+--                i_SqlStatement          => strSqlDynamic,
+--                i_MaxTries              => 10,
+--                i_WaitSeconds           => 10,
+--                o_Tries                 => intTries
+--                );
+
 strMessage01    := 'Inserting data into CSMRT_OWNER.UM_F_STDNT_GRADE_RSTR';
 COMMON_OWNER.SMT_LOG.PUT_MESSAGE(i_Message => strMessage01);
 
-strSqlCommand   := 'insert into CSMRT_OWNER.UM_F_STDNT_GRADE_RSTR';				
-insert /*+ append */ into UM_F_STDNT_GRADE_RSTR 
- with XL as (  
-select FIELDNAME, FIELDVALUE, EFFDT, SRC_SYS_ID, 
-       XLATLONGNAME, XLATSHORTNAME, DATA_ORIGIN, 
+strSqlCommand   := 'insert into CSMRT_OWNER.UM_F_STDNT_GRADE_RSTR';
+insert /*+ append enable_parallel_dml parallel(8) */ into UM_F_STDNT_GRADE_RSTR
+ with XL as (
+select FIELDNAME, FIELDVALUE, EFFDT, SRC_SYS_ID,
+       XLATLONGNAME, XLATSHORTNAME, DATA_ORIGIN,
        row_number() over (partition by FIELDNAME, FIELDVALUE, SRC_SYS_ID
                               order by DATA_ORIGIN desc, (case when EFFDT > trunc(SYSDATE) then to_date('01-JAN-1900') else EFFDT end) desc) X_ORDER
   from CSSTG_OWNER.PSXLATITEM
@@ -85,7 +91,7 @@ select /*+ parallel(8) */
        V.SRC_SYS_ID,
        I.INSTITUTION_CD,
        nvl(I.INSTITUTION_SID, 2147483646) INSTITUTION_SID,
-       nvl(C.ACAD_CAR_SID, 2147483646) ACAD_CAR_SID, 
+       nvl(C.ACAD_CAR_SID, 2147483646) ACAD_CAR_SID,
        nvl(D.TERM_SID, 2147483646) TERM_SID,
        nvl(P.PERSON_SID, 2147483646) PERSON_SID,
        nvl(G.GRD_RSTR_TYPE_SID,2147483646) GRD_RSTR_TYPE_SID,
@@ -94,12 +100,12 @@ select /*+ parallel(8) */
        V.FIRST_NAME_SRCH,
        V.CRSE_GRADE_INPUT,
        V.RQMNT_DESIGNTN_GRD,
-       nvl(X1.XLATSHORTNAME,'-') RQMNT_DESIGNTN_GRD_SD, 
+       nvl(X1.XLATSHORTNAME,'-') RQMNT_DESIGNTN_GRD_SD,
        nvl(X1.XLATLONGNAME,'-') RQMNT_DESIGNTN_GRD_LD,
        V.TSCRPT_NOTE_ID,
        V.TSCRPT_NOTE_EXISTS,
        V.GRADE_ROSTER_STAT,
-       nvl(X2.XLATSHORTNAME,'-') GRADE_ROSTER_STAT_SD, 
+       nvl(X2.XLATSHORTNAME,'-') GRADE_ROSTER_STAT_SD,
        nvl(X2.XLATLONGNAME,'-') GRADE_ROSTER_STAT_LD,
        V.INSTRUCTOR_ID,
        V.GRADING_SCHEME,
@@ -113,12 +119,12 @@ select /*+ parallel(8) */
   from CSSTG_OWNER.PS_GRADE_ROSTER V
   left outer join XL X1
     on X1.FIELDNAME = 'RQMNT_DESIGNTN_GRD'
-   and X1.FIELDVALUE = V.RQMNT_DESIGNTN_GRD 
+   and X1.FIELDVALUE = V.RQMNT_DESIGNTN_GRD
    and X1.SRC_SYS_ID = V.SRC_SYS_ID
    and X1.X_ORDER = 1
   left outer join XL X2
     on X2.FIELDNAME = 'GRADE_ROSTER_STAT'
-   and X2.FIELDVALUE = V.GRADE_ROSTER_STAT 
+   and X2.FIELDVALUE = V.GRADE_ROSTER_STAT
    and X2.SRC_SYS_ID = V.SRC_SYS_ID
    and X2.X_ORDER = 1
   left outer join CSMRT_OWNER.UM_D_GRD_RSTR_TYPE G
@@ -132,21 +138,21 @@ select /*+ parallel(8) */
    and V.SRC_SYS_ID = I.SRC_SYS_ID
    and I.DATA_ORIGIN <> 'D'
   left outer JOIN CSMRT_OWNER.PS_D_PERSON P
-    on V.EMPLID = P.PERSON_ID  
+    on V.EMPLID = P.PERSON_ID
    and V.SRC_SYS_ID = P.SRC_SYS_ID
-   and P.DATA_ORIGIN <> 'D' 
-  left outer join CSMRT_OWNER.PS_D_TERM D 	
+   and P.DATA_ORIGIN <> 'D'
+  left outer join CSMRT_OWNER.PS_D_TERM D
     on D.INSTITUTION_CD = V.INSTITUTION
    and D.ACAD_CAR_CD = V.ACAD_CAREER
    and D.TERM_CD = V.STRM
-   and D.SRC_SYS_ID = V.SRC_SYS_ID 
-   and D.DATA_ORIGIN <> 'D' 
+   and D.SRC_SYS_ID = V.SRC_SYS_ID
+   and D.DATA_ORIGIN <> 'D'
   left outer join CSMRT_OWNER.PS_D_ACAD_CAR C
-    on V.ACAD_CAREER = C.ACAD_CAR_CD 
-   and V.INSTITUTION = C.INSTITUTION_CD	
+    on V.ACAD_CAREER = C.ACAD_CAR_CD
+   and V.INSTITUTION = C.INSTITUTION_CD
    and V.SRC_SYS_ID = C.SRC_SYS_ID
    and C.DATA_ORIGIN <> 'D'
- where V.DATA_ORIGIN <> 'D' 
+ where V.DATA_ORIGIN <> 'D'
  ;
 
 strSqlCommand   := 'SET intRowCount';
@@ -168,16 +174,16 @@ COMMON_OWNER.SMT_PROCESS_LOG.PROCESS_DETAIL
 strMessage01    := 'Enabling Indexes for table CSMRT_OWNER.UM_F_STDNT_GRADE_RSTR';
 COMMON_OWNER.SMT_LOG.PUT_MESSAGE(i_Message => strMessage01);
 
-strSqlDynamic   := 'alter table CSMRT_OWNER.UM_F_STDNT_GRADE_RSTR enable constraint PK_UM_F_STDNT_GRADE_RSTR';
-strSqlCommand   := 'SMT_UTILITY.EXECUTE_IMMEDIATE: ' || strSqlDynamic;
-COMMON_OWNER.SMT_UTILITY.EXECUTE_IMMEDIATE
-                (
-                i_SqlStatement          => strSqlDynamic,
-                i_MaxTries              => 10,
-                i_WaitSeconds           => 10,
-                o_Tries                 => intTries
-                );
-				
+--strSqlDynamic   := 'alter table CSMRT_OWNER.UM_F_STDNT_GRADE_RSTR enable constraint PK_UM_F_STDNT_GRADE_RSTR';
+--strSqlCommand   := 'SMT_UTILITY.EXECUTE_IMMEDIATE: ' || strSqlDynamic;
+--COMMON_OWNER.SMT_UTILITY.EXECUTE_IMMEDIATE
+--                (
+--                i_SqlStatement          => strSqlDynamic,
+--                i_MaxTries              => 10,
+--                i_WaitSeconds           => 10,
+--                o_Tries                 => intTries
+--                );
+
 COMMON_OWNER.SMT_INDEX.ALL_REBUILD('CSMRT_OWNER','UM_F_STDNT_GRADE_RSTR');
 
 strSqlCommand := 'SMT_PROCESS_LOG.PROCESS_SUCCESS';

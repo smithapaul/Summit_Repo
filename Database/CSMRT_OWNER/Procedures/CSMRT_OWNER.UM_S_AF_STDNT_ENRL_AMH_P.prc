@@ -1,4 +1,10 @@
-CREATE OR REPLACE PROCEDURE             "UM_S_AF_STDNT_ENRL_AMH_P"
+DROP PROCEDURE CSMRT_OWNER.UM_S_AF_STDNT_ENRL_AMH_P
+/
+
+--
+-- UM_S_AF_STDNT_ENRL_AMH_P  (Procedure) 
+--
+CREATE OR REPLACE PROCEDURE CSMRT_OWNER."UM_S_AF_STDNT_ENRL_AMH_P"
            (
                    i_EFFDT      in  Varchar2    Default SYSDATE
            )
@@ -98,7 +104,9 @@ CREATE OR REPLACE PROCEDURE             "UM_S_AF_STDNT_ENRL_AMH_P"
           ACAD_YR, AID_YEAR, TERM_LD, ACAD_ORG_CD, ACAD_ORG_LD, ACAD_PROG_CD, ACAD_LEVEL_BOT,      -- Jan 2021
           ACAD_PROG_LD, PROG_CIP_CD, ACAD_PLAN_CD, ACAD_PLAN_LD, PLAN_CIP_CD,
           CE_ONLY_FLG, NEW_CONT_IND, ONLINE_HYBRID_FLG, ONLINE_ONLY_FLG, RSDNCY_ID, RSDNCY_LD, IS_RSDNCY_FLG,
-          ONLINE_FTE, TOT_FTE, ONLINE_CREDITS, NON_ONLINE_CREDITS, CE_CREDITS, NON_CE_CREDITS, TOT_CREDITS, ENROLL_CNT, ONLINE_CNT, CE_CNT
+          ONLINE_FTE, TOT_FTE, ONLINE_CREDITS, NON_ONLINE_CREDITS, CE_CREDITS, NON_CE_CREDITS, TOT_CREDITS, ENROLL_CNT, ONLINE_CNT, CE_CNT,
+          BIRTHDATE,SEX,ETHNIC_GRP_CD,CITIZENSHIP_STATUS,CITIZENSHIP_STATUS_LD,UM_CITIZENSHIP,UM_CITIZENSHIP_LD,
+          MILITARY_STATUS,MILITARY_STATUS_LD,UM_PRIMARY_STATE,UM_PRIMARY_POSTAL
      from CSMRT_OWNER.UM_M_AF_STDNT_ENRL_AMH S
      left outer join Q1
        on S.INSTITUTION_CD = Q1.INSTITUTION_CD
@@ -144,6 +152,17 @@ CREATE OR REPLACE PROCEDURE             "UM_S_AF_STDNT_ENRL_AMH_P"
      and  nvl(round(T.ENROLL_CNT,9),0) = nvl(round(S.ENROLL_CNT,9),0)
      and  nvl(round(T.ONLINE_CNT,9),0) = nvl(round(S.ONLINE_CNT,9),0)
      and  nvl(round(T.CE_CNT,9),0) = nvl(round(S.CE_CNT,9),0)
+     and  nvl(trim(T.BIRTHDATE),to_date('01-JAN-1900')) = nvl(trim(S.BIRTHDATE),to_date('01-JAN-1900'))
+     and  nvl(trim(T.SEX),'-') = nvl(trim(S.SEX),'-')
+     and  nvl(trim(T.ETHNIC_GRP_CD),'-') = nvl(trim(S.ETHNIC_GRP_CD),'-')
+     and  nvl(trim(T.CITIZENSHIP_STATUS),'-') = nvl(trim(S.CITIZENSHIP_STATUS),'-')
+     and  nvl(trim(T.CITIZENSHIP_STATUS_LD),'-') = nvl(trim(S.CITIZENSHIP_STATUS_LD),'-')
+     and  nvl(trim(T.UM_CITIZENSHIP),'-') = nvl(trim(S.UM_CITIZENSHIP),'-')
+     and  nvl(trim(T.UM_CITIZENSHIP_LD),'-') = nvl(trim(S.UM_CITIZENSHIP_LD),'-')
+     and  nvl(trim(T.MILITARY_STATUS),'-') = nvl(trim(S.MILITARY_STATUS),'-')
+     and  nvl(trim(T.MILITARY_STATUS_LD),'-') = nvl(trim(S.MILITARY_STATUS_LD),'-')
+     and  nvl(trim(T.UM_PRIMARY_STATE),'-') = nvl(trim(S.UM_PRIMARY_STATE),'-')
+     and  nvl(trim(T.UM_PRIMARY_POSTAL),'-') = nvl(trim(S.UM_PRIMARY_POSTAL),'-')
    )
     when matched then update set
           T.EFFDT_END = dtEFFDT,
@@ -188,7 +207,18 @@ CREATE OR REPLACE PROCEDURE             "UM_S_AF_STDNT_ENRL_AMH_P"
           T.ONLINE_CNT,
           T.CE_CNT,
           T.CREATED_EW_DTTM,
-          T.LASTUPD_EW_DTTM)
+          T.LASTUPD_EW_DTTM,
+          T.BIRTHDATE,
+          T.SEX,
+          T.ETHNIC_GRP_CD,
+          T.CITIZENSHIP_STATUS,
+          T.CITIZENSHIP_STATUS_LD,
+          T.UM_CITIZENSHIP,
+          T.UM_CITIZENSHIP_LD,
+          T.MILITARY_STATUS,
+          T.MILITARY_STATUS_LD,
+          T.UM_PRIMARY_STATE,
+          T.UM_PRIMARY_POSTAL)
    values (
           S.INSTITUTION_CD,
           S.ACAD_CAR_CD,
@@ -227,7 +257,18 @@ CREATE OR REPLACE PROCEDURE             "UM_S_AF_STDNT_ENRL_AMH_P"
           S.ONLINE_CNT,
           S.CE_CNT,
           SYSDATE,                 -- CREATED_EW_DTTM
-          SYSDATE                  -- LASTUPD_EW_DTTM
+          SYSDATE,                  -- LASTUPD_EW_DTTM
+          S.BIRTHDATE,
+          S.SEX,
+          S.ETHNIC_GRP_CD,
+          S.CITIZENSHIP_STATUS,
+          S.CITIZENSHIP_STATUS_LD,
+          S.UM_CITIZENSHIP,
+          S.UM_CITIZENSHIP_LD,
+          S.MILITARY_STATUS,
+          S.MILITARY_STATUS_LD,
+          S.UM_PRIMARY_STATE,
+          S.UM_PRIMARY_POSTAL
    )
    ;
 

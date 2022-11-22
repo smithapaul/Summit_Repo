@@ -1,4 +1,10 @@
-CREATE OR REPLACE PROCEDURE             "PS_ADDRESSES_P" AUTHID CURRENT_USER IS
+DROP PROCEDURE CSMRT_OWNER.PS_ADDRESSES_P
+/
+
+--
+-- PS_ADDRESSES_P  (Procedure) 
+--
+CREATE OR REPLACE PROCEDURE CSMRT_OWNER."PS_ADDRESSES_P" AUTHID CURRENT_USER IS
 
 ------------------------------------------------------------------------
 --Preethi Lodha

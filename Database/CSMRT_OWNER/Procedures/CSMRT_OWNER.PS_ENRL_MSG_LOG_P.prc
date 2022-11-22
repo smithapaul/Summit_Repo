@@ -1,4 +1,10 @@
-CREATE OR REPLACE PROCEDURE             "PS_ENRL_MSG_LOG_P" AUTHID CURRENT_USER IS
+DROP PROCEDURE CSMRT_OWNER.PS_ENRL_MSG_LOG_P
+/
+
+--
+-- PS_ENRL_MSG_LOG_P  (Procedure) 
+--
+CREATE OR REPLACE PROCEDURE CSMRT_OWNER."PS_ENRL_MSG_LOG_P" AUTHID CURRENT_USER IS
 
 ------------------------------------------------------------------------
 -- George Adams

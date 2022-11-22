@@ -1,4 +1,10 @@
-CREATE OR REPLACE PROCEDURE             "UM_F_ADM_APPL_ACAD_STRUCT_P" AUTHID CURRENT_USER IS
+DROP PROCEDURE CSMRT_OWNER.UM_F_ADM_APPL_ACAD_STRUCT_P
+/
+
+--
+-- UM_F_ADM_APPL_ACAD_STRUCT_P  (Procedure) 
+--
+CREATE OR REPLACE PROCEDURE CSMRT_OWNER."UM_F_ADM_APPL_ACAD_STRUCT_P" AUTHID CURRENT_USER IS
 
 ------------------------------------------------------------------------
 --George Adams
@@ -37,20 +43,6 @@ COMMON_OWNER.SMT_PROCESS_LOG.PROCESS_INIT
                 o_ProcessSid            => intProcessSid
         );
 
-strMessage01    := 'Disabling Indexes for table CSMRT_OWNER.UM_F_ADM_APPL_ACAD_STRUCT';
-COMMON_OWNER.SMT_LOG.PUT_MESSAGE(i_Message => strMessage01);
-COMMON_OWNER.SMT_INDEX.ALL_UNUSABLE('CSMRT_OWNER','UM_F_ADM_APPL_ACAD_STRUCT');
-
-strSqlDynamic   := 'alter table CSMRT_OWNER.UM_F_ADM_APPL_ACAD_STRUCT disable constraint PK_UM_F_ADM_APPL_ACAD_STRUCT';
-strSqlCommand   := 'SMT_UTILITY.EXECUTE_IMMEDIATE: ' || strSqlDynamic;
-COMMON_OWNER.SMT_UTILITY.EXECUTE_IMMEDIATE
-                (
-                i_SqlStatement          => strSqlDynamic,
-                i_MaxTries              => 10,
-                i_WaitSeconds           => 10,
-                o_Tries                 => intTries
-                );
-				
 strMessage01    := 'Truncating table CSMRT_OWNER.UM_F_ADM_APPL_ACAD_STRUCT';
 COMMON_OWNER.SMT_LOG.PUT_MESSAGE(i_Message => strMessage01);
 
@@ -64,11 +56,25 @@ COMMON_OWNER.SMT_UTILITY.EXECUTE_IMMEDIATE
                 o_Tries                 => intTries
                 );
 
+strMessage01    := 'Disabling Indexes for table CSMRT_OWNER.UM_F_ADM_APPL_ACAD_STRUCT';
+COMMON_OWNER.SMT_LOG.PUT_MESSAGE(i_Message => strMessage01);
+COMMON_OWNER.SMT_INDEX.ALL_UNUSABLE('CSMRT_OWNER','UM_F_ADM_APPL_ACAD_STRUCT');
+
+--strSqlDynamic   := 'alter table CSMRT_OWNER.UM_F_ADM_APPL_ACAD_STRUCT disable constraint PK_UM_F_ADM_APPL_ACAD_STRUCT';
+--strSqlCommand   := 'SMT_UTILITY.EXECUTE_IMMEDIATE: ' || strSqlDynamic;
+--COMMON_OWNER.SMT_UTILITY.EXECUTE_IMMEDIATE
+--                (
+--                i_SqlStatement          => strSqlDynamic,
+--                i_MaxTries              => 10,
+--                i_WaitSeconds           => 10,
+--                o_Tries                 => intTries
+--                );
+				
 strMessage01    := 'Inserting data into CSMRT_OWNER.UM_F_ADM_APPL_ACAD_STRUCT';
 COMMON_OWNER.SMT_LOG.PUT_MESSAGE(i_Message => strMessage01);
 
 strSqlCommand   := 'insert into CSMRT_OWNER.UM_F_ADM_APPL_ACAD_STRUCT';				
-insert /*+ append */ into UM_F_ADM_APPL_ACAD_STRUCT
+insert /*+ append enable_parallel_dml parallel(8) */ into UM_F_ADM_APPL_ACAD_STRUCT
    SELECT /*+ INLINE PARALLEL(8) */ A.ADM_APPL_SID,
           NVL (F.TERM_SID, A.ADMIT_TERM_SID) TERM_SID,
           NVL (F.PERSON_SID, A.APPLCNT_SID) PERSON_SID,
@@ -151,7 +157,9 @@ insert /*+ append */ into UM_F_ADM_APPL_ACAD_STRUCT
           DECODE (F.STACK_READMIT_FLG, 'Y', 1, 0) READMIT_STUDENT_CNT,
           DECODE (F.STACK_CONTINUE_FLG, 'Y', 1, 0) CONTINUING_STUDENT_CNT,
           DECODE (F.STACK_BEGIN_FLG, 'Y', 1, 0) NEW_STUDENT_CNT,
-          F.PRIM_PROG_MAJOR1_ORDER
+          F.PRIM_PROG_MAJOR1_ORDER,
+          A.TERM_BEGIN_DT,
+          A.TERM_END_DT
      FROM UM_F_ADM_APPL_STAT A
           JOIN UM_F_ADM_APPL_ENRL AE ON A.ADM_APPL_SID = AE.ADM_APPL_SID
           LEFT OUTER JOIN UM_F_STDNT_ACAD_STRUCT F
@@ -199,15 +207,15 @@ COMMON_OWNER.SMT_PROCESS_LOG.PROCESS_DETAIL
 strMessage01    := 'Enabling Indexes for table CSMRT_OWNER.UM_F_ADM_APPL_ACAD_STRUCT';
 COMMON_OWNER.SMT_LOG.PUT_MESSAGE(i_Message => strMessage01);
 
-strSqlDynamic   := 'alter table CSMRT_OWNER.UM_F_ADM_APPL_ACAD_STRUCT enable constraint PK_UM_F_ADM_APPL_ACAD_STRUCT';
-strSqlCommand   := 'SMT_UTILITY.EXECUTE_IMMEDIATE: ' || strSqlDynamic;
-COMMON_OWNER.SMT_UTILITY.EXECUTE_IMMEDIATE
-                (
-                i_SqlStatement          => strSqlDynamic,
-                i_MaxTries              => 10,
-                i_WaitSeconds           => 10,
-                o_Tries                 => intTries
-                );
+--strSqlDynamic   := 'alter table CSMRT_OWNER.UM_F_ADM_APPL_ACAD_STRUCT enable constraint PK_UM_F_ADM_APPL_ACAD_STRUCT';
+--strSqlCommand   := 'SMT_UTILITY.EXECUTE_IMMEDIATE: ' || strSqlDynamic;
+--COMMON_OWNER.SMT_UTILITY.EXECUTE_IMMEDIATE
+--                (
+--                i_SqlStatement          => strSqlDynamic,
+--                i_MaxTries              => 10,
+--                i_WaitSeconds           => 10,
+--                o_Tries                 => intTries
+--                );
 				
 COMMON_OWNER.SMT_INDEX.ALL_REBUILD('CSMRT_OWNER','UM_F_ADM_APPL_ACAD_STRUCT');
 

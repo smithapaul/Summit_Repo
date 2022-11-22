@@ -1,4 +1,10 @@
-CREATE OR REPLACE PROCEDURE             "PS_UM_CA_UMLOW_P" AUTHID CURRENT_USER IS
+DROP PROCEDURE CSMRT_OWNER.PS_UM_CA_UMLOW_P
+/
+
+--
+-- PS_UM_CA_UMLOW_P  (Procedure) 
+--
+CREATE OR REPLACE PROCEDURE CSMRT_OWNER."PS_UM_CA_UMLOW_P" AUTHID CURRENT_USER IS
 
 ------------------------------------------------------------------------
 -- George Adams

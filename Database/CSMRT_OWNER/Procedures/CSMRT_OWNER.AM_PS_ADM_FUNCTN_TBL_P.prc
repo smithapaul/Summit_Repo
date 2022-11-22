@@ -1,0 +1,471 @@
+DROP PROCEDURE CSMRT_OWNER.AM_PS_ADM_FUNCTN_TBL_P
+/
+
+--
+-- AM_PS_ADM_FUNCTN_TBL_P  (Procedure) 
+--
+CREATE OR REPLACE PROCEDURE CSMRT_OWNER."AM_PS_ADM_FUNCTN_TBL_P" IS
+
+------------------------------------------------------------------------
+-- George Adams
+--
+-- Loads stage table PS_ADM_FUNCTN_TBL from PeopleSoft table PS_ADM_FUNCTN_TBL.
+--
+ --V01  SMT-xxxx 08/16/2017,    James Doucette
+--                              Converted from DataStage
+--
+------------------------------------------------------------------------
+
+        strMartId                       Varchar2(50)    := 'CSW';
+        strProcessName                  Varchar2(100)   := 'AM_PS_ADM_FUNCTN_TBL';
+        intProcessSid                   Integer;
+        dtProcessStart                  Date            := SYSDATE;
+        strMessage01                    Varchar2(4000);
+        strMessage02                    Varchar2(512);
+        strMessage03                    Varchar2(512)   :='';
+        strNewLine                      Varchar2(2)     := chr(13) || chr(10);
+        strSqlCommand                   Varchar2(32767) :='';
+        strSqlDynamic                   Varchar2(32767) :='';
+        strClientInfo                   Varchar2(100);
+        intRowCount                     Integer;
+        intTotalRowCount                Integer         := 0;
+        numSqlCode                      Number;
+        strSqlErrm                      Varchar2(4000);
+        intTries                        Integer;
+
+BEGIN
+strSqlCommand := 'DBMS_APPLICATION_INFO.SET_CLIENT_INFO';
+DBMS_APPLICATION_INFO.SET_CLIENT_INFO (strProcessName);
+
+strSqlCommand := 'SMT_PROCESS_LOG.PROCESS_INIT';
+COMMON_OWNER.SMT_PROCESS_LOG.PROCESS_INIT
+        (
+                i_MartId                => strMartId,
+                i_ProcessName           => strProcessName,
+                i_ProcessStartTime      => dtProcessStart,
+                o_ProcessSid            => intProcessSid
+        );
+
+strMessage01    := 'Updating AMSTG_OWNER.UM_STAGE_JOBS';
+COMMON_OWNER.SMT_LOG.PUT_MESSAGE(i_Message => strMessage01);
+
+
+strSqlCommand   := 'update START_DT on AMSTG_OWNER.UM_STAGE_JOBS';
+update AMSTG_OWNER.UM_STAGE_JOBS
+   set TABLE_STATUS = 'Reading',
+       START_DT = sysdate,
+       END_DT = NULL
+ where TABLE_NAME = 'PS_ADM_FUNCTN_TBL'
+;
+
+strSqlCommand := 'commit';
+commit;
+
+
+strSqlCommand   := 'update NEW_MAX_SCN on AMSTG_OWNER.UM_STAGE_JOBS';
+update AMSTG_OWNER.UM_STAGE_JOBS
+   set TABLE_STATUS = 'Merging',
+       NEW_MAX_SCN = (select /*+ full(S) */ max(ORA_ROWSCN) from SYSADM.PS_ADM_FUNCTN_TBL@AMSOURCE S)
+ where TABLE_NAME = 'PS_ADM_FUNCTN_TBL'
+;
+
+strSqlCommand := 'commit';
+commit;
+
+
+strMessage01    := 'Merging data into AMSTG_OWNER.PS_ADM_FUNCTN_TBL';
+COMMON_OWNER.SMT_LOG.PUT_MESSAGE(i_Message => strMessage01);
+
+strSqlCommand   := 'merge into AMSTG_OWNER.PS_ADM_FUNCTN_TBL';
+merge /*+ use_hash(S,T) */ into AMSTG_OWNER.PS_ADM_FUNCTN_TBL T
+using (select /*+ full(S) */
+nvl(trim(ADMIN_FUNCTION),'-') ADMIN_FUNCTION,
+to_date(to_char(case when EFFDT < '01-JAN-1800' then NULL else EFFDT end,'MM/DD/YYYY HH24:MI:SS'),'MM/DD/YYYY HH24:MI:SS') EFFDT,
+nvl(trim(EFF_STATUS),'-') EFF_STATUS,
+nvl(trim(DESCR),'-') DESCR,
+nvl(trim(DESCRSHORT),'-') DESCRSHORT,
+nvl(trim(ACAD_CAREER_AF),'-') ACAD_CAREER_AF,
+nvl(trim(STDNT_CAR_NBR_AF),'-') STDNT_CAR_NBR_AF,
+nvl(trim(ACAD_PROG_AF),'-') ACAD_PROG_AF,
+nvl(trim(ACAD_PLAN_AF),'-') ACAD_PLAN_AF,
+nvl(trim(STRM_AF),'-') STRM_AF,
+nvl(trim(AID_YEAR_AF),'-') AID_YEAR_AF,
+nvl(trim(CAMPUS_EVNT_NBR_AF),'-') CAMPUS_EVNT_NBR_AF,
+nvl(trim(EVENT_MTG_NBR_AF),'-') EVENT_MTG_NBR_AF,
+nvl(trim(ADM_APPL_NBR_AF),'-') ADM_APPL_NBR_AF,
+nvl(trim(BUSINESS_UNIT_AF),'-') BUSINESS_UNIT_AF,
+nvl(trim(ACCOUNT_NBR_AF),'-') ACCOUNT_NBR_AF,
+nvl(trim(APPL_PROG_NBR_AF),'-') APPL_PROG_NBR_AF,
+nvl(trim(EFFDT_AF),'-') EFFDT_AF,
+nvl(trim(EFFSEQ_AF),'-') EFFSEQ_AF,
+nvl(trim(ITEM_TYPE_AF),'-') ITEM_TYPE_AF,
+nvl(trim(CASHIER_OFFICE_AF),'-') CASHIER_OFFICE_AF,
+nvl(trim(CHECKLIST_DTTM_AF),'-') CHECKLIST_DTTM_AF,
+nvl(trim(COLLECTION_ID_AF),'-') COLLECTION_ID_AF,
+nvl(trim(CONTRACT_NUM_AF),'-') CONTRACT_NUM_AF,
+nvl(trim(GROUP_ID_SF_AF),'-') GROUP_ID_SF_AF,
+nvl(trim(INVOICE_ID_AF),'-') INVOICE_ID_AF,
+nvl(trim(ITEM_NBR_AF),'-') ITEM_NBR_AF,
+nvl(trim(LINE_SEQ_NBR_AF),'-') LINE_SEQ_NBR_AF,
+nvl(trim(PAYMENT_ID_NBR_AF),'-') PAYMENT_ID_NBR_AF,
+nvl(trim(RECEIPT_NBR_AF),'-') RECEIPT_NBR_AF,
+nvl(trim(REFUND_NBR_AF),'-') REFUND_NBR_AF,
+nvl(trim(ACCOUNT_TERM_AF),'-') ACCOUNT_TERM_AF,
+nvl(trim(LN_APPL_SEQ_AF),'-') LN_APPL_SEQ_AF,
+nvl(trim(LOAN_TYPE_AF),'-') LOAN_TYPE_AF,
+nvl(trim(RSTRCT_AID_ID_AF),'-') RSTRCT_AID_ID_AF,
+nvl(trim(AUD_TYPE_AF),'-') AUD_TYPE_AF,
+nvl(trim(AV_AUDIENCE_AF),'-') AV_AUDIENCE_AF,
+nvl(trim(AV_MBR_ORG_COD_AF),'-') AV_MBR_ORG_COD_AF,
+nvl(trim(AV_STD_BEN_AF),'-') AV_STD_BEN_AF,
+nvl(trim(DESIGNATION_AF),'-') DESIGNATION_AF,
+nvl(trim(GIFT_NO_AF),'-') GIFT_NO_AF,
+nvl(trim(INTV_CD_AF),'-') INTV_CD_AF,
+nvl(trim(MBR_PMT_NO_AF),'-') MBR_PMT_NO_AF,
+nvl(trim(MEMBERSHIP_NBR_AF),'-') MEMBERSHIP_NBR_AF,
+nvl(trim(RECOGNITION_TYP_AF),'-') RECOGNITION_TYP_AF,
+nvl(trim(SESSION_NO_AF),'-') SESSION_NO_AF,
+nvl(trim(SUB_FNCTN_USED),'-') SUB_FNCTN_USED,
+nvl(trim(ADMIN_FCN_PEOPLE),'-') ADMIN_FCN_PEOPLE,
+nvl(trim(ADMIN_FCN_ORG),'-') ADMIN_FCN_ORG,
+nvl(trim(SSF_IHC_COV_NBR_AF),'-') SSF_IHC_COV_NBR_AF,
+nvl(trim(SAD_CONTRACTNR_AF),'-') SAD_CONTRACTNR_AF,
+nvl(trim(SAD_INT_CONTR_AF),'-') SAD_INT_CONTR_AF
+from SYSADM.PS_ADM_FUNCTN_TBL@AMSOURCE S
+where ORA_ROWSCN > (select OLD_MAX_SCN from AMSTG_OWNER.UM_STAGE_JOBS where TABLE_NAME = 'PS_ADM_FUNCTN_TBL') ) S
+   on (
+T.ADMIN_FUNCTION = S.ADMIN_FUNCTION and
+T.EFFDT = S.EFFDT and
+T.SRC_SYS_ID = 'CS90')
+when matched then update set
+T.EFF_STATUS = S.EFF_STATUS,
+T.DESCR = S.DESCR,
+T.DESCRSHORT = S.DESCRSHORT,
+T.ACAD_CAREER_AF = S.ACAD_CAREER_AF,
+T.STDNT_CAR_NBR_AF = S.STDNT_CAR_NBR_AF,
+T.ACAD_PROG_AF = S.ACAD_PROG_AF,
+T.ACAD_PLAN_AF = S.ACAD_PLAN_AF,
+T.STRM_AF = S.STRM_AF,
+T.AID_YEAR_AF = S.AID_YEAR_AF,
+T.CAMPUS_EVNT_NBR_AF = S.CAMPUS_EVNT_NBR_AF,
+T.EVENT_MTG_NBR_AF = S.EVENT_MTG_NBR_AF,
+T.ADM_APPL_NBR_AF = S.ADM_APPL_NBR_AF,
+T.BUSINESS_UNIT_AF = S.BUSINESS_UNIT_AF,
+T.ACCOUNT_NBR_AF = S.ACCOUNT_NBR_AF,
+T.APPL_PROG_NBR_AF = S.APPL_PROG_NBR_AF,
+T.EFFDT_AF = S.EFFDT_AF,
+T.EFFSEQ_AF = S.EFFSEQ_AF,
+T.ITEM_TYPE_AF = S.ITEM_TYPE_AF,
+T.CASHIER_OFFICE_AF = S.CASHIER_OFFICE_AF,
+T.CHECKLIST_DTTM_AF = S.CHECKLIST_DTTM_AF,
+T.COLLECTION_ID_AF = S.COLLECTION_ID_AF,
+T.CONTRACT_NUM_AF = S.CONTRACT_NUM_AF,
+T.GROUP_ID_SF_AF = S.GROUP_ID_SF_AF,
+T.INVOICE_ID_AF = S.INVOICE_ID_AF,
+T.ITEM_NBR_AF = S.ITEM_NBR_AF,
+T.LINE_SEQ_NBR_AF = S.LINE_SEQ_NBR_AF,
+T.PAYMENT_ID_NBR_AF = S.PAYMENT_ID_NBR_AF,
+T.RECEIPT_NBR_AF = S.RECEIPT_NBR_AF,
+T.REFUND_NBR_AF = S.REFUND_NBR_AF,
+T.ACCOUNT_TERM_AF = S.ACCOUNT_TERM_AF,
+T.LN_APPL_SEQ_AF = S.LN_APPL_SEQ_AF,
+T.LOAN_TYPE_AF = S.LOAN_TYPE_AF,
+T.RSTRCT_AID_ID_AF = S.RSTRCT_AID_ID_AF,
+T.AUD_TYPE_AF = S.AUD_TYPE_AF,
+T.AV_AUDIENCE_AF = S.AV_AUDIENCE_AF,
+T.AV_MBR_ORG_COD_AF = S.AV_MBR_ORG_COD_AF,
+T.AV_STD_BEN_AF = S.AV_STD_BEN_AF,
+T.DESIGNATION_AF = S.DESIGNATION_AF,
+T.GIFT_NO_AF = S.GIFT_NO_AF,
+T.INTV_CD_AF = S.INTV_CD_AF,
+T.MBR_PMT_NO_AF = S.MBR_PMT_NO_AF,
+T.MEMBERSHIP_NBR_AF = S.MEMBERSHIP_NBR_AF,
+T.RECOGNITION_TYP_AF = S.RECOGNITION_TYP_AF,
+T.SESSION_NO_AF = S.SESSION_NO_AF,
+T.SUB_FNCTN_USED = S.SUB_FNCTN_USED,
+T.ADMIN_FCN_PEOPLE = S.ADMIN_FCN_PEOPLE,
+T.ADMIN_FCN_ORG = S.ADMIN_FCN_ORG,
+T.SSF_IHC_COV_NBR_AF = S.SSF_IHC_COV_NBR_AF,
+T.SAD_CONTRACTNR_AF = S.SAD_CONTRACTNR_AF,
+T.SAD_INT_CONTR_AF = S.SAD_INT_CONTR_AF,
+T.DATA_ORIGIN = 'S',
+T.LASTUPD_EW_DTTM = sysdate,
+T.BATCH_SID   = 1234
+where
+T.EFF_STATUS <> S.EFF_STATUS or
+T.DESCR <> S.DESCR or
+T.DESCRSHORT <> S.DESCRSHORT or
+T.ACAD_CAREER_AF <> S.ACAD_CAREER_AF or
+T.STDNT_CAR_NBR_AF <> S.STDNT_CAR_NBR_AF or
+T.ACAD_PROG_AF <> S.ACAD_PROG_AF or
+T.ACAD_PLAN_AF <> S.ACAD_PLAN_AF or
+T.STRM_AF <> S.STRM_AF or
+T.AID_YEAR_AF <> S.AID_YEAR_AF or
+T.CAMPUS_EVNT_NBR_AF <> S.CAMPUS_EVNT_NBR_AF or
+T.EVENT_MTG_NBR_AF <> S.EVENT_MTG_NBR_AF or
+T.ADM_APPL_NBR_AF <> S.ADM_APPL_NBR_AF or
+T.BUSINESS_UNIT_AF <> S.BUSINESS_UNIT_AF or
+T.ACCOUNT_NBR_AF <> S.ACCOUNT_NBR_AF or
+T.APPL_PROG_NBR_AF <> S.APPL_PROG_NBR_AF or
+T.EFFDT_AF <> S.EFFDT_AF or
+T.EFFSEQ_AF <> S.EFFSEQ_AF or
+T.ITEM_TYPE_AF <> S.ITEM_TYPE_AF or
+T.CASHIER_OFFICE_AF <> S.CASHIER_OFFICE_AF or
+T.CHECKLIST_DTTM_AF <> S.CHECKLIST_DTTM_AF or
+T.COLLECTION_ID_AF <> S.COLLECTION_ID_AF or
+T.CONTRACT_NUM_AF <> S.CONTRACT_NUM_AF or
+T.GROUP_ID_SF_AF <> S.GROUP_ID_SF_AF or
+T.INVOICE_ID_AF <> S.INVOICE_ID_AF or
+T.ITEM_NBR_AF <> S.ITEM_NBR_AF or
+T.LINE_SEQ_NBR_AF <> S.LINE_SEQ_NBR_AF or
+T.PAYMENT_ID_NBR_AF <> S.PAYMENT_ID_NBR_AF or
+T.RECEIPT_NBR_AF <> S.RECEIPT_NBR_AF or
+T.REFUND_NBR_AF <> S.REFUND_NBR_AF or
+T.ACCOUNT_TERM_AF <> S.ACCOUNT_TERM_AF or
+T.LN_APPL_SEQ_AF <> S.LN_APPL_SEQ_AF or
+T.LOAN_TYPE_AF <> S.LOAN_TYPE_AF or
+T.RSTRCT_AID_ID_AF <> S.RSTRCT_AID_ID_AF or
+T.AUD_TYPE_AF <> S.AUD_TYPE_AF or
+T.AV_AUDIENCE_AF <> S.AV_AUDIENCE_AF or
+T.AV_MBR_ORG_COD_AF <> S.AV_MBR_ORG_COD_AF or
+T.AV_STD_BEN_AF <> S.AV_STD_BEN_AF or
+T.DESIGNATION_AF <> S.DESIGNATION_AF or
+T.GIFT_NO_AF <> S.GIFT_NO_AF or
+T.INTV_CD_AF <> S.INTV_CD_AF or
+T.MBR_PMT_NO_AF <> S.MBR_PMT_NO_AF or
+T.MEMBERSHIP_NBR_AF <> S.MEMBERSHIP_NBR_AF or
+T.RECOGNITION_TYP_AF <> S.RECOGNITION_TYP_AF or
+T.SESSION_NO_AF <> S.SESSION_NO_AF or
+T.SUB_FNCTN_USED <> S.SUB_FNCTN_USED or
+T.ADMIN_FCN_PEOPLE <> S.ADMIN_FCN_PEOPLE or
+T.ADMIN_FCN_ORG <> S.ADMIN_FCN_ORG or
+T.SSF_IHC_COV_NBR_AF <> S.SSF_IHC_COV_NBR_AF or
+T.SAD_CONTRACTNR_AF <> S.SAD_CONTRACTNR_AF or
+T.SAD_INT_CONTR_AF <> S.SAD_INT_CONTR_AF or
+T.DATA_ORIGIN = 'D'
+when not matched then
+insert (
+T.ADMIN_FUNCTION,
+T.EFFDT,
+T.SRC_SYS_ID,
+T.EFF_STATUS,
+T.DESCR,
+T.DESCRSHORT,
+T.ACAD_CAREER_AF,
+T.STDNT_CAR_NBR_AF,
+T.ACAD_PROG_AF,
+T.ACAD_PLAN_AF,
+T.STRM_AF,
+T.AID_YEAR_AF,
+T.CAMPUS_EVNT_NBR_AF,
+T.EVENT_MTG_NBR_AF,
+T.ADM_APPL_NBR_AF,
+T.BUSINESS_UNIT_AF,
+T.ACCOUNT_NBR_AF,
+T.APPL_PROG_NBR_AF,
+T.EFFDT_AF,
+T.EFFSEQ_AF,
+T.ITEM_TYPE_AF,
+T.CASHIER_OFFICE_AF,
+T.CHECKLIST_DTTM_AF,
+T.COLLECTION_ID_AF,
+T.CONTRACT_NUM_AF,
+T.GROUP_ID_SF_AF,
+T.INVOICE_ID_AF,
+T.ITEM_NBR_AF,
+T.LINE_SEQ_NBR_AF,
+T.PAYMENT_ID_NBR_AF,
+T.RECEIPT_NBR_AF,
+T.REFUND_NBR_AF,
+T.ACCOUNT_TERM_AF,
+T.LN_APPL_SEQ_AF,
+T.LOAN_TYPE_AF,
+T.RSTRCT_AID_ID_AF,
+T.AUD_TYPE_AF,
+T.AV_AUDIENCE_AF,
+T.AV_MBR_ORG_COD_AF,
+T.AV_STD_BEN_AF,
+T.DESIGNATION_AF,
+T.GIFT_NO_AF,
+T.INTV_CD_AF,
+T.MBR_PMT_NO_AF,
+T.MEMBERSHIP_NBR_AF,
+T.RECOGNITION_TYP_AF,
+T.SESSION_NO_AF,
+T.SUB_FNCTN_USED,
+T.ADMIN_FCN_PEOPLE,
+T.ADMIN_FCN_ORG,
+T.SSF_IHC_COV_NBR_AF,
+T.SAD_CONTRACTNR_AF,
+T.SAD_INT_CONTR_AF,
+T.LOAD_ERROR,
+T.DATA_ORIGIN,
+T.CREATED_EW_DTTM,
+T.LASTUPD_EW_DTTM,
+T.BATCH_SID
+)
+values (
+S.ADMIN_FUNCTION,
+S.EFFDT,
+'CS90',
+S.EFF_STATUS,
+S.DESCR,
+S.DESCRSHORT,
+S.ACAD_CAREER_AF,
+S.STDNT_CAR_NBR_AF,
+S.ACAD_PROG_AF,
+S.ACAD_PLAN_AF,
+S.STRM_AF,
+S.AID_YEAR_AF,
+S.CAMPUS_EVNT_NBR_AF,
+S.EVENT_MTG_NBR_AF,
+S.ADM_APPL_NBR_AF,
+S.BUSINESS_UNIT_AF,
+S.ACCOUNT_NBR_AF,
+S.APPL_PROG_NBR_AF,
+S.EFFDT_AF,
+S.EFFSEQ_AF,
+S.ITEM_TYPE_AF,
+S.CASHIER_OFFICE_AF,
+S.CHECKLIST_DTTM_AF,
+S.COLLECTION_ID_AF,
+S.CONTRACT_NUM_AF,
+S.GROUP_ID_SF_AF,
+S.INVOICE_ID_AF,
+S.ITEM_NBR_AF,
+S.LINE_SEQ_NBR_AF,
+S.PAYMENT_ID_NBR_AF,
+S.RECEIPT_NBR_AF,
+S.REFUND_NBR_AF,
+S.ACCOUNT_TERM_AF,
+S.LN_APPL_SEQ_AF,
+S.LOAN_TYPE_AF,
+S.RSTRCT_AID_ID_AF,
+S.AUD_TYPE_AF,
+S.AV_AUDIENCE_AF,
+S.AV_MBR_ORG_COD_AF,
+S.AV_STD_BEN_AF,
+S.DESIGNATION_AF,
+S.GIFT_NO_AF,
+S.INTV_CD_AF,
+S.MBR_PMT_NO_AF,
+S.MEMBERSHIP_NBR_AF,
+S.RECOGNITION_TYP_AF,
+S.SESSION_NO_AF,
+S.SUB_FNCTN_USED,
+S.ADMIN_FCN_PEOPLE,
+S.ADMIN_FCN_ORG,
+S.SSF_IHC_COV_NBR_AF,
+S.SAD_CONTRACTNR_AF,
+S.SAD_INT_CONTR_AF,
+'N',
+'S',
+sysdate,
+sysdate,
+1234);
+strSqlCommand   := 'SET intRowCount';
+intRowCount     := SQL%ROWCOUNT;
+
+strSqlCommand := 'commit';
+commit;
+
+strMessage01    := '# of PS_ADM_FUNCTN_TBL rows merged: ' || TO_CHAR(intRowCount,'999,999,999,999');
+COMMON_OWNER.SMT_LOG.PUT_MESSAGE(i_Message => strMessage01);
+
+strSqlCommand := 'SMT_PROCESS_LOG.PROCESS_DETAIL';
+COMMON_OWNER.SMT_PROCESS_LOG.PROCESS_DETAIL
+        (
+                i_TargetTableName   => 'PS_ADM_FUNCTN_TBL',
+                i_Action            => 'MERGE',
+                i_RowCount          => intRowCount
+        );
+
+
+strMessage01    := 'Updating AMSTG_OWNER.UM_STAGE_JOBS';
+COMMON_OWNER.SMT_LOG.PUT_MESSAGE(i_Message => strMessage01);
+
+strSqlCommand   := 'update TABLE_STATUS on AMSTG_OWNER.UM_STAGE_JOBS';
+update AMSTG_OWNER.UM_STAGE_JOBS
+   set TABLE_STATUS = 'Deleting',
+       OLD_MAX_SCN = NEW_MAX_SCN
+ where TABLE_NAME = 'PS_ADM_FUNCTN_TBL';
+
+strSqlCommand := 'commit';
+commit;
+
+
+strMessage01    := 'Updating DATA_ORIGIN on AMSTG_OWNER.PS_ADM_FUNCTN_TBL';
+COMMON_OWNER.SMT_LOG.PUT_MESSAGE(i_Message => strMessage01);
+
+strSqlCommand   := 'update DATA_ORIGIN on AMSTG_OWNER.PS_ADM_FUNCTN_TBL';
+update AMSTG_OWNER.PS_ADM_FUNCTN_TBL T
+   set T.DATA_ORIGIN = 'D',
+          T.LASTUPD_EW_DTTM = SYSDATE
+ where T.DATA_ORIGIN <> 'D'
+   and exists 
+(select 1 from
+(select ADMIN_FUNCTION, EFFDT
+   from AMSTG_OWNER.PS_ADM_FUNCTN_TBL T2
+  where (select DELETE_FLG from AMSTG_OWNER.UM_STAGE_JOBS where TABLE_NAME = 'PS_ADM_FUNCTN_TBL') = 'Y'
+  minus
+ select ADMIN_FUNCTION, EFFDT
+   from SYSADM.PS_ADM_FUNCTN_TBL@AMSOURCE S2
+  where (select DELETE_FLG from AMSTG_OWNER.UM_STAGE_JOBS where TABLE_NAME = 'PS_ADM_FUNCTN_TBL') = 'Y'
+   ) S
+ where T.ADMIN_FUNCTION = S.ADMIN_FUNCTION
+      and T.EFFDT = S.EFFDT
+   and T.SRC_SYS_ID = 'CS90' 
+   ) 
+;
+strSqlCommand   := 'SET intRowCount';
+intRowCount     := SQL%ROWCOUNT;
+
+strSqlCommand := 'commit';
+commit;
+
+strMessage01    := '# of PS_ADM_FUNCTN_TBL rows updated: ' || TO_CHAR(intRowCount,'999,999,999,999');
+COMMON_OWNER.SMT_LOG.PUT_MESSAGE(i_Message => strMessage01);
+
+strSqlCommand := 'SMT_PROCESS_LOG.PROCESS_DETAIL';
+COMMON_OWNER.SMT_PROCESS_LOG.PROCESS_DETAIL
+        (
+                i_TargetTableName   => 'PS_ADM_FUNCTN_TBL',
+                i_Action            => 'UPDATE',
+                i_RowCount          => intRowCount
+        );
+
+
+strMessage01    := 'Updating AMSTG_OWNER.UM_STAGE_JOBS';
+COMMON_OWNER.SMT_LOG.PUT_MESSAGE(i_Message => strMessage01);
+
+strSqlCommand   := 'update END_DT on AMSTG_OWNER.UM_STAGE_JOBS';
+
+update AMSTG_OWNER.UM_STAGE_JOBS
+   set TABLE_STATUS = 'Complete',
+       END_DT = SYSDATE
+ where TABLE_NAME = 'PS_ADM_FUNCTN_TBL'
+;
+
+strSqlCommand := 'commit';
+commit;
+
+
+strSqlCommand := 'SMT_PROCESS_LOG.PROCESS_SUCCESS';
+COMMON_OWNER.SMT_PROCESS_LOG.PROCESS_SUCCESS;
+
+strMessage01    := strProcessName || ' is complete.';
+COMMON_OWNER.SMT_LOG.PUT_MESSAGE(i_Message => strMessage01);
+
+
+EXCEPTION
+    WHEN OTHERS THEN
+
+        COMMON_OWNER.SMT_PROCESS_LOG.PROCESS_EXCEPTION
+                (
+                        i_SqlCommand   => strSqlCommand,
+                        i_SqlCode      => SQLCODE,
+                        i_SqlErrm      => SQLERRM
+                );
+
+END AM_PS_ADM_FUNCTN_TBL_P;
+/

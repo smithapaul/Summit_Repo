@@ -1,4 +1,10 @@
-CREATE OR REPLACE PROCEDURE             "PS_CAMPUS_EVNT_ATT_P" AUTHID CURRENT_USER IS
+DROP PROCEDURE CSMRT_OWNER.PS_CAMPUS_EVNT_ATT_P
+/
+
+--
+-- PS_CAMPUS_EVNT_ATT_P  (Procedure) 
+--
+CREATE OR REPLACE PROCEDURE CSMRT_OWNER."PS_CAMPUS_EVNT_ATT_P" AUTHID CURRENT_USER IS
 
 ------------------------------------------------------------------------
 --Preethi Lodha

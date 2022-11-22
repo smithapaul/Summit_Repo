@@ -1,4 +1,10 @@
-CREATE OR REPLACE PROCEDURE             "PS_ADM_APPL_PLAN_P" AUTHID CURRENT_USER IS
+DROP PROCEDURE CSMRT_OWNER.PS_ADM_APPL_PLAN_P
+/
+
+--
+-- PS_ADM_APPL_PLAN_P  (Procedure) 
+--
+CREATE OR REPLACE PROCEDURE CSMRT_OWNER."PS_ADM_APPL_PLAN_P" AUTHID CURRENT_USER IS
 
 ------------------------------------------------------------------------
 -- George Adams

@@ -1,4 +1,10 @@
-CREATE OR REPLACE PROCEDURE             "UM_D_PERSON_ADDR_P" AUTHID CURRENT_USER IS
+DROP PROCEDURE CSMRT_OWNER.UM_D_PERSON_ADDR_P
+/
+
+--
+-- UM_D_PERSON_ADDR_P  (Procedure) 
+--
+CREATE OR REPLACE PROCEDURE CSMRT_OWNER."UM_D_PERSON_ADDR_P" AUTHID CURRENT_USER IS
 
 ------------------------------------------------------------------------
 --George Adams
@@ -38,20 +44,6 @@ COMMON_OWNER.SMT_PROCESS_LOG.PROCESS_INIT
                 o_ProcessSid            => intProcessSid
         );
 
-strMessage01    := 'Disabling Indexes for table CSMRT_OWNER.UM_D_PERSON_ADDR';
-COMMON_OWNER.SMT_LOG.PUT_MESSAGE(i_Message => strMessage01);
-COMMON_OWNER.SMT_INDEX.ALL_UNUSABLE('CSMRT_OWNER','UM_D_PERSON_ADDR');
-
-strSqlDynamic   := 'alter table CSMRT_OWNER.UM_D_PERSON_ADDR disable constraint PK_UM_D_PERSON_ADDR';
-strSqlCommand   := 'SMT_UTILITY.EXECUTE_IMMEDIATE: ' || strSqlDynamic;
-COMMON_OWNER.SMT_UTILITY.EXECUTE_IMMEDIATE
-                (
-                i_SqlStatement          => strSqlDynamic,
-                i_MaxTries              => 10,
-                i_WaitSeconds           => 10,
-                o_Tries                 => intTries
-                );
-				
 strMessage01    := 'Truncating table CSMRT_OWNER.UM_D_PERSON_ADDR';
 COMMON_OWNER.SMT_LOG.PUT_MESSAGE(i_Message => strMessage01);
 
@@ -65,13 +57,27 @@ COMMON_OWNER.SMT_UTILITY.EXECUTE_IMMEDIATE
                 o_Tries                 => intTries
                 );
 
+strMessage01    := 'Disabling Indexes for table CSMRT_OWNER.UM_D_PERSON_ADDR';
+COMMON_OWNER.SMT_LOG.PUT_MESSAGE(i_Message => strMessage01);
+COMMON_OWNER.SMT_INDEX.ALL_UNUSABLE('CSMRT_OWNER','UM_D_PERSON_ADDR');
+
+--strSqlDynamic   := 'alter table CSMRT_OWNER.UM_D_PERSON_ADDR disable constraint PK_UM_D_PERSON_ADDR';
+--strSqlCommand   := 'SMT_UTILITY.EXECUTE_IMMEDIATE: ' || strSqlDynamic;
+--COMMON_OWNER.SMT_UTILITY.EXECUTE_IMMEDIATE
+--                (
+--                i_SqlStatement          => strSqlDynamic,
+--                i_MaxTries              => 10,
+--                i_WaitSeconds           => 10,
+--                o_Tries                 => intTries
+--                );
+				
 strMessage01    := 'Inserting data into CSMRT_OWNER.UM_D_PERSON_ADDR';
 COMMON_OWNER.SMT_LOG.PUT_MESSAGE(i_Message => strMessage01);
 
 strSqlCommand   := 'insert into CSMRT_OWNER.UM_D_PERSON_ADDR';				
-insert /*+ append */ into CSMRT_OWNER.UM_D_PERSON_ADDR
+insert /*+ append enable_parallel_dml parallel(8) */ into CSMRT_OWNER.UM_D_PERSON_ADDR
 with X as (  
-select /*+ inline parallel(16) */ 
+select /*+ inline parallel(8) */ 
        FIELDNAME, FIELDVALUE, EFFDT, SRC_SYS_ID, 
        XLATLONGNAME, XLATSHORTNAME, DATA_ORIGIN, 
        row_number() over (partition by FIELDNAME, FIELDVALUE, SRC_SYS_ID
@@ -79,7 +85,7 @@ select /*+ inline parallel(16) */
   from CSSTG_OWNER.PSXLATITEM
  where DATA_ORIGIN <> 'D'),
        Q1 as (  
-select /*+ inline parallel(16) */
+select /*+ inline parallel(8) */
        A.EMPLID PERSON_ID, A.ADDRESS_TYPE, A.EFFDT, A.SRC_SYS_ID,
        A.EFF_STATUS, 
        nvl(X1.XLATSHORTNAME,'-') ADDRESS_TYPE_SD, nvl(X1.XLATLONGNAME,'-') ADDRESS_TYPE_LD, 
@@ -189,7 +195,7 @@ select /*+ inline parallel(16) */
  where A.DATA_ORIGIN <> 'D'
    and A.EFFDT <= trunc(SYSDATE)    -- Aug 2019 
  union all
-select /*+ /*+ inline parallel(16) */ 
+select /*+ /*+ inline parallel(8) */ 
        PERSON_ID, '-' ADDRESS_TYPE, TO_DATE('01/01/1900', 'MM/DD/YYYY') EFFDT, SRC_SYS_ID,
        'A' EFF_STATUS, '' ADDRESS_TYPE_SD, '' ADDRESS_TYPE_LD, 
        '' ADDRESS1, '' ADDRESS2, '' ADDRESS3, '' ADDRESS4, '' CITY, '' COUNTY, '' STATE, '' STATE_LD, 
@@ -200,7 +206,7 @@ select /*+ /*+ inline parallel(16) */
   from PS_D_PERSON
  where DATA_ORIGIN <> 'D'),
        Q2 as (  
-select /*+ inline parallel(16) */
+select /*+ inline parallel(8) */
        PERSON_ID, ADDRESS_TYPE, EFFDT, SRC_SYS_ID, 
        decode(max(EFFDT) over (partition by PERSON_ID, ADDRESS_TYPE, SRC_SYS_ID
                                    order by EFFDT 
@@ -257,7 +263,7 @@ select /*+ inline parallel(16) */
        Q_ORDER ADDR_ORDER, LASTUPDDTTM, LASTUPDOPRID,
        Q1.DATA_ORIGIN
   from Q1)
-select /*+ inline parallel(16) */
+select /*+ inline parallel(8) */
        P.PERSON_ID, nvl(ADDRESS_TYPE,'-') ADDRESS_TYPE, nvl(EFFDT,to_date('01-JAN-1900')) EFFDT, P.SRC_SYS_ID, 
        nvl(EFFDT_START,to_date('01-JAN-1800')) EFFDT_START, nvl(EFFDT_END,to_date('31-DEC-9999')) EFFDT_END, nvl(EFFDT_ORDER,1) EFFDT_ORDER, nvl(EFF_STATUS,'A') EFF_STATUS, 
        P.PERSON_SID, 
@@ -304,15 +310,15 @@ COMMON_OWNER.SMT_PROCESS_LOG.PROCESS_DETAIL
 strMessage01    := 'Enabling Indexes for table CSMRT_OWNER.UM_D_PERSON_ADDR';
 COMMON_OWNER.SMT_LOG.PUT_MESSAGE(i_Message => strMessage01);
 
-strSqlDynamic   := 'alter table CSMRT_OWNER.UM_D_PERSON_ADDR enable constraint PK_UM_D_PERSON_ADDR';
-strSqlCommand   := 'SMT_UTILITY.EXECUTE_IMMEDIATE: ' || strSqlDynamic;
-COMMON_OWNER.SMT_UTILITY.EXECUTE_IMMEDIATE
-                (
-                i_SqlStatement          => strSqlDynamic,
-                i_MaxTries              => 10,
-                i_WaitSeconds           => 10,
-                o_Tries                 => intTries
-                );
+--strSqlDynamic   := 'alter table CSMRT_OWNER.UM_D_PERSON_ADDR enable constraint PK_UM_D_PERSON_ADDR';
+--strSqlCommand   := 'SMT_UTILITY.EXECUTE_IMMEDIATE: ' || strSqlDynamic;
+--COMMON_OWNER.SMT_UTILITY.EXECUTE_IMMEDIATE
+--                (
+--                i_SqlStatement          => strSqlDynamic,
+--                i_MaxTries              => 10,
+--                i_WaitSeconds           => 10,
+--                o_Tries                 => intTries
+--                );
 				
 COMMON_OWNER.SMT_INDEX.ALL_REBUILD('CSMRT_OWNER','UM_D_PERSON_ADDR');
 

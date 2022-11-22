@@ -1,4 +1,10 @@
-CREATE OR REPLACE PROCEDURE             "PS_D_ITEM_CD_P" AUTHID CURRENT_USER IS
+DROP PROCEDURE CSMRT_OWNER.PS_D_ITEM_CD_P
+/
+
+--
+-- PS_D_ITEM_CD_P  (Procedure) 
+--
+CREATE OR REPLACE PROCEDURE CSMRT_OWNER."PS_D_ITEM_CD_P" AUTHID CURRENT_USER IS
 
 ------------------------------------------------------------------------
 -- George Adams

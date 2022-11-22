@@ -1,4 +1,10 @@
-CREATE OR REPLACE PROCEDURE             PS_BI_BILLING_LINE_P AUTHID CURRENT_USER IS
+DROP PROCEDURE CSMRT_OWNER.PS_BI_BILLING_LINE_P
+/
+
+--
+-- PS_BI_BILLING_LINE_P  (Procedure) 
+--
+CREATE OR REPLACE PROCEDURE CSMRT_OWNER.PS_BI_BILLING_LINE_P AUTHID CURRENT_USER IS
 
 ------------------------------------------------------------------------
 -- George Adams
@@ -7,7 +13,7 @@ CREATE OR REPLACE PROCEDURE             PS_BI_BILLING_LINE_P AUTHID CURRENT_USER
 --
 -- V01  SMT-xxxx 03/29/2017,    George Adams
 --                              Converted from PS_BI_BILLING_LINE.SQL
---
+-- V02    07/06/2021,            Kieu ,Srikanth - Added EMPLID or COMMON_ID additional filter logic 
 ------------------------------------------------------------------------
 
         strMartId                       Varchar2(50)    := 'CSW';
@@ -31,7 +37,7 @@ BEGIN
 
 strSqlCommand := 'DBMS_APPLICATION_INFO.SET_CLIENT_INFO';
 DBMS_APPLICATION_INFO.SET_CLIENT_INFO (strProcessName);
-
+    
 strSqlCommand := 'SMT_PROCESS_LOG.PROCESS_INIT';
 COMMON_OWNER.SMT_PROCESS_LOG.PROCESS_INIT
         (
@@ -55,7 +61,6 @@ update CSSTG_OWNER.UM_STAGE_JOBS
 strSqlCommand := 'commit';
 commit;
 
-
 strSqlCommand   := 'update NEW_MAX_SCN on CSSTG_OWNER.UM_STAGE_JOBS';
 update CSSTG_OWNER.UM_STAGE_JOBS
    set TABLE_STATUS = 'Merging',
@@ -65,7 +70,6 @@ update CSSTG_OWNER.UM_STAGE_JOBS
 
 strSqlCommand := 'commit';
 commit;
-
 
 strMessage01    := 'Merging data into CSSTG_OWNER.PS_BI_BILLING_LINE';
 COMMON_OWNER.SMT_LOG.PUT_MESSAGE(i_Message => strMessage01);
@@ -143,7 +147,6 @@ COMMON_OWNER.SMT_PROCESS_LOG.PROCESS_DETAIL
                 i_RowCount          => intRowCount
         );
 
-
 strMessage01    := 'Updating CSSTG_OWNER.UM_STAGE_JOBS';
 COMMON_OWNER.SMT_LOG.PUT_MESSAGE(i_Message => strMessage01);
 
@@ -155,7 +158,6 @@ update CSSTG_OWNER.UM_STAGE_JOBS
 
 strSqlCommand := 'commit';
 commit;
-
 
 strMessage01    := 'Updating DATA_ORIGIN on CSSTG_OWNER.PS_BI_BILLING_LINE';
 COMMON_OWNER.SMT_LOG.PUT_MESSAGE(i_Message => strMessage01);
@@ -171,7 +173,7 @@ update CSSTG_OWNER.PS_BI_BILLING_LINE T
    from CSSTG_OWNER.PS_BI_BILLING_LINE T2
   where (select DELETE_FLG from CSSTG_OWNER.UM_STAGE_JOBS where TABLE_NAME = 'PS_BI_BILLING_LINE') = 'Y'
   minus
- select BUSINESS_UNIT, INVOICE_ID, COMMON_ID, SA_ID_TYPE, ITEM_NBR, ITEM_LINE
+ select /*+ full(S2) */ BUSINESS_UNIT, INVOICE_ID, COMMON_ID, SA_ID_TYPE, ITEM_NBR, ITEM_LINE
    from SYSADM.PS_BI_BILLING_LINE@SASOURCE S2
   where (select DELETE_FLG from CSSTG_OWNER.UM_STAGE_JOBS where TABLE_NAME = 'PS_BI_BILLING_LINE') = 'Y'
    ) S

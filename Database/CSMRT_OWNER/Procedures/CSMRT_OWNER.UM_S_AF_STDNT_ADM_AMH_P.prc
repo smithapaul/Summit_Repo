@@ -1,4 +1,10 @@
-CREATE OR REPLACE PROCEDURE             "UM_S_AF_STDNT_ADM_AMH_P"
+DROP PROCEDURE CSMRT_OWNER.UM_S_AF_STDNT_ADM_AMH_P
+/
+
+--
+-- UM_S_AF_STDNT_ADM_AMH_P  (Procedure) 
+--
+CREATE OR REPLACE PROCEDURE CSMRT_OWNER."UM_S_AF_STDNT_ADM_AMH_P"
            (
                    i_EFFDT      in  Varchar2    Default SYSDATE
            )

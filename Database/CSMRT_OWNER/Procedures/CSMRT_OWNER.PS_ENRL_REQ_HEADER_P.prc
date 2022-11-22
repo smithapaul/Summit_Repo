@@ -1,4 +1,10 @@
-CREATE OR REPLACE PROCEDURE             "PS_ENRL_REQ_HEADER_P" AUTHID CURRENT_USER IS
+DROP PROCEDURE CSMRT_OWNER.PS_ENRL_REQ_HEADER_P
+/
+
+--
+-- PS_ENRL_REQ_HEADER_P  (Procedure) 
+--
+CREATE OR REPLACE PROCEDURE CSMRT_OWNER."PS_ENRL_REQ_HEADER_P" AUTHID CURRENT_USER IS
 
 ------------------------------------------------------------------------
 -- George Adams

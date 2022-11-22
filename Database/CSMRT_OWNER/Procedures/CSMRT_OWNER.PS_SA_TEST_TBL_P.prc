@@ -1,4 +1,10 @@
-CREATE OR REPLACE PROCEDURE             "PS_SA_TEST_TBL_P" AUTHID CURRENT_USER IS
+DROP PROCEDURE CSMRT_OWNER.PS_SA_TEST_TBL_P
+/
+
+--
+-- PS_SA_TEST_TBL_P  (Procedure) 
+--
+CREATE OR REPLACE PROCEDURE CSMRT_OWNER."PS_SA_TEST_TBL_P" AUTHID CURRENT_USER IS
 
 
 ------------------------------------------------------------------------

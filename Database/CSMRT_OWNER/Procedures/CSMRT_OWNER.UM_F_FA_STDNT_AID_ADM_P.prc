@@ -1,4 +1,10 @@
-CREATE OR REPLACE PROCEDURE             "UM_F_FA_STDNT_AID_ADM_P" AUTHID CURRENT_USER IS
+DROP PROCEDURE CSMRT_OWNER.UM_F_FA_STDNT_AID_ADM_P
+/
+
+--
+-- UM_F_FA_STDNT_AID_ADM_P  (Procedure) 
+--
+CREATE OR REPLACE PROCEDURE CSMRT_OWNER."UM_F_FA_STDNT_AID_ADM_P" AUTHID CURRENT_USER IS
 
 ------------------------------------------------------------------------
 --George Adams
@@ -39,20 +45,6 @@ COMMON_OWNER.SMT_PROCESS_LOG.PROCESS_INIT
                 o_ProcessSid            => intProcessSid
         );
 
-strMessage01    := 'Disabling Indexes for table CSMRT_OWNER.UM_F_FA_STDNT_AID_ADM';
-COMMON_OWNER.SMT_LOG.PUT_MESSAGE(i_Message => strMessage01);
-COMMON_OWNER.SMT_INDEX.ALL_UNUSABLE('CSMRT_OWNER','UM_F_FA_STDNT_AID_ADM');
-
-strSqlDynamic   := 'alter table CSMRT_OWNER.UM_F_FA_STDNT_AID_ADM disable constraint PK_UM_F_FA_STDNT_AID_ADM';
-strSqlCommand   := 'SMT_UTILITY.EXECUTE_IMMEDIATE: ' || strSqlDynamic;
-COMMON_OWNER.SMT_UTILITY.EXECUTE_IMMEDIATE
-                (
-                i_SqlStatement          => strSqlDynamic,
-                i_MaxTries              => 10,
-                i_WaitSeconds           => 10,
-                o_Tries                 => intTries
-                );
-				
 strMessage01    := 'Truncating table CSMRT_OWNER.UM_F_FA_STDNT_AID_ADM';
 COMMON_OWNER.SMT_LOG.PUT_MESSAGE(i_Message => strMessage01);
 
@@ -66,11 +58,25 @@ COMMON_OWNER.SMT_UTILITY.EXECUTE_IMMEDIATE
                 o_Tries                 => intTries
                 );
 
+strMessage01    := 'Disabling Indexes for table CSMRT_OWNER.UM_F_FA_STDNT_AID_ADM';
+COMMON_OWNER.SMT_LOG.PUT_MESSAGE(i_Message => strMessage01);
+COMMON_OWNER.SMT_INDEX.ALL_UNUSABLE('CSMRT_OWNER','UM_F_FA_STDNT_AID_ADM');
+
+--strSqlDynamic   := 'alter table CSMRT_OWNER.UM_F_FA_STDNT_AID_ADM disable constraint PK_UM_F_FA_STDNT_AID_ADM';
+--strSqlCommand   := 'SMT_UTILITY.EXECUTE_IMMEDIATE: ' || strSqlDynamic;
+--COMMON_OWNER.SMT_UTILITY.EXECUTE_IMMEDIATE
+--                (
+--                i_SqlStatement          => strSqlDynamic,
+--                i_MaxTries              => 10,
+--                i_WaitSeconds           => 10,
+--                o_Tries                 => intTries
+--                );
+				
 strMessage01    := 'Inserting data into CSMRT_OWNER.UM_F_FA_STDNT_AID_ADM';
 COMMON_OWNER.SMT_LOG.PUT_MESSAGE(i_Message => strMessage01);
 
 strSqlCommand   := 'insert into CSMRT_OWNER.UM_F_FA_STDNT_AID_ADM';				
-insert /*+ append */ into CSMRT_OWNER.UM_F_FA_STDNT_AID_ADM
+insert /*+ append enable_parallel_dml parallel(8) */ into CSMRT_OWNER.UM_F_FA_STDNT_AID_ADM
    WITH EXT
         AS (  SELECT  /*+ INLINE PARALLEL(8) */ 
                      PERSON_SID,            -- Add natural keys!!! 
@@ -86,6 +92,9 @@ insert /*+ append */ into CSMRT_OWNER.UM_F_FA_STDNT_AID_ADM
                      MAX (UM_CUM_CREDIT) UM_CUM_CREDIT,
                      MAX (UM_CUM_GPA) UM_CUM_GPA,
                      MAX (UM_CUM_QP) UM_CUM_QP,
+                     MAX (UM_CUM_CREDIT_AGG) UM_CUM_CREDIT_AGG,     -- Aug 2022 
+                     MAX (UM_CUM_GPA_AGG) UM_CUM_GPA_AGG,           -- Aug 2022 
+                     MAX (UM_CUM_QP_AGG) UM_CUM_QP_AGG,             -- Aug 2022 
                      MAX (UM_GPA_EXCLUDE_FLG) UM_GPA_EXCLUDE_FLG,
                      MAX (UM_EXT_ORG_CR) UM_EXT_ORG_CR,
                      MAX (UM_EXT_ORG_QP) UM_EXT_ORG_QP,
@@ -96,8 +105,9 @@ insert /*+ append */ into CSMRT_OWNER.UM_F_FA_STDNT_AID_ADM
                      MAX (UM_GPA_OVRD_FLG) UM_GPA_OVRD_FLG,
                      MAX (UM_1_OVRD_HSGPA_FLG) UM_1_OVRD_HSGPA_FLG,
                      MAX (UM_CONVERT_GPA) UM_CONVERT_GPA,
-                     MAX (UM_EXT_OR_MTSC_GPA) UM_EXT_OR_MTSC_GPA,    -- SMT-8300 Sept 2019
-                     MAX (MS_CONVERT_GPA) MS_CONVERT_GPA             -- SMT-8300 Sept 2019
+                     MAX (UM_EXT_OR_MTSC_GPA) UM_EXT_OR_MTSC_GPA,   -- SMT-8300 Sept 2019
+                     MAX (MS_CONVERT_GPA) MS_CONVERT_GPA,           -- SMT-8300 Sept 2019
+                     max(MAX_DATA_ROW) MAX_DATA_ROW                 -- Aug 2022 
                 FROM PS_F_EXT_ACAD_SUMM
                WHERE DATA_ORIGIN <> 'D'
                  AND ROWNUM < 1000000000
@@ -166,6 +176,9 @@ insert /*+ append */ into CSMRT_OWNER.UM_F_FA_STDNT_AID_ADM
                    EXT.UM_CUM_CREDIT,
                    EXT.UM_CUM_GPA,
                    EXT.UM_CUM_QP,
+                   EXT.UM_CUM_CREDIT_AGG,       -- Aug 2022 
+                   EXT.UM_CUM_GPA_AGG,          -- Aug 2022 
+                   EXT.UM_CUM_QP_AGG,           -- Aug 2022 
                    EXT.UM_GPA_EXCLUDE_FLG,
                    EXT.UM_EXT_ORG_CR,
                    EXT.UM_EXT_ORG_QP,
@@ -176,8 +189,11 @@ insert /*+ append */ into CSMRT_OWNER.UM_F_FA_STDNT_AID_ADM
                    EXT.UM_GPA_OVRD_FLG,
                    EXT.UM_1_OVRD_HSGPA_FLG,
                    EXT.UM_CONVERT_GPA,
-				   UM_EXT_OR_MTSC_GPA,    -- SMT-8300 Sept 2019
-                   MS_CONVERT_GPA        -- SMT-8300 Sept 2019
+				   UM_EXT_OR_MTSC_GPA,      -- SMT-8300 Sept 2019
+                   MS_CONVERT_GPA,          -- SMT-8300 Sept 2019
+                   EXT.MAX_DATA_ROW,             -- Aug 2022 
+                   F.ABTS_FLAG,
+                   F.BSMS_FLAG 
               FROM UM_F_ADM_APPL_STAT F
                    LEFT OUTER JOIN EXT
                       ON     F.APPLCNT_SID = EXT.PERSON_SID
@@ -377,6 +393,9 @@ insert /*+ append */ into CSMRT_OWNER.UM_F_FA_STDNT_AID_ADM
           ADM.UM_CUM_CREDIT,
           ADM.UM_CUM_GPA,
           ADM.UM_CUM_QP,
+          ADM.UM_CUM_CREDIT_AGG,        -- Aug 2022 
+          ADM.UM_CUM_GPA_AGG,           -- Aug 2022     
+          ADM.UM_CUM_QP_AGG,            -- Aug 2022 
           ADM.UM_GPA_EXCLUDE_FLG,
           ADM.UM_EXT_ORG_CR,
           ADM.UM_EXT_ORG_QP,
@@ -389,12 +408,15 @@ insert /*+ append */ into CSMRT_OWNER.UM_F_FA_STDNT_AID_ADM
           ADM.UM_CONVERT_GPA,
           SCORE.SAT_TOTAL_UM_SCORE,             -- Jan 2017 
           SCORE.SAT_TOTAL_1600_CONV_SCORE,      -- Jan 2017 
-          SCORE.SAT_CONV_2016_SCORE,             -- Jan 2017 
-		  UM_EXT_OR_MTSC_GPA,        -- SMT-8300
-          MS_CONVERT_GPA,            -- SMT-8300
-		  'S',                       -- SMT-8300
-          SYSDATE,                   -- SMT-8300
-          SYSDATE                    -- SMT-8300
+          SCORE.SAT_CONV_2016_SCORE,            -- Jan 2017 
+		  UM_EXT_OR_MTSC_GPA,                   -- SMT-8300
+          MS_CONVERT_GPA,                       -- SMT-8300
+          MAX_DATA_ROW,                         -- Aug 2022 
+		  'S',                                  -- SMT-8300
+          SYSDATE,                              -- SMT-8300
+          SYSDATE,                               -- SMT-8300
+          ADM.ABTS_FLAG,
+          ADM.BSMS_FLAG 
      FROM ADM, 
           UM_F_ADM_APPL_TESTSCORE_AGG SCORE,     -- Jan 2017  
           EXT_DEG_TAB_MIN_NUM DEG
@@ -408,7 +430,8 @@ insert /*+ append */ into CSMRT_OWNER.UM_F_FA_STDNT_AID_ADM
       AND ADM.LST_SCHL_ATTND_SID = DEG.LST_SCHL_ATTND_SID
       AND ADM.ADMIT_TERM_SID = DEG.ADMIT_TERM_SID
       AND DEG.ROW_NUM = 1;
-
+      
+      
 strSqlCommand := 'commit';
 commit;
 
@@ -426,15 +449,15 @@ COMMON_OWNER.SMT_PROCESS_LOG.PROCESS_DETAIL
 strMessage01    := 'Enabling Indexes for table CSMRT_OWNER.UM_F_FA_STDNT_AID_ADM';
 COMMON_OWNER.SMT_LOG.PUT_MESSAGE(i_Message => strMessage01);
 
-strSqlDynamic   := 'alter table CSMRT_OWNER.UM_F_FA_STDNT_AID_ADM enable constraint PK_UM_F_FA_STDNT_AID_ADM';
-strSqlCommand   := 'SMT_UTILITY.EXECUTE_IMMEDIATE: ' || strSqlDynamic;
-COMMON_OWNER.SMT_UTILITY.EXECUTE_IMMEDIATE
-                (
-                i_SqlStatement          => strSqlDynamic,
-                i_MaxTries              => 10,
-                i_WaitSeconds           => 10,
-                o_Tries                 => intTries
-                );
+--strSqlDynamic   := 'alter table CSMRT_OWNER.UM_F_FA_STDNT_AID_ADM enable constraint PK_UM_F_FA_STDNT_AID_ADM';
+--strSqlCommand   := 'SMT_UTILITY.EXECUTE_IMMEDIATE: ' || strSqlDynamic;
+--COMMON_OWNER.SMT_UTILITY.EXECUTE_IMMEDIATE
+--                (
+--                i_SqlStatement          => strSqlDynamic,
+--                i_MaxTries              => 10,
+--                i_WaitSeconds           => 10,
+--                o_Tries                 => intTries
+--                );
 				
 COMMON_OWNER.SMT_INDEX.ALL_REBUILD('CSMRT_OWNER','UM_F_FA_STDNT_AID_ADM');
 

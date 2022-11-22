@@ -1,4 +1,10 @@
-CREATE OR REPLACE PROCEDURE             "PS_PERSONAL_PHONE_P" AUTHID CURRENT_USER IS
+DROP PROCEDURE CSMRT_OWNER.PS_PERSONAL_PHONE_P
+/
+
+--
+-- PS_PERSONAL_PHONE_P  (Procedure) 
+--
+CREATE OR REPLACE PROCEDURE CSMRT_OWNER."PS_PERSONAL_PHONE_P" AUTHID CURRENT_USER IS
 
 ------------------------------------------------------------------------
 -- George Adams
@@ -61,7 +67,7 @@ commit;
 strSqlCommand   := 'update NEW_MAX_SCN on CSSTG_OWNER.UM_STAGE_JOBS';
 update CSSTG_OWNER.UM_STAGE_JOBS
    set TABLE_STATUS = 'Merging',
-       NEW_MAX_SCN = (select /*+ full(S) */ max(ORA_ROWSCN) from SYSADM.PS_ACAD_CAL_TABLE@SASOURCE S)
+       NEW_MAX_SCN = (select /*+ full(S) */ max(ORA_ROWSCN) from SYSADM.PS_PERSONAL_PHONE@SASOURCE S)
  where TABLE_NAME = 'PS_PERSONAL_PHONE'
 ;
 

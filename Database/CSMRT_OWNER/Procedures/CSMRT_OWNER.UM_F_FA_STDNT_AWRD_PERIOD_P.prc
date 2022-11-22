@@ -1,4 +1,10 @@
-CREATE OR REPLACE PROCEDURE             "UM_F_FA_STDNT_AWRD_PERIOD_P" AUTHID CURRENT_USER IS
+DROP PROCEDURE CSMRT_OWNER.UM_F_FA_STDNT_AWRD_PERIOD_P
+/
+
+--
+-- UM_F_FA_STDNT_AWRD_PERIOD_P  (Procedure) 
+--
+CREATE OR REPLACE PROCEDURE CSMRT_OWNER."UM_F_FA_STDNT_AWRD_PERIOD_P" AUTHID CURRENT_USER IS
 
 ------------------------------------------------------------------------
 -- George Adams
@@ -40,20 +46,6 @@ COMMON_OWNER.SMT_PROCESS_LOG.PROCESS_INIT
                 o_ProcessSid            => intProcessSid
         );
 
-strMessage01    := 'Disabling Indexes for table CSMRT_OWNER.UM_F_FA_STDNT_AWRD_PERIOD';
-COMMON_OWNER.SMT_LOG.PUT_MESSAGE(i_Message => strMessage01);
-COMMON_OWNER.SMT_INDEX.ALL_UNUSABLE('CSMRT_OWNER','UM_F_FA_STDNT_AWRD_PERIOD');
-
-strSqlDynamic   := 'alter table CSMRT_OWNER.UM_F_FA_STDNT_AWRD_PERIOD disable constraint PK_UM_F_FA_STDNT_AWRD_PERIOD';
-strSqlCommand   := 'SMT_UTILITY.EXECUTE_IMMEDIATE: ' || strSqlDynamic;
-COMMON_OWNER.SMT_UTILITY.EXECUTE_IMMEDIATE
-                (
-                i_SqlStatement          => strSqlDynamic,
-                i_MaxTries              => 10,
-                i_WaitSeconds           => 10,
-                o_Tries                 => intTries
-                );
-				
 strMessage01    := 'Truncating table CSMRT_OWNER.UM_F_FA_STDNT_AWRD_PERIOD';
 COMMON_OWNER.SMT_LOG.PUT_MESSAGE(i_Message => strMessage01);
 
@@ -67,75 +59,89 @@ COMMON_OWNER.SMT_UTILITY.EXECUTE_IMMEDIATE
                 o_Tries                 => intTries
                 );
 
+strMessage01    := 'Disabling Indexes for table CSMRT_OWNER.UM_F_FA_STDNT_AWRD_PERIOD';
+COMMON_OWNER.SMT_LOG.PUT_MESSAGE(i_Message => strMessage01);
+COMMON_OWNER.SMT_INDEX.ALL_UNUSABLE('CSMRT_OWNER','UM_F_FA_STDNT_AWRD_PERIOD');
+
+--strSqlDynamic   := 'alter table CSMRT_OWNER.UM_F_FA_STDNT_AWRD_PERIOD disable constraint PK_UM_F_FA_STDNT_AWRD_PERIOD';
+--strSqlCommand   := 'SMT_UTILITY.EXECUTE_IMMEDIATE: ' || strSqlDynamic;
+--COMMON_OWNER.SMT_UTILITY.EXECUTE_IMMEDIATE
+--                (
+--                i_SqlStatement          => strSqlDynamic,
+--                i_MaxTries              => 10,
+--                i_WaitSeconds           => 10,
+--                o_Tries                 => intTries
+--                );
+
 strMessage01    := 'Inserting data into CSMRT_OWNER.UM_F_FA_STDNT_AWRD_PERIOD';
 COMMON_OWNER.SMT_LOG.PUT_MESSAGE(i_Message => strMessage01);
 
-strSqlCommand   := 'insert into CSMRT_OWNER.UM_F_FA_STDNT_AWRD_PERIOD';				
-insert /*+ append */ into UM_F_FA_STDNT_AWRD_PERIOD 
-  with X as (  
-select FIELDNAME, FIELDVALUE, EFFDT, SRC_SYS_ID, 
-       XLATLONGNAME, XLATSHORTNAME, DATA_ORIGIN, 
+strSqlCommand   := 'insert into CSMRT_OWNER.UM_F_FA_STDNT_AWRD_PERIOD';
+insert /*+ append enable_parallel_dml parallel(8) */ into UM_F_FA_STDNT_AWRD_PERIOD
+  with X as (
+select FIELDNAME, FIELDVALUE, EFFDT, SRC_SYS_ID,
+       XLATLONGNAME, XLATSHORTNAME, DATA_ORIGIN,
        row_number() over (partition by FIELDNAME, FIELDVALUE, SRC_SYS_ID
                               order by DATA_ORIGIN desc, (case when EFFDT > trunc(SYSDATE) then to_date('01-JAN-1900') else EFFDT end) desc) X_ORDER
   from CSSTG_OWNER.PSXLATITEM
  where DATA_ORIGIN <> 'D')
-SELECT /*+ PARALLEL(8) INLINE */ 
-       A.INSTITUTION   INSTITUTION_CD, 
-       A.AID_YEAR, 
-       A.EMPLID PERSON_ID, 
-       A.AWARD_PERIOD, 
+SELECT /*+ PARALLEL(8) INLINE */
+       A.INSTITUTION   INSTITUTION_CD,
+       A.AID_YEAR,
+       A.EMPLID PERSON_ID,
+       A.AWARD_PERIOD,
        A.SRC_SYS_ID,
        nvl(I.INSTITUTION_SID, 2147483646) INSTITUTION_SID,
        nvl(P.PERSON_SID,2147483646) PERSON_SID,
-       BASE_WEEKS, 
-       BDGT_DURATION_FED, 
-       BDGT_DURATION_INST, 
-       EFC_STATUS, 
-       X1.XLATLONGNAME EFC_STATUS_LD, 
-       FANLTR_STATUS, 
-       X2.XLATLONGNAME FANLTR_STATUS_LD, 
-       FANLTR_STATUS_PREH, 
-       FED_EFC, 
-       FED_NEED, 
-       FED_NEED_BASE_AID, 
-       FED_OVRAWD_AMT, 
-       FED_OVRAWD_COA, 
-       FED_PARENT_CONTRB, 
-       FED_SPECIAL_AID, 
-       FED_STDNT_CONTRB, 
-       FED_TOTAL_AID, 
-       FED_UNMET_COA, 
-       FED_UNMET_NEED, 
-       FED_YEAR_COA, 
-       ISIR_CALC_EFC, 
-       ISIR_CALC_SC, 
-       ISIR_CALC_PC, 
-       INST_CALC_EFC, 
-       INST_CALC_SC, 
-       INST_CALC_PC, 
-       INST_EFC, 
-       INST_EFC_OVERIDE, 
-       INST_NEED, 
-       INST_NEED_BASE_AID, 
-       INST_OVRAWD_AMT, 
-       INST_OVRAWD_COA, 
-       INST_PARENT_CONTRB, 
-       INST_SPECIAL_AID, 
-       INST_STDNT_CONTRB, 
-       INST_TOTAL_AID, 
-       INST_UNMET_COA, 
-       INST_UNMET_NEED, 
-       INST_YEAR_COA, 
-       PELL_YEAR_COA, 
-       PRORATED_EFC, 
-       PRORATED_PAR_CNTRB, 
-       PRORATED_STU_CNTRB, 
-       SFA_PELLYR_COA_LHT, 
-       VET_ED_BENEFIT, 
-       VET_ED_FAN_PRINT, 
-       WEEKS_ENROLLED, 
-       WEEKLY_PC, 
-       WEEKLY_SC, 
+       BASE_WEEKS,
+       BDGT_DURATION_FED,
+       BDGT_DURATION_INST,
+       EFC_STATUS,
+       X1.XLATLONGNAME EFC_STATUS_LD,
+       FANLTR_STATUS,
+       X2.XLATLONGNAME FANLTR_STATUS_LD,
+       FANLTR_STATUS_PREH,
+       FED_EFC,
+       FED_NEED,
+       FED_NEED_BASE_AID,
+       FED_OVRAWD_AMT,
+       FED_OVRAWD_COA,
+       FED_PARENT_CONTRB,
+       FED_SPECIAL_AID,
+       FED_STDNT_CONTRB,
+       FED_TOTAL_AID,
+       FED_UNMET_COA,
+       FED_UNMET_NEED,
+       FED_YEAR_COA,
+       ISIR_CALC_EFC,
+       ISIR_CALC_SC,
+       ISIR_CALC_PC,
+       INST_CALC_EFC,
+       INST_CALC_SC,
+       INST_CALC_PC,
+       INST_EFC,
+       INST_EFC_OVERIDE,
+       INST_NEED,
+       INST_NEED_BASE_AID,
+       INST_OVRAWD_AMT,
+       INST_OVRAWD_COA,
+       INST_PARENT_CONTRB,
+       INST_SPECIAL_AID,
+       INST_STDNT_CONTRB,
+       INST_TOTAL_AID,
+       INST_UNMET_COA,
+       INST_UNMET_NEED,
+       INST_YEAR_COA,
+       PELL_YEAR_COA,
+       PRORATED_EFC,
+       PRORATED_PAR_CNTRB,
+       PRORATED_STU_CNTRB,
+       SFA_PELLYR_COA_LHT,
+       VET_ED_BENEFIT,
+       VET_ED_FAN_PRINT,
+       WEEKS_ENROLLED,
+       WEEKLY_PC,
+       WEEKLY_SC,
        COMMENTS,
        'N' LOAD_ERROR,
        'S' DATA_ORIGIN,
@@ -154,7 +160,7 @@ SELECT /*+ PARALLEL(8) INLINE */
     and X2.FIELDNAME = 'FANLTR_STATUS'
     and X2.X_ORDER = 1
    left outer join CSMRT_OWNER.PS_D_INSTITUTION I
-    on A.INSTITUTION = I.INSTITUTION_CD  
+    on A.INSTITUTION = I.INSTITUTION_CD
    and A.SRC_SYS_ID = I.SRC_SYS_ID
    and I.DATA_ORIGIN <> 'D'
   left outer join CSMRT_OWNER.PS_D_PERSON P
@@ -192,16 +198,16 @@ COMMON_OWNER.SMT_PROCESS_LOG.PROCESS_DETAIL
 strMessage01    := 'Enabling Indexes for table CSMRT_OWNER.UM_F_FA_STDNT_AWRD_PERIOD';
 COMMON_OWNER.SMT_LOG.PUT_MESSAGE(i_Message => strMessage01);
 
-strSqlDynamic   := 'alter table CSMRT_OWNER.UM_F_FA_STDNT_AWRD_PERIOD enable constraint PK_UM_F_FA_STDNT_AWRD_PERIOD';
-strSqlCommand   := 'SMT_UTILITY.EXECUTE_IMMEDIATE: ' || strSqlDynamic;
-COMMON_OWNER.SMT_UTILITY.EXECUTE_IMMEDIATE
-                (
-                i_SqlStatement          => strSqlDynamic,
-                i_MaxTries              => 10,
-                i_WaitSeconds           => 10,
-                o_Tries                 => intTries
-                );
-				
+--strSqlDynamic   := 'alter table CSMRT_OWNER.UM_F_FA_STDNT_AWRD_PERIOD enable constraint PK_UM_F_FA_STDNT_AWRD_PERIOD';
+--strSqlCommand   := 'SMT_UTILITY.EXECUTE_IMMEDIATE: ' || strSqlDynamic;
+--COMMON_OWNER.SMT_UTILITY.EXECUTE_IMMEDIATE
+--                (
+--                i_SqlStatement          => strSqlDynamic,
+--                i_MaxTries              => 10,
+--                i_WaitSeconds           => 10,
+--                o_Tries                 => intTries
+--                );
+
 COMMON_OWNER.SMT_INDEX.ALL_REBUILD('CSMRT_OWNER','UM_F_FA_STDNT_AWRD_PERIOD');
 
 strSqlCommand := 'SMT_PROCESS_LOG.PROCESS_SUCCESS';

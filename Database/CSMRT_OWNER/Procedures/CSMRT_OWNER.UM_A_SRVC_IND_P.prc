@@ -1,4 +1,10 @@
-CREATE OR REPLACE PROCEDURE             "UM_A_SRVC_IND_P" AUTHID CURRENT_USER IS
+DROP PROCEDURE CSMRT_OWNER.UM_A_SRVC_IND_P
+/
+
+--
+-- UM_A_SRVC_IND_P  (Procedure) 
+--
+CREATE OR REPLACE PROCEDURE CSMRT_OWNER."UM_A_SRVC_IND_P" AUTHID CURRENT_USER IS
 
 ------------------------------------------------------------------------
 -- George Adams
@@ -41,20 +47,6 @@ COMMON_OWNER.SMT_PROCESS_LOG.PROCESS_INIT
                 o_ProcessSid            => intProcessSid
         );
 
-strMessage01    := 'Disabling Indexes for table CSMRT_OWNER.UM_A_SRVC_IND';
-COMMON_OWNER.SMT_LOG.PUT_MESSAGE(i_Message => strMessage01);
-COMMON_OWNER.SMT_INDEX.ALL_UNUSABLE('CSMRT_OWNER','UM_A_SRVC_IND');
-
-strSqlDynamic   := 'alter table CSMRT_OWNER.UM_A_SRVC_IND disable constraint PK_UM_A_SRVC_IND';
-strSqlCommand   := 'SMT_UTILITY.EXECUTE_IMMEDIATE: ' || strSqlDynamic;
-COMMON_OWNER.SMT_UTILITY.EXECUTE_IMMEDIATE
-                (
-                i_SqlStatement          => strSqlDynamic,
-                i_MaxTries              => 10,
-                i_WaitSeconds           => 10,
-                o_Tries                 => intTries
-                );
-				
 strMessage01    := 'Truncating table CSMRT_OWNER.UM_A_SRVC_IND';
 COMMON_OWNER.SMT_LOG.PUT_MESSAGE(i_Message => strMessage01);
 
@@ -68,11 +60,25 @@ COMMON_OWNER.SMT_UTILITY.EXECUTE_IMMEDIATE
                 o_Tries                 => intTries
                 );
 
+strMessage01    := 'Disabling Indexes for table CSMRT_OWNER.UM_A_SRVC_IND';
+COMMON_OWNER.SMT_LOG.PUT_MESSAGE(i_Message => strMessage01);
+COMMON_OWNER.SMT_INDEX.ALL_UNUSABLE('CSMRT_OWNER','UM_A_SRVC_IND');
+
+--strSqlDynamic   := 'alter table CSMRT_OWNER.UM_A_SRVC_IND disable constraint PK_UM_A_SRVC_IND';
+--strSqlCommand   := 'SMT_UTILITY.EXECUTE_IMMEDIATE: ' || strSqlDynamic;
+--COMMON_OWNER.SMT_UTILITY.EXECUTE_IMMEDIATE
+--                (
+--                i_SqlStatement          => strSqlDynamic,
+--                i_MaxTries              => 10,
+--                i_WaitSeconds           => 10,
+--                o_Tries                 => intTries
+--                );
+				
 strMessage01    := 'Inserting data into CSMRT_OWNER.UM_A_SRVC_IND';
 COMMON_OWNER.SMT_LOG.PUT_MESSAGE(i_Message => strMessage01);
 
 strSqlCommand   := 'insert into CSMRT_OWNER.UM_A_SRVC_IND';				
-insert /*+ append */ into UM_A_SRVC_IND
+insert /*+ append enable_parallel_dml parallel(8) */ into UM_A_SRVC_IND
 with XL as (
 select /*+ PARALLEL(8) INLINE */ 
        FIELDNAME, FIELDVALUE, SRC_SYS_ID, XLATLONGNAME, XLATSHORTNAME
@@ -212,15 +218,15 @@ strMessage01    := 'Enabling Indexes for table CSMRT_OWNER.UM_A_SRVC_IND';
 COMMON_OWNER.SMT_LOG.PUT_MESSAGE(i_Message => strMessage01);
 --alter table UM_A_SRVC_IND enable constraint PK_UM_A_SRVC_IND;
 
-strSqlDynamic   := 'alter table CSMRT_OWNER.UM_A_SRVC_IND enable constraint PK_UM_A_SRVC_IND';
-strSqlCommand   := 'SMT_UTILITY.EXECUTE_IMMEDIATE: ' || strSqlDynamic;
-COMMON_OWNER.SMT_UTILITY.EXECUTE_IMMEDIATE
-                (
-                i_SqlStatement          => strSqlDynamic,
-                i_MaxTries              => 10,
-                i_WaitSeconds           => 10,
-                o_Tries                 => intTries
-                );
+--strSqlDynamic   := 'alter table CSMRT_OWNER.UM_A_SRVC_IND enable constraint PK_UM_A_SRVC_IND';
+--strSqlCommand   := 'SMT_UTILITY.EXECUTE_IMMEDIATE: ' || strSqlDynamic;
+--COMMON_OWNER.SMT_UTILITY.EXECUTE_IMMEDIATE
+--                (
+--                i_SqlStatement          => strSqlDynamic,
+--                i_MaxTries              => 10,
+--                i_WaitSeconds           => 10,
+--                o_Tries                 => intTries
+--                );
 				
 COMMON_OWNER.SMT_INDEX.ALL_REBUILD('CSMRT_OWNER','UM_A_SRVC_IND');
 

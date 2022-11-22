@@ -1,4 +1,10 @@
-CREATE OR REPLACE PROCEDURE             "PS_BUS_UNIT_TBL_SF_P" AUTHID CURRENT_USER IS
+DROP PROCEDURE CSMRT_OWNER.PS_BUS_UNIT_TBL_SF_P
+/
+
+--
+-- PS_BUS_UNIT_TBL_SF_P  (Procedure) 
+--
+CREATE OR REPLACE PROCEDURE CSMRT_OWNER."PS_BUS_UNIT_TBL_SF_P" AUTHID CURRENT_USER IS
 
 
 ------------------------------------------------------------------------

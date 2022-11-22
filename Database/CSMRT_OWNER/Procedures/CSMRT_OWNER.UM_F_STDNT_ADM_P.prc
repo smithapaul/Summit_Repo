@@ -1,4 +1,10 @@
-CREATE OR REPLACE PROCEDURE             "UM_F_STDNT_ADM_P" AUTHID CURRENT_USER IS
+DROP PROCEDURE CSMRT_OWNER.UM_F_STDNT_ADM_P
+/
+
+--
+-- UM_F_STDNT_ADM_P  (Procedure) 
+--
+CREATE OR REPLACE PROCEDURE CSMRT_OWNER."UM_F_STDNT_ADM_P" AUTHID CURRENT_USER IS
 
 ------------------------------------------------------------------------
 -- George Adams
@@ -6,7 +12,6 @@ CREATE OR REPLACE PROCEDURE             "UM_F_STDNT_ADM_P" AUTHID CURRENT_USER I
 -- V01 12/13/2018             -- srikanth ,pabbu converted to proc from sql scripts
 -- V02 Case: 70378 11/02/2020  Jim Doucette
 --                             Add UM_CA_FIRST_GEN to UM_F_STDNT_ADM
-
 ------------------------------------------------------------------------
 
         strMartId                       Varchar2(50)    := 'CSW';
@@ -40,20 +45,6 @@ COMMON_OWNER.SMT_PROCESS_LOG.PROCESS_INIT
                 o_ProcessSid            => intProcessSid
         );
 
-strMessage01    := 'Disabling Indexes for table CSMRT_OWNER.UM_F_STDNT_ADM';
-COMMON_OWNER.SMT_LOG.PUT_MESSAGE(i_Message => strMessage01);
-COMMON_OWNER.SMT_INDEX.ALL_UNUSABLE('CSMRT_OWNER','UM_F_STDNT_ADM');
-
-strSqlDynamic   := 'alter table CSMRT_OWNER.UM_F_STDNT_ADM disable constraint PK_UM_F_STDNT_ADM';
-strSqlCommand   := 'SMT_UTILITY.EXECUTE_IMMEDIATE: ' || strSqlDynamic;
-COMMON_OWNER.SMT_UTILITY.EXECUTE_IMMEDIATE
-                (
-                i_SqlStatement          => strSqlDynamic,
-                i_MaxTries              => 10,
-                i_WaitSeconds           => 10,
-                o_Tries                 => intTries
-                );
-				
 strMessage01    := 'Truncating table CSMRT_OWNER.UM_F_STDNT_ADM';
 COMMON_OWNER.SMT_LOG.PUT_MESSAGE(i_Message => strMessage01);
 
@@ -67,12 +58,26 @@ COMMON_OWNER.SMT_UTILITY.EXECUTE_IMMEDIATE
                 o_Tries                 => intTries
                 );
 
+strMessage01    := 'Disabling Indexes for table CSMRT_OWNER.UM_F_STDNT_ADM';
+COMMON_OWNER.SMT_LOG.PUT_MESSAGE(i_Message => strMessage01);
+COMMON_OWNER.SMT_INDEX.ALL_UNUSABLE('CSMRT_OWNER','UM_F_STDNT_ADM');
+
+--strSqlDynamic   := 'alter table CSMRT_OWNER.UM_F_STDNT_ADM disable constraint PK_UM_F_STDNT_ADM';
+--strSqlCommand   := 'SMT_UTILITY.EXECUTE_IMMEDIATE: ' || strSqlDynamic;
+--COMMON_OWNER.SMT_UTILITY.EXECUTE_IMMEDIATE
+--                (
+--                i_SqlStatement          => strSqlDynamic,
+--                i_MaxTries              => 10,
+--                i_WaitSeconds           => 10,
+--                o_Tries                 => intTries
+--                );
+				
 strMessage01    := 'Inserting data into CSMRT_OWNER.UM_F_STDNT_ADM';
 COMMON_OWNER.SMT_LOG.PUT_MESSAGE(i_Message => strMessage01);
 
 strSqlCommand   := 'insert into CSMRT_OWNER.UM_F_STDNT_ADM';				
-INSERT /*+ APPEND */ INTO CSMRT_OWNER.UM_F_STDNT_ADM
-   WITH ACAD_TAB
+INSERT /*+ append enable_parallel_dml parallel(8) */ INTO CSMRT_OWNER.UM_F_STDNT_ADM
+      WITH ACAD_TAB  --1,156,281 1,156,281
         AS (SELECT /*+ INLINE PARALLEL(8) */ DISTINCT PERSON_SID,
                             INSTITUTION_SID,
                             INSTITUTION_CD,
@@ -87,15 +92,19 @@ INSERT /*+ APPEND */ INTO CSMRT_OWNER.UM_F_STDNT_ADM
         as (select /*+ PARALLEL(8) INLINE */
             PERSON_SID, SRC_SYS_ID, EXT_ORG_SID, INSTITUTION_SID, 
             max(CLASS_RANK) CLASS_RANK, max(CLASS_SIZE) CLASS_SIZE, max(CLASS_PERCENTILE) CLASS_PERCENTILE, max(EXT_GPA) EXT_GPA, max(CONVERTED_GPA) CONVERTED_GPA,
-            max(UM_CUM_CREDIT) UM_CUM_CREDIT, max(UM_CUM_GPA) UM_CUM_GPA, max(UM_CUM_QP) UM_CUM_QP, max(UM_GPA_EXCLUDE_FLG) UM_GPA_EXCLUDE_FLG, 
+            max(UM_CUM_CREDIT) UM_CUM_CREDIT, max(UM_CUM_GPA) UM_CUM_GPA, max(UM_CUM_QP) UM_CUM_QP, 
+            max(UM_CUM_CREDIT_AGG) UM_CUM_CREDIT_AGG, max(UM_CUM_GPA_AGG) UM_CUM_GPA_AGG, max(UM_CUM_QP_AGG) UM_CUM_QP_AGG,     -- Aug 2022  
+            max(UM_GPA_EXCLUDE_FLG) UM_GPA_EXCLUDE_FLG, 
             max(UM_EXT_ORG_CR) UM_EXT_ORG_CR, max(UM_EXT_ORG_QP) UM_EXT_ORG_QP, max(UM_EXT_ORG_GPA) UM_EXT_ORG_GPA, max(UM_EXT_ORG_CNV_CR) UM_EXT_ORG_CNV_CR, 
             max(UM_EXT_ORG_CNV_GPA) UM_EXT_ORG_CNV_GPA, max(UM_EXT_ORG_CNV_QP) UM_EXT_ORG_CNV_QP, 
             max(UM_GPA_OVRD_FLG) UM_GPA_OVRD_FLG, max(UM_1_OVRD_HSGPA_FLG) UM_1_OVRD_HSGPA_FLG, max(UM_CONVERT_GPA) UM_CONVERT_GPA,
-            max(UM_EXT_OR_MTSC_GPA) UM_EXT_OR_MTSC_GPA,    -- SMT-8300
-            max(MS_CONVERT_GPA) MS_CONVERT_GPA             -- SMT-8300		
-            from PS_F_EXT_ACAD_SUMM
-            where DATA_ORIGIN <> 'D'
-            group by PERSON_SID, SRC_SYS_ID, EXT_ORG_SID, INSTITUTION_SID),
+            max(UM_EXT_OR_MTSC_GPA) UM_EXT_OR_MTSC_GPA,     -- SMT-8300
+            max(MS_CONVERT_GPA) MS_CONVERT_GPA,             -- SMT-8300
+            max(MAX_DATA_ROW) MAX_DATA_ROW		            -- Aug 2022
+              from PS_F_EXT_ACAD_SUMM
+             where DATA_ORIGIN <> 'D'
+               and ROWNUM < 10000000000         -- Sept 2021 
+             group by PERSON_SID, SRC_SYS_ID, EXT_ORG_SID, INSTITUTION_SID),
         ADM_TAB
         AS (SELECT /*+ INLINE PARALLEL(8) */
                   ACAD.PERSON_SID,
@@ -155,6 +164,9 @@ INSERT /*+ APPEND */ INTO CSMRT_OWNER.UM_F_STDNT_ADM
                    EXT.UM_CUM_CREDIT,
                    EXT.UM_CUM_GPA,
                    EXT.UM_CUM_QP,
+                   EXT.UM_CUM_CREDIT_AGG,       -- Aug 2022 
+                   EXT.UM_CUM_GPA_AGG,          -- Aug 2022 
+                   EXT.UM_CUM_QP_AGG,           -- Aug 2022 
                    EXT.UM_GPA_EXCLUDE_FLG,
                    EXT.UM_EXT_ORG_CR,
                    EXT.UM_EXT_ORG_QP,
@@ -167,7 +179,10 @@ INSERT /*+ APPEND */ INTO CSMRT_OWNER.UM_F_STDNT_ADM
                    EXT.UM_CONVERT_GPA,
 				   EXT.UM_EXT_OR_MTSC_GPA,
 				   EXT.MS_CONVERT_GPA,
-				   ADM.UM_CA_FIRST_GEN        -- Case 70378 11/02/2020
+				   ADM.UM_CA_FIRST_GEN,         -- Case 70378 11/02/2020
+				   EXT.MAX_DATA_ROW ,            -- Aug 2022
+                   ADM.ABTS_FLAG,
+                   ADM.BSMS_FLAG 
               FROM ACAD_TAB ACAD
                    LEFT OUTER JOIN UM_F_ADM_APPL_STAT ADM
                      ON ACAD.PERSON_SID = ADM.APPLCNT_SID
@@ -272,7 +287,7 @@ INSERT /*+ APPEND */ INTO CSMRT_OWNER.UM_F_STDNT_ADM
                     FIELDNAME, FIELDVALUE, SRC_SYS_ID,
                     XLATLONGNAME, XLATSHORTNAME
                FROM UM_D_XLATITEM)
-   SELECT /*+ INLINE PARALLEL(8) */ 
+   SELECT /*+ INLINE PARALLEL(8) no_use_nl(ADM DEG SCORE) */ 
           ADM.PERSON_SID,        -- Add natural keys!!! 
           ADM.INSTITUTION_SID,
           ADM.ACAD_CAR_SID,
@@ -302,64 +317,18 @@ INSERT /*+ APPEND */ INTO CSMRT_OWNER.UM_F_STDNT_ADM
           NVL (DEG.EXT_DEG_SID, 2147483646) EXT_DEG_SID,
           DEG.EXT_DEG_DT,
           NVL (DEG.EXT_DEG_STAT_ID, ' ') EXT_DEG_STAT_ID,
---           NVL (
---               (SELECT MIN (X.XLATSHORTNAME)
---                  FROM UM_D_XLATITEM_VW X
---                 WHERE     X.FIELDNAME = 'DEGREE_STATUS'
---                       AND X.FIELDVALUE = DEG.EXT_DEG_STAT_ID),
---               ' ')                             EXT_DEG_STAT_SD,
---           NVL (
---               (SELECT MIN (X.XLATLONGNAME)
---                  FROM UM_D_XLATITEM_VW X
---                 WHERE     X.FIELDNAME = 'DEGREE_STATUS'
---                       AND X.FIELDVALUE = DEG.EXT_DEG_STAT_ID),
---               ' ')                             EXT_DEG_STAT_LD,
            NVL (X1.XLATSHORTNAME,' ')           EXT_DEG_STAT_SD,        -- June 2021 
            NVL (X1.XLATLONGNAME,' ')            EXT_DEG_STAT_LD,        -- June 2021 
           ADM.FIN_AID_INTEREST,
           ADM.HOUSING_INTEREST,
---           NVL (
---               (SELECT MIN (X.XLATSHORTNAME)
---                  FROM UM_D_XLATITEM_VW X
---                 WHERE     X.FIELDNAME = 'HOUSING_INTEREST'
---                       AND X.FIELDVALUE = ADM.HOUSING_INTEREST),
---               ' ')                             HOUSING_INTEREST_SD,
---           NVL (
---               (SELECT MIN (X.XLATLONGNAME)
---                  FROM UM_D_XLATITEM_VW X
---                 WHERE     X.FIELDNAME = 'HOUSING_INTEREST'
---                       AND X.FIELDVALUE = ADM.HOUSING_INTEREST),
---               ' ')                             HOUSING_INTEREST_LD,
            NVL (X2.XLATSHORTNAME,' ')           HOUSING_INTEREST_SD,    -- June 2021 
            NVL (X2.XLATLONGNAME,' ')            HOUSING_INTEREST_LD,    -- June 2021 
           ADM.LST_SCHL_ATTND_SID,
           ADM.LST_SCHL_GRDDT,
           ADM.NOTIFICATION_PLAN,
---           NVL (
---               (SELECT MIN (X.XLATSHORTNAME)
---                  FROM UM_D_XLATITEM_VW X
---                 WHERE     X.FIELDNAME = 'NOTIFICATION_PLAN'
---                       AND X.FIELDVALUE = ADM.NOTIFICATION_PLAN),
---               ' ')                             NOTIFICATION_PLAN_SD,
---           NVL (
---               (SELECT MIN (X.XLATLONGNAME)
---                  FROM UM_D_XLATITEM_VW X
---                 WHERE     X.FIELDNAME = 'NOTIFICATION_PLAN'
---                       AND X.FIELDVALUE = ADM.NOTIFICATION_PLAN),
---               ' ')                             NOTIFICATION_PLAN_LD,
            NVL (X3.XLATSHORTNAME,' ')           NOTIFICATION_PLAN_SD,   -- June 2021 
            NVL (X3.XLATLONGNAME,' ')            NOTIFICATION_PLAN_LD,   -- June 2021 
           ADM.UM_BHE,
---           NVL (
---               (SELECT MIN (X.XLATSHORTNAME)
---                  FROM UM_D_XLATITEM_VW X
---                 WHERE X.FIELDNAME = 'UM_BHE' AND X.FIELDVALUE = ADM.UM_BHE),
---               ' ')                             UM_BHE_SD,
---           NVL (
---               (SELECT MIN (X.XLATLONGNAME)
---                  FROM UM_D_XLATITEM_VW X
---                 WHERE X.FIELDNAME = 'UM_BHE' AND X.FIELDVALUE = ADM.UM_BHE),
---               ' ')                             UM_BHE_LD,
            NVL (X4.XLATSHORTNAME,' ')           UM_BHE_SD,              -- June 2021 
            NVL (X4.XLATLONGNAME,' ')            UM_BHE_LD,              -- June 2021 
           ADM.UM_BHE_ENG,
@@ -377,18 +346,6 @@ INSERT /*+ APPEND */ INTO CSMRT_OWNER.UM_F_STDNT_ADM
           ADM.UM_BHE_TRANS_CR,
           ADM.UM_BHE_TRANS_GPA,
           ADM.UM_RA_TA_INTEREST,
---           NVL (
---               (SELECT MIN (X.XLATSHORTNAME)
---                  FROM UM_D_XLATITEM_VW X
---                 WHERE     X.FIELDNAME = 'UM_RA_TA_INTEREST'
---                       AND X.FIELDVALUE = ADM.UM_RA_TA_INTEREST),
---               ' ')                             UM_RA_TA_INTEREST_SD,
---           NVL (
---               (SELECT MIN (X.XLATLONGNAME)
---                  FROM UM_D_XLATITEM_VW X
---                 WHERE     X.FIELDNAME = 'UM_RA_TA_INTEREST'
---                       AND X.FIELDVALUE = ADM.UM_RA_TA_INTEREST),
---               ' ')                             UM_RA_TA_INTEREST_LD,
            NVL (X5.XLATSHORTNAME,' ')           UM_RA_TA_INTEREST_SD,   -- June 2021 
            NVL (X5.XLATLONGNAME,' ')            UM_RA_TA_INTEREST_LD,   -- June 2021 
           ADM.UM_TCA_COMPLETE,
@@ -398,6 +355,9 @@ INSERT /*+ APPEND */ INTO CSMRT_OWNER.UM_F_STDNT_ADM
           ADM.UM_CUM_CREDIT,
           ADM.UM_CUM_GPA,
           ADM.UM_CUM_QP,
+          ADM.UM_CUM_CREDIT_AGG,        -- Aug 2022 
+          ADM.UM_CUM_GPA_AGG,           -- Aug 2022
+          ADM.UM_CUM_QP_AGG,            -- Aug 2022
           ADM.UM_GPA_EXCLUDE_FLG,
           ADM.UM_EXT_ORG_CR,
           ADM.UM_EXT_ORG_QP,
@@ -428,9 +388,12 @@ INSERT /*+ APPEND */ INTO CSMRT_OWNER.UM_F_STDNT_ADM
 		  ADM.UM_EXT_OR_MTSC_GPA,    -- SMT-8300
 		  ADM.MS_CONVERT_GPA,        -- SMT-8300
 		  ADM.UM_CA_FIRST_GEN,       -- CASE-70378
+		  ADM.MAX_DATA_ROW,          -- Aug 2022 
 		  'S',                       -- SMT-8300
           SYSDATE,                   -- SMT-8300
-          SYSDATE                    -- SMT-8300
+          SYSDATE,                    -- SMT-8300
+          NVL(ADM.ABTS_FLAG,'N') as ABTS_FLAG,
+          NVL(ADM.BSMS_FLAG,'N') as  BSMS_FLAG
       FROM ADM_TAB ADM 
       JOIN SCORE_TAB SCORE
         ON ADM.PERSON_SID = SCORE.PERSON_SID
@@ -483,15 +446,15 @@ COMMON_OWNER.SMT_PROCESS_LOG.PROCESS_DETAIL
 strMessage01    := 'Enabling Indexes for table CSMRT_OWNER.UM_F_STDNT_ADM';
 COMMON_OWNER.SMT_LOG.PUT_MESSAGE(i_Message => strMessage01);
 
-strSqlDynamic   := 'alter table CSMRT_OWNER.UM_F_STDNT_ADM enable constraint PK_UM_F_STDNT_ADM';
-strSqlCommand   := 'SMT_UTILITY.EXECUTE_IMMEDIATE: ' || strSqlDynamic;
-COMMON_OWNER.SMT_UTILITY.EXECUTE_IMMEDIATE
-                (
-                i_SqlStatement          => strSqlDynamic,
-                i_MaxTries              => 10,
-                i_WaitSeconds           => 10,
-                o_Tries                 => intTries
-                );
+--strSqlDynamic   := 'alter table CSMRT_OWNER.UM_F_STDNT_ADM enable constraint PK_UM_F_STDNT_ADM';
+--strSqlCommand   := 'SMT_UTILITY.EXECUTE_IMMEDIATE: ' || strSqlDynamic;
+--COMMON_OWNER.SMT_UTILITY.EXECUTE_IMMEDIATE
+--                (
+--                i_SqlStatement          => strSqlDynamic,
+--                i_MaxTries              => 10,
+--                i_WaitSeconds           => 10,
+--                o_Tries                 => intTries
+--                );
 				
 COMMON_OWNER.SMT_INDEX.ALL_REBUILD('CSMRT_OWNER','UM_F_STDNT_ADM');
 

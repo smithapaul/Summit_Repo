@@ -1,4 +1,10 @@
-CREATE OR REPLACE PROCEDURE             "UM_R_PERSON_RSDNCY_P" AUTHID CURRENT_USER IS
+DROP PROCEDURE CSMRT_OWNER.UM_R_PERSON_RSDNCY_P
+/
+
+--
+-- UM_R_PERSON_RSDNCY_P  (Procedure) 
+--
+CREATE OR REPLACE PROCEDURE CSMRT_OWNER."UM_R_PERSON_RSDNCY_P" AUTHID CURRENT_USER IS
 
 ------------------------------------------------------------------------
 --George Adams
@@ -55,15 +61,15 @@ strMessage01    := 'Disabling Indexes for table CSMRT_OWNER.UM_R_PERSON_RSDNCY';
 COMMON_OWNER.SMT_LOG.PUT_MESSAGE(i_Message => strMessage01);
 COMMON_OWNER.SMT_INDEX.ALL_UNUSABLE('CSMRT_OWNER','UM_R_PERSON_RSDNCY');
 
-strSqlDynamic   := 'alter table CSMRT_OWNER.UM_R_PERSON_RSDNCY disable constraint PK_UM_R_PERSON_RSDNCY';
-strSqlCommand   := 'SMT_UTILITY.EXECUTE_IMMEDIATE: ' || strSqlDynamic;
-COMMON_OWNER.SMT_UTILITY.EXECUTE_IMMEDIATE
-                (
-                i_SqlStatement          => strSqlDynamic,
-                i_MaxTries              => 10,
-                i_WaitSeconds           => 10,
-                o_Tries                 => intTries
-                );
+--strSqlDynamic   := 'alter table CSMRT_OWNER.UM_R_PERSON_RSDNCY disable constraint PK_UM_R_PERSON_RSDNCY';
+--strSqlCommand   := 'SMT_UTILITY.EXECUTE_IMMEDIATE: ' || strSqlDynamic;
+--COMMON_OWNER.SMT_UTILITY.EXECUTE_IMMEDIATE
+--                (
+--                i_SqlStatement          => strSqlDynamic,
+--                i_MaxTries              => 10,
+--                i_WaitSeconds           => 10,
+--                o_Tries                 => intTries
+--                );
 
 strMessage01    := 'Inserting data into CSMRT_OWNER.UM_R_PERSON_RSDNCY';
 COMMON_OWNER.SMT_LOG.PUT_MESSAGE(i_Message => strMessage01);
@@ -200,7 +206,7 @@ COMMON_OWNER.SMT_PROCESS_LOG.PROCESS_DETAIL
         );
 
 strSqlCommand   := 'insert into CSMRT_OWNER.UM_R_PERSON_RSDNCY';
-insert into CSMRT_OWNER.UM_R_PERSON_RSDNCY
+insert /*+ append enable_parallel_dml parallel(8) */ into CSMRT_OWNER.UM_R_PERSON_RSDNCY
 select /*+ INLINE PARALLEL(8) */
 INSTITUTION_CD,
 '-' ACAD_CAR_CD,
@@ -273,15 +279,15 @@ COMMON_OWNER.SMT_PROCESS_LOG.PROCESS_DETAIL
 strMessage01    := 'Enabling Indexes for table CSMRT_OWNER.UM_R_PERSON_RSDNCY';
 COMMON_OWNER.SMT_LOG.PUT_MESSAGE(i_Message => strMessage01);
 
-strSqlDynamic   := 'alter table CSMRT_OWNER.UM_R_PERSON_RSDNCY enable constraint PK_UM_R_PERSON_RSDNCY';
-strSqlCommand   := 'SMT_UTILITY.EXECUTE_IMMEDIATE: ' || strSqlDynamic;
-COMMON_OWNER.SMT_UTILITY.EXECUTE_IMMEDIATE
-                (
-                i_SqlStatement          => strSqlDynamic,
-                i_MaxTries              => 10,
-                i_WaitSeconds           => 10,
-                o_Tries                 => intTries
-                );
+--strSqlDynamic   := 'alter table CSMRT_OWNER.UM_R_PERSON_RSDNCY enable constraint PK_UM_R_PERSON_RSDNCY';
+--strSqlCommand   := 'SMT_UTILITY.EXECUTE_IMMEDIATE: ' || strSqlDynamic;
+--COMMON_OWNER.SMT_UTILITY.EXECUTE_IMMEDIATE
+--                (
+--                i_SqlStatement          => strSqlDynamic,
+--                i_MaxTries              => 10,
+--                i_WaitSeconds           => 10,
+--                o_Tries                 => intTries
+--                );
 
 COMMON_OWNER.SMT_INDEX.ALL_REBUILD('CSMRT_OWNER','UM_R_PERSON_RSDNCY');
 

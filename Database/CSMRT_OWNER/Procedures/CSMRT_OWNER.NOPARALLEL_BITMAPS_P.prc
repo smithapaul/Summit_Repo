@@ -1,4 +1,10 @@
-CREATE OR REPLACE PROCEDURE             NOPARALLEL_BITMAPS_P IS
+DROP PROCEDURE CSMRT_OWNER.NOPARALLEL_BITMAPS_P
+/
+
+--
+-- NOPARALLEL_BITMAPS_P  (Procedure) 
+--
+CREATE OR REPLACE PROCEDURE CSMRT_OWNER.NOPARALLEL_BITMAPS_P IS
    bitmap_cur            SYS_REFCURSOR;
    v_sql_str             varchar2(2000);
    v_bitmap_total        number;

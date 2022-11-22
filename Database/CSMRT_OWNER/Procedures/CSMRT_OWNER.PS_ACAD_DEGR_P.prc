@@ -1,4 +1,10 @@
-CREATE OR REPLACE PROCEDURE             "PS_ACAD_DEGR_P" AUTHID CURRENT_USER IS
+DROP PROCEDURE CSMRT_OWNER.PS_ACAD_DEGR_P
+/
+
+--
+-- PS_ACAD_DEGR_P  (Procedure) 
+--
+CREATE OR REPLACE PROCEDURE CSMRT_OWNER."PS_ACAD_DEGR_P" AUTHID CURRENT_USER IS
 
 ------------------------------------------------------------------------
 -- George Adams

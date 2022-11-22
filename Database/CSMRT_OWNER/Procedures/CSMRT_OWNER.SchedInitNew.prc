@@ -1,4 +1,10 @@
-CREATE OR REPLACE PROCEDURE             "SchedInitNew" 
+DROP PROCEDURE CSMRT_OWNER."SchedInitNew"
+/
+
+--
+-- "SchedInitNew"  (Procedure) 
+--
+CREATE OR REPLACE PROCEDURE CSMRT_OWNER."SchedInitNew" 
         (
                i_MartId                in  Varchar2
         )

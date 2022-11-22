@@ -1,4 +1,10 @@
-CREATE OR REPLACE PROCEDURE             "UM_F_FA_STDNT_PELL_ACTN_P" AUTHID CURRENT_USER IS
+DROP PROCEDURE CSMRT_OWNER.UM_F_FA_STDNT_PELL_ACTN_P
+/
+
+--
+-- UM_F_FA_STDNT_PELL_ACTN_P  (Procedure) 
+--
+CREATE OR REPLACE PROCEDURE CSMRT_OWNER."UM_F_FA_STDNT_PELL_ACTN_P" AUTHID CURRENT_USER IS
 
 
 ------------------------------------------------------------------------
@@ -41,22 +47,6 @@ COMMON_OWNER.SMT_PROCESS_LOG.PROCESS_INIT
                 o_ProcessSid            => intProcessSid
         );
 
-strMessage01    := 'Disabling Indexes for table CSMRT_OWNER.UM_F_FA_STDNT_PELL_ACTN';
-COMMON_OWNER.SMT_LOG.PUT_MESSAGE(i_Message => strMessage01);
-COMMON_OWNER.SMT_INDEX.ALL_UNUSABLE('CSMRT_OWNER','UM_F_FA_STDNT_PELL_ACTN');
-
---alter table UM_F_FA_STDNT_PELL_ACTN disable constraint PK_UM_F_FA_STDNT_PELL_ACTN;
-strSqlDynamic   := 'alter table CSMRT_OWNER.UM_F_FA_STDNT_PELL_ACTN disable constraint PK_UM_F_FA_STDNT_PELL_ACTN';
-strSqlCommand   := 'SMT_UTILITY.EXECUTE_IMMEDIATE: ' || strSqlDynamic;
-COMMON_OWNER.SMT_UTILITY.EXECUTE_IMMEDIATE
-                (
-                i_SqlStatement          => strSqlDynamic,
-                i_MaxTries              => 10,
-                i_WaitSeconds           => 10,
-                o_Tries                 => intTries
-                );
-				
-				
 strMessage01    := 'Truncating table CSMRT_OWNER.UM_F_FA_STDNT_PELL_ACTN';
 COMMON_OWNER.SMT_LOG.PUT_MESSAGE(i_Message => strMessage01);
 
@@ -70,34 +60,48 @@ COMMON_OWNER.SMT_UTILITY.EXECUTE_IMMEDIATE
                 o_Tries                 => intTries
                 );
 
+strMessage01    := 'Disabling Indexes for table CSMRT_OWNER.UM_F_FA_STDNT_PELL_ACTN';
+COMMON_OWNER.SMT_LOG.PUT_MESSAGE(i_Message => strMessage01);
+COMMON_OWNER.SMT_INDEX.ALL_UNUSABLE('CSMRT_OWNER','UM_F_FA_STDNT_PELL_ACTN');
+
+----alter table UM_F_FA_STDNT_PELL_ACTN disable constraint PK_UM_F_FA_STDNT_PELL_ACTN;
+--strSqlDynamic   := 'alter table CSMRT_OWNER.UM_F_FA_STDNT_PELL_ACTN disable constraint PK_UM_F_FA_STDNT_PELL_ACTN';
+--strSqlCommand   := 'SMT_UTILITY.EXECUTE_IMMEDIATE: ' || strSqlDynamic;
+--COMMON_OWNER.SMT_UTILITY.EXECUTE_IMMEDIATE
+--                (
+--                i_SqlStatement          => strSqlDynamic,
+--                i_MaxTries              => 10,
+--                i_WaitSeconds           => 10,
+--                o_Tries                 => intTries
+--                );
 
 strMessage01    := 'Inserting data into CSMRT_OWNER.UM_F_FA_STDNT_PELL_ACTN';
 COMMON_OWNER.SMT_LOG.PUT_MESSAGE(i_Message => strMessage01);
 
-strSqlCommand   := 'insert into CSMRT_OWNER.UM_F_FA_STDNT_PELL_ACTN';				
-insert /*+ append */ into UM_F_FA_STDNT_PELL_ACTN
+strSqlCommand   := 'insert into CSMRT_OWNER.UM_F_FA_STDNT_PELL_ACTN';
+insert /*+ append enable_parallel_dml parallel(8) */ into UM_F_FA_STDNT_PELL_ACTN
 with XL as (select /*+ materialize */
                    FIELDNAME, FIELDVALUE, SRC_SYS_ID, XLATLONGNAME, XLATSHORTNAME
               from UM_D_XLATITEM
-             where SRC_SYS_ID = 'CS90') 
+             where SRC_SYS_ID = 'CS90')
 select /*+ PARALLEL(8) INLINE */
-       A.INSTITUTION INSTITUTION_CD, 
-       A.AID_YEAR, 
-       A.EMPLID PERSON_ID, 
-       A.PELL_ORIG_ID, 
-       A.PELL_ORIG_ACTN_SEQ, 
-       nvl(M.PELL_ORIG_MSG_SEQ,0) PELL_ORIG_MSG_SEQ, 
-       A.SRC_SYS_ID, 
-       I.INSTITUTION_SID, 
-       nvl(P.PERSON_SID,2147483646) PERSON_SID, 
-       A.PELL_ACTION_CD, 
-       nvl(X1.XLATSHORTNAME,'-') PELL_ACTION_SD, 
-       nvl(X1.XLATLONGNAME,'-') PELL_ACTION_LD, 
-       A.PELL_ACTION_DT, 
-       A.PELL_BATCH_NBR, 
-       A.OPRID, 
-       A.PROCESS_INSTANCE, 
-       A.SFA_CR_DOCUMENT_ID, 
+       A.INSTITUTION INSTITUTION_CD,
+       A.AID_YEAR,
+       A.EMPLID PERSON_ID,
+       A.PELL_ORIG_ID,
+       A.PELL_ORIG_ACTN_SEQ,
+       nvl(M.PELL_ORIG_MSG_SEQ,0) PELL_ORIG_MSG_SEQ,
+       A.SRC_SYS_ID,
+       I.INSTITUTION_SID,
+       nvl(P.PERSON_SID,2147483646) PERSON_SID,
+       A.PELL_ACTION_CD,
+       nvl(X1.XLATSHORTNAME,'-') PELL_ACTION_SD,
+       nvl(X1.XLATLONGNAME,'-') PELL_ACTION_LD,
+       A.PELL_ACTION_DT,
+       A.PELL_BATCH_NBR,
+       A.OPRID,
+       A.PROCESS_INSTANCE,
+       A.SFA_CR_DOCUMENT_ID,
        M.PELL_ORIG_ACTN_MSG,
        'N' LOAD_ERROR, 'S' DATA_ORIGIN, SYSDATE CREATED_EW_DTTM, SYSDATE LASTUPD_EW_DTTM, 1234 BATCH_SID
   from CSSTG_OWNER.PS_PELL_ORIG_ACTN A
@@ -117,7 +121,7 @@ select /*+ PARALLEL(8) INLINE */
    and A.SRC_SYS_ID = P.SRC_SYS_ID
   left outer join XL X1
     on X1.FIELDNAME = 'PELL_ACTION_CD'
-   and X1.FIELDVALUE = A.PELL_ACTION_CD 
+   and X1.FIELDVALUE = A.PELL_ACTION_CD
    and X1.SRC_SYS_ID = A.SRC_SYS_ID
  where A.DATA_ORIGIN <> 'D'
 ;
@@ -153,16 +157,16 @@ strMessage01    := 'Enabling Indexes for table CSMRT_OWNER.UM_F_FA_STDNT_PELL_AC
 COMMON_OWNER.SMT_LOG.PUT_MESSAGE(i_Message => strMessage01);
 --alter table UM_F_FA_STDNT_PELL_ACTN enable constraint PK_UM_F_FA_STDNT_PELL_ACTN;
 
-strSqlDynamic   := 'alter table CSMRT_OWNER.UM_F_FA_STDNT_PELL_ACTN enable constraint PK_UM_F_FA_STDNT_PELL_ACTN';
-strSqlCommand   := 'SMT_UTILITY.EXECUTE_IMMEDIATE: ' || strSqlDynamic;
-COMMON_OWNER.SMT_UTILITY.EXECUTE_IMMEDIATE
-                (
-                i_SqlStatement          => strSqlDynamic,
-                i_MaxTries              => 10,
-                i_WaitSeconds           => 10,
-                o_Tries                 => intTries
-                );
-				
+--strSqlDynamic   := 'alter table CSMRT_OWNER.UM_F_FA_STDNT_PELL_ACTN enable constraint PK_UM_F_FA_STDNT_PELL_ACTN';
+--strSqlCommand   := 'SMT_UTILITY.EXECUTE_IMMEDIATE: ' || strSqlDynamic;
+--COMMON_OWNER.SMT_UTILITY.EXECUTE_IMMEDIATE
+--                (
+--                i_SqlStatement          => strSqlDynamic,
+--                i_MaxTries              => 10,
+--                i_WaitSeconds           => 10,
+--                o_Tries                 => intTries
+--                );
+
 COMMON_OWNER.SMT_INDEX.ALL_REBUILD('CSMRT_OWNER','UM_F_FA_STDNT_PELL_ACTN');
 
 strSqlCommand := 'SMT_PROCESS_LOG.PROCESS_SUCCESS';

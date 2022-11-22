@@ -1,4 +1,10 @@
-CREATE OR REPLACE PROCEDURE             "PS_D_EXT_TST_CMPNT_P" AUTHID CURRENT_USER IS
+DROP PROCEDURE CSMRT_OWNER.PS_D_EXT_TST_CMPNT_P
+/
+
+--
+-- PS_D_EXT_TST_CMPNT_P  (Procedure) 
+--
+CREATE OR REPLACE PROCEDURE CSMRT_OWNER."PS_D_EXT_TST_CMPNT_P" AUTHID CURRENT_USER IS
 
 ------------------------------------------------------------------------
 -- George Adams

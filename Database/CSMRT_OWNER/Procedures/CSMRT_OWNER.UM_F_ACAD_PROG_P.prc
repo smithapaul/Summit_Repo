@@ -1,4 +1,10 @@
-CREATE OR REPLACE PROCEDURE             "UM_F_ACAD_PROG_P" AUTHID CURRENT_USER IS
+DROP PROCEDURE CSMRT_OWNER.UM_F_ACAD_PROG_P
+/
+
+--
+-- UM_F_ACAD_PROG_P  (Procedure) 
+--
+CREATE OR REPLACE PROCEDURE CSMRT_OWNER."UM_F_ACAD_PROG_P" AUTHID CURRENT_USER IS
 
 ------------------------------------------------------------------------
 -- George Adams
@@ -60,15 +66,15 @@ strMessage01    := 'Disabling Indexes for table CSMRT_OWNER.UM_F_ACAD_PROG';
 COMMON_OWNER.SMT_LOG.PUT_MESSAGE(i_Message => strMessage01);
 COMMON_OWNER.SMT_INDEX.ALL_UNUSABLE('CSMRT_OWNER','UM_F_ACAD_PROG');
 
-strSqlDynamic   := 'alter table CSMRT_OWNER.UM_F_ACAD_PROG disable constraint PK_UM_F_ACAD_PROG';
-strSqlCommand   := 'SMT_UTILITY.EXECUTE_IMMEDIATE: ' || strSqlDynamic;
-COMMON_OWNER.SMT_UTILITY.EXECUTE_IMMEDIATE
-                (
-                i_SqlStatement          => strSqlDynamic,
-                i_MaxTries              => 10,
-                i_WaitSeconds           => 10,
-                o_Tries                 => intTries
-                );
+--strSqlDynamic   := 'alter table CSMRT_OWNER.UM_F_ACAD_PROG disable constraint PK_UM_F_ACAD_PROG';
+--strSqlCommand   := 'SMT_UTILITY.EXECUTE_IMMEDIATE: ' || strSqlDynamic;
+--COMMON_OWNER.SMT_UTILITY.EXECUTE_IMMEDIATE
+--                (
+--                i_SqlStatement          => strSqlDynamic,
+--                i_MaxTries              => 10,
+--                i_WaitSeconds           => 10,
+--                o_Tries                 => intTries
+--                );
 
 strMessage01    := 'Inserting data into CSMRT_OWNER.UM_F_ACAD_PROG';
 COMMON_OWNER.SMT_LOG.PUT_MESSAGE(i_Message => strMessage01);
@@ -440,7 +446,8 @@ select /*+ parallel(8) inline no_merge */
        G6.PROG_COUNT
 from G6
 )
-select /*+ parallel(8) inline use_hash(P1) */
+--select /*+ parallel(8) inline use_hash(P1) */     -- Feb 2022 
+select /*+ parallel(8) inline use_hash(P1) no_use_nl(C1 C2 C3 I1 P1 P2 P3 P4 P5 T1 T2 T3 T4 T5 T6 T7) */
        G7.INSTITUTION,
        G7.ACAD_CAREER,
        G7.ACAD_TERM,
@@ -582,15 +589,15 @@ COMMON_OWNER.SMT_PROCESS_LOG.PROCESS_DETAIL
 strMessage01    := 'Enabling Indexes for table CSMRT_OWNER.UM_F_ACAD_PROG';
 COMMON_OWNER.SMT_LOG.PUT_MESSAGE(i_Message => strMessage01);
 
-strSqlDynamic   := 'alter table CSMRT_OWNER.UM_F_ACAD_PROG enable constraint PK_UM_F_ACAD_PROG';
-strSqlCommand   := 'SMT_UTILITY.EXECUTE_IMMEDIATE: ' || strSqlDynamic;
-COMMON_OWNER.SMT_UTILITY.EXECUTE_IMMEDIATE
-                (
-                i_SqlStatement          => strSqlDynamic,
-                i_MaxTries              => 10,
-                i_WaitSeconds           => 10,
-                o_Tries                 => intTries
-                );
+--strSqlDynamic   := 'alter table CSMRT_OWNER.UM_F_ACAD_PROG enable constraint PK_UM_F_ACAD_PROG';
+--strSqlCommand   := 'SMT_UTILITY.EXECUTE_IMMEDIATE: ' || strSqlDynamic;
+--COMMON_OWNER.SMT_UTILITY.EXECUTE_IMMEDIATE
+--                (
+--                i_SqlStatement          => strSqlDynamic,
+--                i_MaxTries              => 10,
+--                i_WaitSeconds           => 10,
+--                o_Tries                 => intTries
+--                );
 
 COMMON_OWNER.SMT_INDEX.ALL_REBUILD('CSMRT_OWNER','UM_F_ACAD_PROG');
 

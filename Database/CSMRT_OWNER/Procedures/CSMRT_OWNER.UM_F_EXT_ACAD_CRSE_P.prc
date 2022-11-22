@@ -1,4 +1,10 @@
-CREATE OR REPLACE PROCEDURE             "UM_F_EXT_ACAD_CRSE_P" AUTHID CURRENT_USER IS
+DROP PROCEDURE CSMRT_OWNER.UM_F_EXT_ACAD_CRSE_P
+/
+
+--
+-- UM_F_EXT_ACAD_CRSE_P  (Procedure) 
+--
+CREATE OR REPLACE PROCEDURE CSMRT_OWNER."UM_F_EXT_ACAD_CRSE_P" AUTHID CURRENT_USER IS
 
 ------------------------------------------------------------------------
 -- George Adams
@@ -41,20 +47,6 @@ COMMON_OWNER.SMT_PROCESS_LOG.PROCESS_INIT
                 o_ProcessSid            => intProcessSid
         );
 
-strMessage01    := 'Disabling Indexes for table CSMRT_OWNER.UM_F_EXT_ACAD_CRSE';
-COMMON_OWNER.SMT_LOG.PUT_MESSAGE(i_Message => strMessage01);
-COMMON_OWNER.SMT_INDEX.ALL_UNUSABLE('CSMRT_OWNER','UM_F_EXT_ACAD_CRSE');
-
-strSqlDynamic   := 'alter table CSMRT_OWNER.UM_F_EXT_ACAD_CRSE disable constraint PK_UM_F_EXT_ACAD_CRSE';
-strSqlCommand   := 'SMT_UTILITY.EXECUTE_IMMEDIATE: ' || strSqlDynamic;
-COMMON_OWNER.SMT_UTILITY.EXECUTE_IMMEDIATE
-                (
-                i_SqlStatement          => strSqlDynamic,
-                i_MaxTries              => 10,
-                i_WaitSeconds           => 10,
-                o_Tries                 => intTries
-                );
-				
 strMessage01    := 'Truncating table CSMRT_OWNER.UM_F_EXT_ACAD_CRSE';
 COMMON_OWNER.SMT_LOG.PUT_MESSAGE(i_Message => strMessage01);
 
@@ -68,11 +60,25 @@ COMMON_OWNER.SMT_UTILITY.EXECUTE_IMMEDIATE
                 o_Tries                 => intTries
                 );
 
+strMessage01    := 'Disabling Indexes for table CSMRT_OWNER.UM_F_EXT_ACAD_CRSE';
+COMMON_OWNER.SMT_LOG.PUT_MESSAGE(i_Message => strMessage01);
+COMMON_OWNER.SMT_INDEX.ALL_UNUSABLE('CSMRT_OWNER','UM_F_EXT_ACAD_CRSE');
+
+--strSqlDynamic   := 'alter table CSMRT_OWNER.UM_F_EXT_ACAD_CRSE disable constraint PK_UM_F_EXT_ACAD_CRSE';
+--strSqlCommand   := 'SMT_UTILITY.EXECUTE_IMMEDIATE: ' || strSqlDynamic;
+--COMMON_OWNER.SMT_UTILITY.EXECUTE_IMMEDIATE
+--                (
+--                i_SqlStatement          => strSqlDynamic,
+--                i_MaxTries              => 10,
+--                i_WaitSeconds           => 10,
+--                o_Tries                 => intTries
+--                );
+
 strMessage01    := 'Inserting data into CSMRT_OWNER.UM_F_EXT_ACAD_CRSE';
 COMMON_OWNER.SMT_LOG.PUT_MESSAGE(i_Message => strMessage01);
 
-strSqlCommand   := 'insert into CSMRT_OWNER.UM_F_EXT_ACAD_CRSE';				
-insert /*+ append */ into UM_F_EXT_ACAD_CRSE 
+strSqlCommand   := 'insert into CSMRT_OWNER.UM_F_EXT_ACAD_CRSE';
+insert /*+ append enable_parallel_dml parallel(8) */ into UM_F_EXT_ACAD_CRSE
 WITH G
      AS (SELECT SETID,
                 GRADING_SCHEME,
@@ -92,13 +98,13 @@ SELECT EMPLID           PERSON_ID,
        C.SRC_SYS_ID,
 	   INSTITUTION             INSTITUTION_CD,
        nvl(C.DESCR, '-')        EXT_COURSE_DESCR,
-       nvl(P.PERSON_SID,2147483646) PERSON_SID, 
+       nvl(P.PERSON_SID,2147483646) PERSON_SID,
        nvl (ORG.EXT_ORG_SID, 2147483646) EXT_ORG_SID,
        nvl(I.INSTITUTION_SID, 2147483646) INSTITUTION_SID,
-       nvl(CAR.EXT_ACAD_CAR_SID, 2147483646) EXT_ACAD_CAR_SID, 
-       nvl(S.TST_DATA_SRC_SID, 2147483646) TST_DATA_SRC_SID, 
-       nvl(UT.ACAD_UNIT_TYPE_SID, 2147483646) ACAD_UNIT_TYPE_SID, 
-       nvl(LVL.EXT_ACAD_LVL_SID, 2147483646) EXT_ACAD_LVL_SID, 
+       nvl(CAR.EXT_ACAD_CAR_SID, 2147483646) EXT_ACAD_CAR_SID,
+       nvl(S.TST_DATA_SRC_SID, 2147483646) TST_DATA_SRC_SID,
+       nvl(UT.ACAD_UNIT_TYPE_SID, 2147483646) ACAD_UNIT_TYPE_SID,
+       nvl(LVL.EXT_ACAD_LVL_SID, 2147483646) EXT_ACAD_LVL_SID,
        nvl (T.EXT_TERM_SID, 2147483646) EXT_TERM_SID,
        BEGIN_DT,
        END_DT,
@@ -128,10 +134,10 @@ SELECT EMPLID           PERSON_ID,
 	   UNT_TAKEN,
 	   LASTUPDDTTM,
        LASTUPDOPRID,
-       'N' LOAD_ERROR, 
-       'S' DATA_ORIGIN, 
-       SYSDATE CREATED_EW_DTTM, 
-       SYSDATE LASTUPD_EW_DTTM, 
+       'N' LOAD_ERROR,
+       'S' DATA_ORIGIN,
+       SYSDATE CREATED_EW_DTTM,
+       SYSDATE LASTUPD_EW_DTTM,
        1234 BATCH_SID
   FROM CSSTG_OWNER.PS_EXT_COURSE  C
   LEFT OUTER JOIN G
@@ -148,37 +154,37 @@ SELECT EMPLID           PERSON_ID,
    and C.SRC_SYS_ID = ORG.SRC_SYS_ID
    and ORG.DATA_ORIGIN <> 'D'
   LEFT OUTER JOIN CSMRT_OWNER.PS_D_INSTITUTION I
-    on C.INSTITUTION = I.INSTITUTION_CD  
+    on C.INSTITUTION = I.INSTITUTION_CD
    and C.SRC_SYS_ID = I.SRC_SYS_ID
    and I.DATA_ORIGIN <> 'D'
   LEFT OUTER JOIN CSMRT_OWNER.PS_D_EXT_ACAD_CAR CAR
-    on C.EXT_CAREER = CAR.EXT_ACAD_CAR_ID  
+    on C.EXT_CAREER = CAR.EXT_ACAD_CAR_ID
    and C.SRC_SYS_ID = CAR.SRC_SYS_ID
-   and CAR.DATA_ORIGIN <> 'D'   
+   and CAR.DATA_ORIGIN <> 'D'
   LEFT OUTER JOIN CSMRT_OWNER.PS_D_TST_DATA_SRC S
     on C.LS_DATA_SOURCE = S.TST_DATA_SRC_ID
    and C.SRC_SYS_ID = S.SRC_SYS_ID
   LEFT OUTER JOIN CSMRT_OWNER.PS_D_ACAD_UNIT_TYP UT
     on C.UNT_TYPE = UT.ACAD_UNIT_TYPE_ID
    and C.SRC_SYS_ID = UT.SRC_SYS_ID
-   and UT.DATA_ORIGIN <> 'D'  
+   and UT.DATA_ORIGIN <> 'D'
   LEFT OUTER JOIN CSMRT_OWNER.PS_D_EXT_ACAD_LVL LVL
     on C.EXT_ACAD_LEVEL = LVL.EXT_ACAD_LVL_ID
    and C.SRC_SYS_ID = LVL.SRC_SYS_ID
-   and LVL.DATA_ORIGIN <> 'D'  
+   and LVL.DATA_ORIGIN <> 'D'
   LEFT OUTER JOIN CSMRT_OWNER.PS_D_EXT_TERM T
     on T.EXT_TERM_TYPE_ID = 'QTR'
    and C.EXT_TERM = T.EXT_TERM_ID
    and C.SRC_SYS_ID = T.SRC_SYS_ID
-   and T.DATA_ORIGIN <> 'D' 
+   and T.DATA_ORIGIN <> 'D'
   LEFT OUTER JOIN CSMRT_OWNER.UM_D_XLATITEM X1
     on 'CAN_TRNS_TYPE' = X1.FIELDNAME
    and C.CAN_TRNS_TYPE = X1.FIELDVALUE
-   and C.SRC_SYS_ID = X1.SRC_SYS_ID 
+   and C.SRC_SYS_ID = X1.SRC_SYS_ID
   LEFT OUTER JOIN CSMRT_OWNER.UM_D_XLATITEM X2
     on 'COURSE_LEVEL' = X2.FIELDNAME
    and C.COURSE_LEVEL = X2.FIELDVALUE
-   and C.SRC_SYS_ID = X2.SRC_SYS_ID 
+   and C.SRC_SYS_ID = X2.SRC_SYS_ID
   LEFT OUTER JOIN CSMRT_OWNER.UM_D_XLATITEM X3
     on 'EXT_CRSE_TYPE' = X3.FIELDNAME
    and C.EXT_CRSE_TYPE = X3.FIELDVALUE
@@ -218,16 +224,16 @@ COMMON_OWNER.SMT_PROCESS_LOG.PROCESS_DETAIL
 strMessage01    := 'Enabling Indexes for table CSMRT_OWNER.UM_F_EXT_ACAD_CRSE';
 COMMON_OWNER.SMT_LOG.PUT_MESSAGE(i_Message => strMessage01);
 
-strSqlDynamic   := 'alter table CSMRT_OWNER.UM_F_EXT_ACAD_CRSE enable constraint PK_UM_F_EXT_ACAD_CRSE';
-strSqlCommand   := 'SMT_UTILITY.EXECUTE_IMMEDIATE: ' || strSqlDynamic;
-COMMON_OWNER.SMT_UTILITY.EXECUTE_IMMEDIATE
-                (
-                i_SqlStatement          => strSqlDynamic,
-                i_MaxTries              => 10,
-                i_WaitSeconds           => 10,
-                o_Tries                 => intTries
-                );
-				
+--strSqlDynamic   := 'alter table CSMRT_OWNER.UM_F_EXT_ACAD_CRSE enable constraint PK_UM_F_EXT_ACAD_CRSE';
+--strSqlCommand   := 'SMT_UTILITY.EXECUTE_IMMEDIATE: ' || strSqlDynamic;
+--COMMON_OWNER.SMT_UTILITY.EXECUTE_IMMEDIATE
+--                (
+--                i_SqlStatement          => strSqlDynamic,
+--                i_MaxTries              => 10,
+--                i_WaitSeconds           => 10,
+--                o_Tries                 => intTries
+--                );
+
 COMMON_OWNER.SMT_INDEX.ALL_REBUILD('CSMRT_OWNER','UM_F_EXT_ACAD_CRSE');
 
 strSqlCommand := 'SMT_PROCESS_LOG.PROCESS_SUCCESS';

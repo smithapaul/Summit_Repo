@@ -1,4 +1,10 @@
-CREATE OR REPLACE PROCEDURE             "PS_LOAN_ORIG_DTL_P" AUTHID CURRENT_USER IS
+DROP PROCEDURE CSMRT_OWNER.PS_LOAN_ORIG_DTL_P
+/
+
+--
+-- PS_LOAN_ORIG_DTL_P  (Procedure) 
+--
+CREATE OR REPLACE PROCEDURE CSMRT_OWNER."PS_LOAN_ORIG_DTL_P" AUTHID CURRENT_USER IS
 
 ------------------------------------------------------------------------
 -- George Adams

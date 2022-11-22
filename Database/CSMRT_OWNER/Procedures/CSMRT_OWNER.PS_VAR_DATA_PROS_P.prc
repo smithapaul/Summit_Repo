@@ -1,4 +1,10 @@
-CREATE OR REPLACE PROCEDURE             "PS_VAR_DATA_PROS_P" AUTHID CURRENT_USER IS
+DROP PROCEDURE CSMRT_OWNER.PS_VAR_DATA_PROS_P
+/
+
+--
+-- PS_VAR_DATA_PROS_P  (Procedure) 
+--
+CREATE OR REPLACE PROCEDURE CSMRT_OWNER."PS_VAR_DATA_PROS_P" AUTHID CURRENT_USER IS
 
 ------------------------------------------------------------------------
 --

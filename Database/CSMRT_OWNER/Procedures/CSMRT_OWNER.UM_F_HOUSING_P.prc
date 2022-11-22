@@ -1,4 +1,10 @@
-CREATE OR REPLACE PROCEDURE             "UM_F_HOUSING_P" AUTHID CURRENT_USER IS
+DROP PROCEDURE CSMRT_OWNER.UM_F_HOUSING_P
+/
+
+--
+-- UM_F_HOUSING_P  (Procedure) 
+--
+CREATE OR REPLACE PROCEDURE CSMRT_OWNER."UM_F_HOUSING_P" AUTHID CURRENT_USER IS
 
 ------------------------------------------------------------------------
 --George Adams
@@ -38,7 +44,7 @@ COMMON_OWNER.SMT_PROCESS_LOG.PROCESS_INIT
                 o_ProcessSid            => intProcessSid
         );
 
-				
+
 strMessage01    := 'Truncating table CSMRT_OWNER.UM_F_HOUSING';
 COMMON_OWNER.SMT_LOG.PUT_MESSAGE(i_Message => strMessage01);
 
@@ -56,20 +62,21 @@ strMessage01    := 'Disabling Indexes for table CSMRT_OWNER.UM_F_HOUSING';
 COMMON_OWNER.SMT_LOG.PUT_MESSAGE(i_Message => strMessage01);
 COMMON_OWNER.SMT_INDEX.ALL_UNUSABLE('CSMRT_OWNER','UM_F_HOUSING');
 
-strSqlDynamic   := 'alter table CSMRT_OWNER.UM_F_HOUSING disable constraint PK_UM_F_HOUSING';
-strSqlCommand   := 'SMT_UTILITY.EXECUTE_IMMEDIATE: ' || strSqlDynamic;
-COMMON_OWNER.SMT_UTILITY.EXECUTE_IMMEDIATE
-                (
-                i_SqlStatement          => strSqlDynamic,
-                i_MaxTries              => 10,
-                i_WaitSeconds           => 10,
-                o_Tries                 => intTries
-                );
+--strSqlDynamic   := 'alter table CSMRT_OWNER.UM_F_HOUSING disable constraint PK_UM_F_HOUSING';
+--strSqlCommand   := 'SMT_UTILITY.EXECUTE_IMMEDIATE: ' || strSqlDynamic;
+--COMMON_OWNER.SMT_UTILITY.EXECUTE_IMMEDIATE
+--                (
+--                i_SqlStatement          => strSqlDynamic,
+--                i_MaxTries              => 10,
+--                i_WaitSeconds           => 10,
+--                o_Tries                 => intTries
+--                );
+
 strMessage01    := 'Inserting data into CSMRT_OWNER.UM_F_HOUSING';
 COMMON_OWNER.SMT_LOG.PUT_MESSAGE(i_Message => strMessage01);
 
-strSqlCommand   := 'insert into CSMRT_OWNER.UM_F_HOUSING';				
-insert /*+ append */ into CSMRT_OWNER.UM_F_HOUSING 
+strSqlCommand   := 'insert into CSMRT_OWNER.UM_F_HOUSING';
+insert /*+ append enable_parallel_dml parallel(8) */ into CSMRT_OWNER.UM_F_HOUSING
   with Q1 as (
 select INSTITUTION INSTITUTION_CD, EMPLID PERSON_ID, COMMENT1 ACAD_YEAR_LD, SRC_SYS_ID,
        APPLIES_AT_DATE APPLIED_DT, COMPLETED_DT, AGREEMENT_DATE AGREEMENT_DT,
@@ -83,7 +90,7 @@ select Q1.INSTITUTION_CD, Q1.PERSON_ID, Q1.ACAD_YEAR_LD, Q1.SRC_SYS_ID,
             then to_char(to_number(substr(HOUSING_TERM_LD,8,2))+10)||'10'
             when upper(HOUSING_TERM_LD) like 'SPRING%'
             then to_char(to_number(substr(HOUSING_TERM_LD,10,2)+10))||'30'
-       else '-' end HOUSING_TERM_CD,    -- Fall or Spring 
+       else '-' end HOUSING_TERM_CD,    -- Fall or Spring
        HOUSING_TERM_LD, HOUSING_LOAD_DT
   from Q1),
     Q3 as (
@@ -92,7 +99,7 @@ select Q2.INSTITUTION_CD, Q2.PERSON_ID, Q2.ACAD_YEAR_LD, Q2.SRC_SYS_ID,
        substr(trim(Q2.HOUSING_TERM_LD),-4,4) HOUSING_TERM_CD,
        Q2.HOUSING_TERM_LD, Q2.HOUSING_LOAD_DT
   from Q2
- where Q2.HOUSING_TERM_CD = '-')    -- Full Year 
+ where Q2.HOUSING_TERM_CD = '-')    -- Full Year
 select Q2.INSTITUTION_CD, Q2.PERSON_ID, Q2.ACAD_YEAR_LD, Q2.HOUSING_TERM_CD, Q2.SRC_SYS_ID,
        nvl(I.INSTITUTION_SID,2147483646) INSTITUTION_SID,
        nvl(T.TERM_SID,2147483646) TERM_SID,
@@ -156,11 +163,11 @@ COMMON_OWNER.SMT_PROCESS_LOG.PROCESS_DETAIL
 strMessage01    := 'Inserting data into CSMRT_OWNER.UM_F_HOUSING';
 COMMON_OWNER.SMT_LOG.PUT_MESSAGE(i_Message => strMessage01);
 
-strSqlCommand   := 'insert into CSMRT_OWNER.UM_F_HOUSING';				
+strSqlCommand   := 'insert into CSMRT_OWNER.UM_F_HOUSING';
 
-insert into CSMRT_OWNER.UM_F_HOUSING
-select '-' INSTITUTION_CD, '-' PERSON_ID, '-' ACAD_YEAR_LD, '-' HOUSING_TERM_CD, 'CS90' SRC_SYS_ID, 
-       2147483646 INSTITUTION_SID, 2147483646 TERM_SID, 2147483646 PERSON_SID, NULL APPLIED_DT, NULL COMPLETED_DT, NULL AGREEMENT_DT, '-' HOUSING_TERM_LD, NULL HOUSING_LOAD_DT, 
+insert /*+ append enable_parallel_dml parallel(8) */ into CSMRT_OWNER.UM_F_HOUSING
+select '-' INSTITUTION_CD, '-' PERSON_ID, '-' ACAD_YEAR_LD, '-' HOUSING_TERM_CD, 'CS90' SRC_SYS_ID,
+       2147483646 INSTITUTION_SID, 2147483646 TERM_SID, 2147483646 PERSON_SID, NULL APPLIED_DT, NULL COMPLETED_DT, NULL AGREEMENT_DT, '-' HOUSING_TERM_LD, NULL HOUSING_LOAD_DT,
        'S' DATA_ORIGIN, SYSDATE CREATED_EW_DTTM, SYSDATE LASTUPD_EW_DTTM
   from DUAL
 ;
@@ -185,16 +192,16 @@ COMMON_OWNER.SMT_PROCESS_LOG.PROCESS_DETAIL
 strMessage01    := 'Enabling Indexes for table CSMRT_OWNER.UM_F_HOUSING';
 COMMON_OWNER.SMT_LOG.PUT_MESSAGE(i_Message => strMessage01);
 
-strSqlDynamic   := 'alter table CSMRT_OWNER.UM_F_HOUSING enable constraint PK_UM_F_HOUSING';
-strSqlCommand   := 'SMT_UTILITY.EXECUTE_IMMEDIATE: ' || strSqlDynamic;
-COMMON_OWNER.SMT_UTILITY.EXECUTE_IMMEDIATE
-                (
-                i_SqlStatement          => strSqlDynamic,
-                i_MaxTries              => 10,
-                i_WaitSeconds           => 10,
-                o_Tries                 => intTries
-                );
-				
+--strSqlDynamic   := 'alter table CSMRT_OWNER.UM_F_HOUSING enable constraint PK_UM_F_HOUSING';
+--strSqlCommand   := 'SMT_UTILITY.EXECUTE_IMMEDIATE: ' || strSqlDynamic;
+--COMMON_OWNER.SMT_UTILITY.EXECUTE_IMMEDIATE
+--                (
+--                i_SqlStatement          => strSqlDynamic,
+--                i_MaxTries              => 10,
+--                i_WaitSeconds           => 10,
+--                o_Tries                 => intTries
+--                );
+
 COMMON_OWNER.SMT_INDEX.ALL_REBUILD('CSMRT_OWNER','UM_F_HOUSING');
 
 strSqlCommand := 'SMT_PROCESS_LOG.PROCESS_SUCCESS';

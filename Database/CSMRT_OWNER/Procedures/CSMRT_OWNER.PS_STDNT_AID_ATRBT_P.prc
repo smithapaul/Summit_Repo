@@ -1,4 +1,10 @@
-CREATE OR REPLACE PROCEDURE             "PS_STDNT_AID_ATRBT_P" AUTHID CURRENT_USER IS
+DROP PROCEDURE CSMRT_OWNER.PS_STDNT_AID_ATRBT_P
+/
+
+--
+-- PS_STDNT_AID_ATRBT_P  (Procedure) 
+--
+CREATE OR REPLACE PROCEDURE CSMRT_OWNER."PS_STDNT_AID_ATRBT_P" AUTHID CURRENT_USER IS
 
 ------------------------------------------------------------------------
 -- George Adams

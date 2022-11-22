@@ -1,4 +1,10 @@
-CREATE OR REPLACE PROCEDURE             "UM_D_TRANSFER_DICT_P" AUTHID CURRENT_USER IS
+DROP PROCEDURE CSMRT_OWNER.UM_D_TRANSFER_DICT_P
+/
+
+--
+-- UM_D_TRANSFER_DICT_P  (Procedure) 
+--
+CREATE OR REPLACE PROCEDURE CSMRT_OWNER."UM_D_TRANSFER_DICT_P" AUTHID CURRENT_USER IS
 
 ------------------------------------------------------------------------
 -- George Adams
@@ -91,7 +97,8 @@ select /*+ inline parallel(8) */
        DATA_ORIGIN,
        row_number() over (partition by INSTITUTION, TRNSFR_SRC_ID, COMP_SUBJECT_AREA, SRC_SYS_ID
                               order by DATA_ORIGIN desc, (case when EFFDT > trunc(SYSDATE) then to_date('01-JAN-1800') else EFFDT end) desc) Q_ORDER
-  from CSSTG_OWNER.PS_TRNSFR_SUBJ), 
+  from CSSTG_OWNER.PS_TRNSFR_SUBJ
+    where DATA_ORIGIN <> 'D'), 
        Q2 as (  
 select /*+ inline parallel(8) */ 
        INSTITUTION INSTITUTION_CD, TRNSFR_SRC_ID, COMP_SUBJECT_AREA, TRNSFR_EQVLNCY_CMP, SRC_SYS_ID, 
@@ -100,7 +107,8 @@ select /*+ inline parallel(8) */
        DATA_ORIGIN,
        row_number() over (partition by INSTITUTION, TRNSFR_SRC_ID, COMP_SUBJECT_AREA, TRNSFR_EQVLNCY_CMP, SRC_SYS_ID
                               order by DATA_ORIGIN desc, (case when EFFDT > trunc(SYSDATE) then to_date('01-JAN-1800') else EFFDT end) desc) Q_ORDER
-  from CSSTG_OWNER.PS_TRNSFR_COMP), 
+  from CSSTG_OWNER.PS_TRNSFR_COMP
+  where DATA_ORIGIN <> 'D'), 
        Q3 as (  
 select /*+ inline parallel(8) */ 
        INSTITUTION INSTITUTION_CD, TRNSFR_SRC_ID, COMP_SUBJECT_AREA, TRNSFR_EQVLNCY_CMP, TRNSFR_CMP_SEQ, SRC_SYS_ID,
@@ -109,7 +117,8 @@ select /*+ inline parallel(8) */
        DATA_ORIGIN, 
        row_number() over (partition by INSTITUTION, TRNSFR_SRC_ID, COMP_SUBJECT_AREA, TRNSFR_EQVLNCY_CMP, SRC_SYS_ID
                               order by DATA_ORIGIN desc, (case when EFFDT > trunc(SYSDATE) then to_date('01-JAN-1800') else EFFDT end) desc, TRNSFR_CMP_SEQ desc) Q_ORDER
-  from CSSTG_OWNER.PS_TRNSFR_FROM), 
+  from CSSTG_OWNER.PS_TRNSFR_FROM
+  where DATA_ORIGIN <> 'D'), 
        Q4 as (  
 select /*+ inline parallel(8) */ 
        INSTITUTION INSTITUTION_CD, TRNSFR_SRC_ID, COMP_SUBJECT_AREA, TRNSFR_EQVLNCY_CMP, CRSE_ID UM_CRSE_ID, SRC_SYS_ID,
@@ -117,7 +126,8 @@ select /*+ inline parallel(8) */
        DATA_ORIGIN, 
        row_number() over (partition by INSTITUTION, TRNSFR_SRC_ID, COMP_SUBJECT_AREA, TRNSFR_EQVLNCY_CMP, CRSE_ID, SRC_SYS_ID
                               order by DATA_ORIGIN desc, (case when EFFDT > trunc(SYSDATE) then to_date('01-JAN-1800') else EFFDT end) desc) Q_ORDER
-  from CSSTG_OWNER.PS_TRNSFR_TO), 
+  from CSSTG_OWNER.PS_TRNSFR_TO
+  where DATA_ORIGIN <> 'D'), 
        S as (
 select /*+ inline parallel(8) */ 
        Q1.INSTITUTION_CD, Q1.TRNSFR_SRC_ID, Q1.COMP_SUBJECT_AREA, Q2.TRNSFR_EQVLNCY_CMP, Q3.TRNSFR_CMP_SEQ, nvl(Q4.UM_CRSE_ID,'-') CRSE_ID, Q1.SRC_SYS_ID, 
@@ -141,7 +151,9 @@ select /*+ inline parallel(8) */
    and Q1.TRNSFR_SRC_ID = Q2.TRNSFR_SRC_ID
    and Q1.COMP_SUBJECT_AREA = Q2.COMP_SUBJECT_AREA
    and Q1.SRC_SYS_ID = Q2.SRC_SYS_ID
-   and Q2.Q_ORDER = 1
+   --and Q2.Q_ORDER = 1
+   and Q1.Q_ORDER = 1  
+   and Q1.EFFDT = Q2.EFFDT 
   join Q3
     on Q2.INSTITUTION_CD = Q3.INSTITUTION_CD
    and Q2.TRNSFR_SRC_ID = Q3.TRNSFR_SRC_ID
@@ -149,14 +161,15 @@ select /*+ inline parallel(8) */
    and Q2.TRNSFR_EQVLNCY_CMP = Q3.TRNSFR_EQVLNCY_CMP  
    and Q2.EFFDT = Q3.EFFDT      -- Need??? 
    and Q2.SRC_SYS_ID = Q3.SRC_SYS_ID
-   and Q3.Q_ORDER = 1
-  join Q4               -- outer join???  
+   --and Q3.Q_ORDER = 1
+  left outer join Q4               -- outer join???  
     on Q3.INSTITUTION_CD = Q4.INSTITUTION_CD
    and Q3.TRNSFR_SRC_ID = Q4.TRNSFR_SRC_ID
    and Q3.COMP_SUBJECT_AREA = Q4.COMP_SUBJECT_AREA
    and Q3.TRNSFR_EQVLNCY_CMP = Q4.TRNSFR_EQVLNCY_CMP  
    and Q3.SRC_SYS_ID = Q4.SRC_SYS_ID
-   and Q4.Q_ORDER = 1
+   --and Q4.Q_ORDER = 1
+   and Q3.EFFDT = Q4.EFFDT  
   left outer join UM_D_CRSE C
     on Q4.UM_CRSE_ID = C.CRSE_CD
    and Q4.UM_CRSE_OFFER_NBR = C.CRSE_OFFER_NUM
@@ -168,7 +181,7 @@ select /*+ inline parallel(8) */
    and Q3.SCHOOL_CRSE_NBR = E.SCHOOL_CRSE_NBR 
    and Q3.SRC_SYS_ID = E.SRC_SYS_ID
    and E.DATA_ORIGIN <> 'D'
-  left outer join PS_D_EXT_ORG O
+  inner join PS_D_EXT_ORG O
     on Q3.TRNSFR_SRC_ID = O.EXT_ORG_ID 
    and Q3.SRC_SYS_ID = O.SRC_SYS_ID
    and O.DATA_ORIGIN <> 'D'

@@ -1,4 +1,10 @@
-CREATE OR REPLACE PROCEDURE             "RoleDefnStage" AUTHID CURRENT_USER IS
+DROP PROCEDURE CSMRT_OWNER."RoleDefnStage"
+/
+
+--
+-- "RoleDefnStage"  (Procedure) 
+--
+CREATE OR REPLACE PROCEDURE CSMRT_OWNER."RoleDefnStage" AUTHID CURRENT_USER IS
 
 ------------------------------------------------------------------------
 -- Greg Kampf 08/25/2016

@@ -1,4 +1,10 @@
-CREATE OR REPLACE PROCEDURE             "PS_D_ADMIN_FUNC_P" AUTHID CURRENT_USER IS
+DROP PROCEDURE CSMRT_OWNER.PS_D_ADMIN_FUNC_P
+/
+
+--
+-- PS_D_ADMIN_FUNC_P  (Procedure) 
+--
+CREATE OR REPLACE PROCEDURE CSMRT_OWNER."PS_D_ADMIN_FUNC_P" AUTHID CURRENT_USER IS
 
 ------------------------------------------------------------------------
 -- George Adams

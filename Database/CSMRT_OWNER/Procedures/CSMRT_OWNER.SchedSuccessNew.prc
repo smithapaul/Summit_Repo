@@ -1,4 +1,10 @@
-CREATE OR REPLACE PROCEDURE             "SchedSuccessNew" 
+DROP PROCEDURE CSMRT_OWNER."SchedSuccessNew"
+/
+
+--
+-- "SchedSuccessNew"  (Procedure) 
+--
+CREATE OR REPLACE PROCEDURE CSMRT_OWNER."SchedSuccessNew" 
 
         (
                i_MartId                in  Varchar2

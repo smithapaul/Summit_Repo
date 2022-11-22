@@ -1,4 +1,10 @@
-CREATE OR REPLACE PROCEDURE             "PS_SSR_STDGRD_HONR_P" AUTHID CURRENT_USER IS
+DROP PROCEDURE CSMRT_OWNER.PS_SSR_STDGRD_HONR_P
+/
+
+--
+-- PS_SSR_STDGRD_HONR_P  (Procedure) 
+--
+CREATE OR REPLACE PROCEDURE CSMRT_OWNER."PS_SSR_STDGRD_HONR_P" AUTHID CURRENT_USER IS
 
 ------------------------------------------------------------------------
 -- James Doucette

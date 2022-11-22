@@ -1,0 +1,566 @@
+DROP PROCEDURE CSMRT_OWNER.AM_PS_RQ_GRP_TBL_P
+/
+
+--
+-- AM_PS_RQ_GRP_TBL_P  (Procedure) 
+--
+CREATE OR REPLACE PROCEDURE CSMRT_OWNER.AM_PS_RQ_GRP_TBL_P IS
+
+------------------------------------------------------------------------
+-- George Adams
+--
+-- Loads stage table PS_RQ_GRP_TBL from PeopleSoft table PS_RQ_GRP_TBL.
+--
+-- V01  SMT-xxxx 8/18/2017,    Preethi Lodha
+--                             Converted from DataStage
+--
+------------------------------------------------------------------------
+
+        strMartId                       Varchar2(50)    := 'CSW';
+        strProcessName                  Varchar2(100)   := 'AM_PS_RQ_GRP_TBL';
+        intProcessSid                   Integer;
+        dtProcessStart                  Date            := SYSDATE;
+        strMessage01                    Varchar2(4000);
+        strMessage02                    Varchar2(512);
+        strMessage03                    Varchar2(512)   :='';
+        strNewLine                      Varchar2(2)     := chr(13) || chr(10);
+        strSqlCommand                   Varchar2(32767) :='';
+        strSqlDynamic                   Varchar2(32767) :='';
+        strClientInfo                   Varchar2(100);
+        intRowCount                     Integer;
+        intTotalRowCount                Integer         := 0;
+        numSqlCode                      Number;
+        strSqlErrm                      Varchar2(4000);
+        intTries                        Integer;
+
+BEGIN
+strSqlCommand := 'DBMS_APPLICATION_INFO.SET_CLIENT_INFO';
+DBMS_APPLICATION_INFO.SET_CLIENT_INFO (strProcessName);
+
+strSqlCommand := 'SMT_PROCESS_LOG.PROCESS_INIT';
+COMMON_OWNER.SMT_PROCESS_LOG.PROCESS_INIT
+        (
+                i_MartId                => strMartId,
+                i_ProcessName           => strProcessName,
+                i_ProcessStartTime      => dtProcessStart,
+                o_ProcessSid            => intProcessSid
+        );
+
+strMessage01    := 'Updating AMSTG_OWNER.UM_STAGE_JOBS';
+COMMON_OWNER.SMT_LOG.PUT_MESSAGE(i_Message => strMessage01);
+
+
+strSqlCommand   := 'update START_DT on AMSTG_OWNER.UM_STAGE_JOBS';
+update AMSTG_OWNER.UM_STAGE_JOBS
+   set TABLE_STATUS = 'Reading',
+       START_DT = SYSDATE,
+       END_DT = NULL
+ where TABLE_NAME = 'PS_RQ_GRP_TBL'
+;
+
+strSqlCommand := 'commit';
+commit;
+
+
+strSqlCommand   := 'update TABLE_STATUS on AMSTG_OWNER.UM_STAGE_JOBS';
+update AMSTG_OWNER.UM_STAGE_JOBS
+   set TABLE_STATUS = 'Truncating',
+       NEW_MAX_SCN = (select /*+ full(S) */ max(ORA_ROWSCN) from SYSADM.PS_RQ_GRP_TBL@AMSOURCE S)
+ where TABLE_NAME = 'PS_RQ_GRP_TBL'
+;
+
+strSqlCommand := 'commit';
+commit;
+
+
+strSqlDynamic   := 'truncate table AMSTG_OWNER.PS_T_RQ_GRP_TBL';
+strSqlCommand   := 'SMT_UTILITY.EXECUTE_IMMEDIATE: ' || strSqlDynamic;
+COMMON_OWNER.SMT_UTILITY.EXECUTE_IMMEDIATE
+                (
+                i_SqlStatement          => strSqlDynamic,
+                i_MaxTries              => 10,
+                i_WaitSeconds           => 10,
+                o_Tries                 => intTries
+                );
+
+
+strSqlCommand   := 'Loading temp table for AMSTG_OWNER.UM_STAGE_JOBS';
+update AMSTG_OWNER.UM_STAGE_JOBS
+   set TABLE_STATUS = 'Loading'
+ where TABLE_NAME = 'PS_RQ_GRP_TBL'
+;
+
+strSqlCommand := 'commit';
+commit;
+
+
+strSqlCommand := 'insert';
+INSERT /*+ append */
+      INTO  AMSTG_OWNER.PS_T_RQ_GRP_TBL
+   SELECT /*+ full(S) */
+         RQRMNT_GROUP,
+          EFFDT,
+          'CS90' SRC_SYS_ID,
+          EFF_STATUS,
+          DESCR,
+          DESCRSHORT,
+          RQRMNT_USEAGE,
+          INSTITUTION,
+          ACAD_CAREER,
+          ACAD_GROUP,
+          ACAD_PROG,
+          ACAD_PLAN,
+          ACAD_SUB_PLAN,
+          ACAD_CAREER_INC,
+          ACAD_PROG_INC,
+          ACAD_PLAN_INC,
+          ACAD_SUBPLAN_INC,
+          SUBJECT,
+          CATALOG_NBR,
+          RQRMNT_LIST_SEQ,
+          RQ_CONNECT_TYPE,
+          SPECIAL_PROCESSING,
+          MIN_UNITS_REQD,
+          MIN_CRSES_REQD,
+          GRADE_POINTS_MIN,
+          GPA_REQUIRED,
+          REQ_CRSSELECT_METH,
+          CREDIT_INCL_MODE,
+          RQ_REPORTING,
+          SAA_DISPLAY_GPA,
+          SAA_DISPLAY_UNITS,
+          SAA_DISPLAY_CRSCNT,
+          CONDITION_CODE,
+          CONDITION_OPERATOR,
+          CONDITION_DATA,
+          REQCH_RESOLV_METH,
+          REQCH_STOP_RULE,
+          RQ_MIN_LINES,
+          RQ_MAX_LINES,
+          RQ_PARTITION_SHR,
+          OTH_PLN_SPLN_REQ,
+          PLN_SPLN_RQD_NBR,
+          ENABLE_CATLG_PRINT,
+          OVRD_STD_DESCR,
+          TEST_ID,
+          TEST_COMPONENT,
+          SCORE,
+          SAA_MAX_VALID_AGE,
+          SAA_BEST_TEST_OPT,
+          SAA_HIDE_STATUS,
+          SAA_DESCR80,
+          DESCR254A,
+          '1234' BATCH_SID,
+          TO_CHAR (SUBSTR (TRIM (DESCRLONG), 1, 4000)) DESCRLONG,
+          TO_NUMBER (ORA_ROWSCN) SRC_SCN
+     FROM SYSADM.PS_RQ_GRP_TBL@AMSOURCE;
+strSqlCommand := 'commit';
+commit;
+
+
+strSqlCommand   := 'update TABLE_STATUS on AMSTG_OWNER.UM_STAGE_JOBS';
+update AMSTG_OWNER.UM_STAGE_JOBS
+   set TABLE_STATUS = 'Merging'
+ where TABLE_NAME = 'PS_RQ_GRP_TBL'
+;
+
+strSqlCommand := 'commit';
+commit;
+
+
+strMessage01    := 'Merging data into AMSTG_OWNER.PS_RQ_GRP_TBL';
+COMMON_OWNER.SMT_LOG.PUT_MESSAGE(i_Message => strMessage01);
+
+strSqlCommand   := 'merge into AMSTG_OWNER.PS_RQ_GRP_TBL';
+merge /*+ use_hash(S,T) */ into AMSTG_OWNER.PS_RQ_GRP_TBL T
+using (select /*+ full(S) */
+nvl(trim(RQRMNT_GROUP),'-') RQRMNT_GROUP,
+to_date(to_char(case when EFFDT < '01-JAN-1800' then NULL else EFFDT end,'MM/DD/YYYY HH24:MI:SS'),'MM/DD/YYYY HH24:MI:SS') EFFDT,
+nvl(trim(EFF_STATUS),'-') EFF_STATUS,
+nvl(trim(DESCR),'-') DESCR,
+nvl(trim(DESCRSHORT),'-') DESCRSHORT,
+nvl(trim(RQRMNT_USEAGE),'-') RQRMNT_USEAGE,
+nvl(trim(INSTITUTION),'-') INSTITUTION,
+nvl(trim(ACAD_CAREER),'-') ACAD_CAREER,
+nvl(trim(ACAD_GROUP),'-') ACAD_GROUP,
+nvl(trim(ACAD_PROG),'-') ACAD_PROG,
+nvl(trim(ACAD_PLAN),'-') ACAD_PLAN,
+nvl(trim(ACAD_SUB_PLAN),'-') ACAD_SUB_PLAN,
+nvl(trim(ACAD_CAREER_INC),'-') ACAD_CAREER_INC,
+nvl(trim(ACAD_PROG_INC),'-') ACAD_PROG_INC,
+nvl(trim(ACAD_PLAN_INC),'-') ACAD_PLAN_INC,
+nvl(trim(ACAD_SUBPLAN_INC),'-') ACAD_SUBPLAN_INC,
+nvl(trim(SUBJECT),'-') SUBJECT,
+nvl(trim(CATALOG_NBR),'-') CATALOG_NBR,
+nvl(RQRMNT_LIST_SEQ,0) RQRMNT_LIST_SEQ,
+nvl(trim(RQ_CONNECT_TYPE),'-') RQ_CONNECT_TYPE,
+nvl(trim(SPECIAL_PROCESSING),'-') SPECIAL_PROCESSING,
+nvl(MIN_UNITS_REQD,0) MIN_UNITS_REQD,
+nvl(MIN_CRSES_REQD,0) MIN_CRSES_REQD,
+nvl(GRADE_POINTS_MIN,0) GRADE_POINTS_MIN,
+nvl(GPA_REQUIRED,0) GPA_REQUIRED,
+nvl(trim(REQ_CRSSELECT_METH),'-') REQ_CRSSELECT_METH,
+nvl(trim(CREDIT_INCL_MODE),'-') CREDIT_INCL_MODE,
+nvl(trim(RQ_REPORTING),'-') RQ_REPORTING,
+nvl(trim(SAA_DISPLAY_GPA),'-') SAA_DISPLAY_GPA,
+nvl(trim(SAA_DISPLAY_UNITS),'-') SAA_DISPLAY_UNITS,
+nvl(trim(SAA_DISPLAY_CRSCNT),'-') SAA_DISPLAY_CRSCNT,
+nvl(trim(CONDITION_CODE),'-') CONDITION_CODE,
+nvl(trim(CONDITION_OPERATOR),'-') CONDITION_OPERATOR,
+nvl(trim(CONDITION_DATA),'-') CONDITION_DATA,
+nvl(trim(REQCH_RESOLV_METH),'-') REQCH_RESOLV_METH,
+nvl(trim(REQCH_STOP_RULE),'-') REQCH_STOP_RULE,
+nvl(RQ_MIN_LINES,0) RQ_MIN_LINES,
+nvl(RQ_MAX_LINES,0) RQ_MAX_LINES,
+nvl(trim(RQ_PARTITION_SHR),'-') RQ_PARTITION_SHR,
+nvl(trim(OTH_PLN_SPLN_REQ),'-') OTH_PLN_SPLN_REQ,
+nvl(PLN_SPLN_RQD_NBR,0) PLN_SPLN_RQD_NBR,
+nvl(trim(ENABLE_CATLG_PRINT),'-') ENABLE_CATLG_PRINT,
+nvl(trim(OVRD_STD_DESCR),'-') OVRD_STD_DESCR,
+nvl(trim(TEST_ID),'-') TEST_ID,
+nvl(trim(TEST_COMPONENT),'-') TEST_COMPONENT,
+nvl(SCORE,0) SCORE,
+nvl(SAA_MAX_VALID_AGE,0) SAA_MAX_VALID_AGE,
+nvl(trim(SAA_BEST_TEST_OPT),'-') SAA_BEST_TEST_OPT,
+nvl(trim(SAA_HIDE_STATUS),'-') SAA_HIDE_STATUS,
+nvl(trim(SAA_DESCR80),'-') SAA_DESCR80,
+nvl(trim(DESCR254A),'-') DESCR254A,
+DESCRLONG DESCRLONG
+from AMSTG_OWNER.PS_T_RQ_GRP_TBL
+where SRC_SCN > (select OLD_MAX_SCN from AMSTG_OWNER.UM_STAGE_JOBS where TABLE_NAME = 'PS_RQ_GRP_TBL') ) S
+   on (
+T.RQRMNT_GROUP = S.RQRMNT_GROUP and
+T.EFFDT = S.EFFDT and
+T.SRC_SYS_ID = 'CS90')
+when matched then update set
+T.EFF_STATUS = S.EFF_STATUS,
+T.DESCR = S.DESCR,
+T.DESCRSHORT = S.DESCRSHORT,
+T.RQRMNT_USEAGE = S.RQRMNT_USEAGE,
+T.INSTITUTION = S.INSTITUTION,
+T.ACAD_CAREER = S.ACAD_CAREER,
+T.ACAD_GROUP = S.ACAD_GROUP,
+T.ACAD_PROG = S.ACAD_PROG,
+T.ACAD_PLAN = S.ACAD_PLAN,
+T.ACAD_SUB_PLAN = S.ACAD_SUB_PLAN,
+T.ACAD_CAREER_INC = S.ACAD_CAREER_INC,
+T.ACAD_PROG_INC = S.ACAD_PROG_INC,
+T.ACAD_PLAN_INC = S.ACAD_PLAN_INC,
+T.ACAD_SUBPLAN_INC = S.ACAD_SUBPLAN_INC,
+T.SUBJECT = S.SUBJECT,
+T.CATALOG_NBR = S.CATALOG_NBR,
+T.RQRMNT_LIST_SEQ = S.RQRMNT_LIST_SEQ,
+T.RQ_CONNECT_TYPE = S.RQ_CONNECT_TYPE,
+T.SPECIAL_PROCESSING = S.SPECIAL_PROCESSING,
+T.MIN_UNITS_REQD = S.MIN_UNITS_REQD,
+T.MIN_CRSES_REQD = S.MIN_CRSES_REQD,
+T.GRADE_POINTS_MIN = S.GRADE_POINTS_MIN,
+T.GPA_REQUIRED = S.GPA_REQUIRED,
+T.REQ_CRSSELECT_METH = S.REQ_CRSSELECT_METH,
+T.CREDIT_INCL_MODE = S.CREDIT_INCL_MODE,
+T.RQ_REPORTING = S.RQ_REPORTING,
+T.SAA_DISPLAY_GPA = S.SAA_DISPLAY_GPA,
+T.SAA_DISPLAY_UNITS = S.SAA_DISPLAY_UNITS,
+T.SAA_DISPLAY_CRSCNT = S.SAA_DISPLAY_CRSCNT,
+T.CONDITION_CODE = S.CONDITION_CODE,
+T.CONDITION_OPERATOR = S.CONDITION_OPERATOR,
+T.CONDITION_DATA = S.CONDITION_DATA,
+T.REQCH_RESOLV_METH = S.REQCH_RESOLV_METH,
+T.REQCH_STOP_RULE = S.REQCH_STOP_RULE,
+T.RQ_MIN_LINES = S.RQ_MIN_LINES,
+T.RQ_MAX_LINES = S.RQ_MAX_LINES,
+T.RQ_PARTITION_SHR = S.RQ_PARTITION_SHR,
+T.OTH_PLN_SPLN_REQ = S.OTH_PLN_SPLN_REQ,
+T.PLN_SPLN_RQD_NBR = S.PLN_SPLN_RQD_NBR,
+T.ENABLE_CATLG_PRINT = S.ENABLE_CATLG_PRINT,
+T.OVRD_STD_DESCR = S.OVRD_STD_DESCR,
+T.TEST_ID = S.TEST_ID,
+T.TEST_COMPONENT = S.TEST_COMPONENT,
+T.SCORE = S.SCORE,
+T.SAA_MAX_VALID_AGE = S.SAA_MAX_VALID_AGE,
+T.SAA_BEST_TEST_OPT = S.SAA_BEST_TEST_OPT,
+T.SAA_HIDE_STATUS = S.SAA_HIDE_STATUS,
+T.SAA_DESCR80 = S.SAA_DESCR80,
+T.DESCR254A = S.DESCR254A,
+T.DESCRLONG = S.DESCRLONG,
+T.DATA_ORIGIN = 'S',
+T.LASTUPD_EW_DTTM = sysdate,
+T.BATCH_SID   = 1234
+where
+T.EFF_STATUS <> S.EFF_STATUS or
+T.DESCR <> S.DESCR or
+T.DESCRSHORT <> S.DESCRSHORT or
+T.RQRMNT_USEAGE <> S.RQRMNT_USEAGE or
+T.INSTITUTION <> S.INSTITUTION or
+T.ACAD_CAREER <> S.ACAD_CAREER or
+T.ACAD_GROUP <> S.ACAD_GROUP or
+T.ACAD_PROG <> S.ACAD_PROG or
+T.ACAD_PLAN <> S.ACAD_PLAN or
+T.ACAD_SUB_PLAN <> S.ACAD_SUB_PLAN or
+T.ACAD_CAREER_INC <> S.ACAD_CAREER_INC or
+T.ACAD_PROG_INC <> S.ACAD_PROG_INC or
+T.ACAD_PLAN_INC <> S.ACAD_PLAN_INC or
+T.ACAD_SUBPLAN_INC <> S.ACAD_SUBPLAN_INC or
+T.SUBJECT <> S.SUBJECT or
+T.CATALOG_NBR <> S.CATALOG_NBR or
+T.RQRMNT_LIST_SEQ <> S.RQRMNT_LIST_SEQ or
+T.RQ_CONNECT_TYPE <> S.RQ_CONNECT_TYPE or
+T.SPECIAL_PROCESSING <> S.SPECIAL_PROCESSING or
+T.MIN_UNITS_REQD <> S.MIN_UNITS_REQD or
+T.MIN_CRSES_REQD <> S.MIN_CRSES_REQD or
+T.GRADE_POINTS_MIN <> S.GRADE_POINTS_MIN or
+T.GPA_REQUIRED <> S.GPA_REQUIRED or
+T.REQ_CRSSELECT_METH <> S.REQ_CRSSELECT_METH or
+T.CREDIT_INCL_MODE <> S.CREDIT_INCL_MODE or
+T.RQ_REPORTING <> S.RQ_REPORTING or
+T.SAA_DISPLAY_GPA <> S.SAA_DISPLAY_GPA or
+T.SAA_DISPLAY_UNITS <> S.SAA_DISPLAY_UNITS or
+T.SAA_DISPLAY_CRSCNT <> S.SAA_DISPLAY_CRSCNT or
+T.CONDITION_CODE <> S.CONDITION_CODE or
+T.CONDITION_OPERATOR <> S.CONDITION_OPERATOR or
+T.CONDITION_DATA <> S.CONDITION_DATA or
+T.REQCH_RESOLV_METH <> S.REQCH_RESOLV_METH or
+T.REQCH_STOP_RULE <> S.REQCH_STOP_RULE or
+T.RQ_MIN_LINES <> S.RQ_MIN_LINES or
+T.RQ_MAX_LINES <> S.RQ_MAX_LINES or
+T.RQ_PARTITION_SHR <> S.RQ_PARTITION_SHR or
+T.OTH_PLN_SPLN_REQ <> S.OTH_PLN_SPLN_REQ or
+T.PLN_SPLN_RQD_NBR <> S.PLN_SPLN_RQD_NBR or
+T.ENABLE_CATLG_PRINT <> S.ENABLE_CATLG_PRINT or
+T.OVRD_STD_DESCR <> S.OVRD_STD_DESCR or
+T.TEST_ID <> S.TEST_ID or
+T.TEST_COMPONENT <> S.TEST_COMPONENT or
+T.SCORE <> S.SCORE or
+T.SAA_MAX_VALID_AGE <> S.SAA_MAX_VALID_AGE or
+T.SAA_BEST_TEST_OPT <> S.SAA_BEST_TEST_OPT or
+T.SAA_HIDE_STATUS <> S.SAA_HIDE_STATUS or
+T.SAA_DESCR80 <> S.SAA_DESCR80 or
+T.DESCR254A <> S.DESCR254A or
+nvl(trim(T.DESCRLONG),0) <> nvl(trim(S.DESCRLONG),0) or
+T.DATA_ORIGIN = 'D'
+when not matched then
+insert (
+T.RQRMNT_GROUP,
+T.EFFDT,
+T.SRC_SYS_ID,
+T.EFF_STATUS,
+T.DESCR,
+T.DESCRSHORT,
+T.RQRMNT_USEAGE,
+T.INSTITUTION,
+T.ACAD_CAREER,
+T.ACAD_GROUP,
+T.ACAD_PROG,
+T.ACAD_PLAN,
+T.ACAD_SUB_PLAN,
+T.ACAD_CAREER_INC,
+T.ACAD_PROG_INC,
+T.ACAD_PLAN_INC,
+T.ACAD_SUBPLAN_INC,
+T.SUBJECT,
+T.CATALOG_NBR,
+T.RQRMNT_LIST_SEQ,
+T.RQ_CONNECT_TYPE,
+T.SPECIAL_PROCESSING,
+T.MIN_UNITS_REQD,
+T.MIN_CRSES_REQD,
+T.GRADE_POINTS_MIN,
+T.GPA_REQUIRED,
+T.REQ_CRSSELECT_METH,
+T.CREDIT_INCL_MODE,
+T.RQ_REPORTING,
+T.SAA_DISPLAY_GPA,
+T.SAA_DISPLAY_UNITS,
+T.SAA_DISPLAY_CRSCNT,
+T.CONDITION_CODE,
+T.CONDITION_OPERATOR,
+T.CONDITION_DATA,
+T.REQCH_RESOLV_METH,
+T.REQCH_STOP_RULE,
+T.RQ_MIN_LINES,
+T.RQ_MAX_LINES,
+T.RQ_PARTITION_SHR,
+T.OTH_PLN_SPLN_REQ,
+T.PLN_SPLN_RQD_NBR,
+T.ENABLE_CATLG_PRINT,
+T.OVRD_STD_DESCR,
+T.TEST_ID,
+T.TEST_COMPONENT,
+T.SCORE,
+T.SAA_MAX_VALID_AGE,
+T.SAA_BEST_TEST_OPT,
+T.SAA_HIDE_STATUS,
+T.SAA_DESCR80,
+T.DESCR254A,
+T.DESCRLONG,
+T.LOAD_ERROR,
+T.DATA_ORIGIN,
+T.CREATED_EW_DTTM,
+T.LASTUPD_EW_DTTM,
+T.BATCH_SID
+)
+values (
+S.RQRMNT_GROUP,
+S.EFFDT,
+'CS90',
+S.EFF_STATUS,
+S.DESCR,
+S.DESCRSHORT,
+S.RQRMNT_USEAGE,
+S.INSTITUTION,
+S.ACAD_CAREER,
+S.ACAD_GROUP,
+S.ACAD_PROG,
+S.ACAD_PLAN,
+S.ACAD_SUB_PLAN,
+S.ACAD_CAREER_INC,
+S.ACAD_PROG_INC,
+S.ACAD_PLAN_INC,
+S.ACAD_SUBPLAN_INC,
+S.SUBJECT,
+S.CATALOG_NBR,
+S.RQRMNT_LIST_SEQ,
+S.RQ_CONNECT_TYPE,
+S.SPECIAL_PROCESSING,
+S.MIN_UNITS_REQD,
+S.MIN_CRSES_REQD,
+S.GRADE_POINTS_MIN,
+S.GPA_REQUIRED,
+S.REQ_CRSSELECT_METH,
+S.CREDIT_INCL_MODE,
+S.RQ_REPORTING,
+S.SAA_DISPLAY_GPA,
+S.SAA_DISPLAY_UNITS,
+S.SAA_DISPLAY_CRSCNT,
+S.CONDITION_CODE,
+S.CONDITION_OPERATOR,
+S.CONDITION_DATA,
+S.REQCH_RESOLV_METH,
+S.REQCH_STOP_RULE,
+S.RQ_MIN_LINES,
+S.RQ_MAX_LINES,
+S.RQ_PARTITION_SHR,
+S.OTH_PLN_SPLN_REQ,
+S.PLN_SPLN_RQD_NBR,
+S.ENABLE_CATLG_PRINT,
+S.OVRD_STD_DESCR,
+S.TEST_ID,
+S.TEST_COMPONENT,
+S.SCORE,
+S.SAA_MAX_VALID_AGE,
+S.SAA_BEST_TEST_OPT,
+S.SAA_HIDE_STATUS,
+S.SAA_DESCR80,
+S.DESCR254A,
+S.DESCRLONG,
+'N',
+'S',
+sysdate,
+sysdate,
+1234);
+
+strSqlCommand   := 'SET intRowCount';
+intRowCount     := SQL%ROWCOUNT;
+
+strSqlCommand := 'commit';
+commit;
+
+
+strMessage01    := '# of PS_RQ_GRP_TBL rows merged: ' || TO_CHAR(intRowCount,'999,999,999,999');
+COMMON_OWNER.SMT_LOG.PUT_MESSAGE(i_Message => strMessage01);
+
+strSqlCommand := 'SMT_PROCESS_LOG.PROCESS_DETAIL';
+COMMON_OWNER.SMT_PROCESS_LOG.PROCESS_DETAIL
+        (
+                i_TargetTableName   => 'PS_RQ_GRP_TBL',
+                i_Action            => 'MERGE',
+                i_RowCount          => intRowCount
+        );
+
+
+strMessage01    := 'Updating AMSTG_OWNER.UM_STAGE_JOBS';
+COMMON_OWNER.SMT_LOG.PUT_MESSAGE(i_Message => strMessage01);
+
+strSqlCommand   := 'update TABLE_STATUS on AMSTG_OWNER.UM_STAGE_JOBS';
+update AMSTG_OWNER.UM_STAGE_JOBS
+   set TABLE_STATUS = 'Deleting',
+       OLD_MAX_SCN = NEW_MAX_SCN
+ where TABLE_NAME = 'PS_RQ_GRP_TBL';
+
+strSqlCommand := 'commit';
+commit;
+
+
+strMessage01    := 'Updating DATA_ORIGIN on AMSTG_OWNER.PS_RQ_GRP_TBL';
+COMMON_OWNER.SMT_LOG.PUT_MESSAGE(i_Message => strMessage01);
+
+strSqlCommand   := 'update DATA_ORIGIN on AMSTG_OWNER.PS_RQ_GRP_TBL';
+update AMSTG_OWNER.PS_RQ_GRP_TBL T
+   set T.DATA_ORIGIN = 'D',
+          T.LASTUPD_EW_DTTM = SYSDATE
+ where T.DATA_ORIGIN <> 'D'
+   and exists 
+(select 1 from
+(select RQRMNT_GROUP, EFFDT
+   from AMSTG_OWNER.PS_RQ_GRP_TBL T2
+  where (select DELETE_FLG from AMSTG_OWNER.UM_STAGE_JOBS where TABLE_NAME = 'PS_RQ_GRP_TBL') = 'Y'
+  minus
+ select RQRMNT_GROUP, EFFDT
+   from SYSADM.PS_RQ_GRP_TBL@AMSOURCE S2
+  where (select DELETE_FLG from AMSTG_OWNER.UM_STAGE_JOBS where TABLE_NAME = 'PS_RQ_GRP_TBL') = 'Y'
+   ) S
+ where T.RQRMNT_GROUP = S.RQRMNT_GROUP
+   and T.EFFDT = S.EFFDT
+   and T.SRC_SYS_ID = 'CS90' 
+   ) 
+;
+strSqlCommand   := 'SET intRowCount';
+intRowCount     := SQL%ROWCOUNT;
+
+strSqlCommand := 'commit';
+commit;
+
+strMessage01    := '# of PS_RQ_GRP_TBL rows updated: ' || TO_CHAR(intRowCount,'999,999,999,999');
+COMMON_OWNER.SMT_LOG.PUT_MESSAGE(i_Message => strMessage01);
+
+strSqlCommand := 'SMT_PROCESS_LOG.PROCESS_DETAIL';
+COMMON_OWNER.SMT_PROCESS_LOG.PROCESS_DETAIL
+        (
+                i_TargetTableName   => 'PS_RQ_GRP_TBL',
+                i_Action            => 'UPDATE',
+                i_RowCount          => intRowCount
+        );
+
+
+strMessage01    := 'Updating AMSTG_OWNER.UM_STAGE_JOBS';
+COMMON_OWNER.SMT_LOG.PUT_MESSAGE(i_Message => strMessage01);
+
+strSqlCommand   := 'update END_DT on AMSTG_OWNER.UM_STAGE_JOBS';
+
+update AMSTG_OWNER.UM_STAGE_JOBS
+   set TABLE_STATUS = 'Complete',
+       END_DT = SYSDATE
+ where TABLE_NAME = 'PS_RQ_GRP_TBL'
+;
+
+strSqlCommand := 'commit';
+commit;
+
+
+strSqlCommand := 'SMT_PROCESS_LOG.PROCESS_SUCCESS';
+COMMON_OWNER.SMT_PROCESS_LOG.PROCESS_SUCCESS;
+
+strMessage01    := strProcessName || ' is complete.';
+COMMON_OWNER.SMT_LOG.PUT_MESSAGE(i_Message => strMessage01);
+
+
+EXCEPTION
+   WHEN OTHERS
+   THEN
+      COMMON_OWNER.SMT_PROCESS_LOG.PROCESS_EXCEPTION (
+         i_SqlCommand   => strSqlCommand,
+         i_SqlCode      => SQLCODE,
+         i_SqlErrm      => SQLERRM);
+
+END AM_PS_RQ_GRP_TBL_P;
+/

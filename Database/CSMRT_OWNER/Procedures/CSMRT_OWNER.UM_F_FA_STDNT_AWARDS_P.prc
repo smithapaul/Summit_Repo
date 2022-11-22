@@ -1,4 +1,10 @@
-CREATE OR REPLACE PROCEDURE             "UM_F_FA_STDNT_AWARDS_P" AUTHID CURRENT_USER IS
+DROP PROCEDURE CSMRT_OWNER.UM_F_FA_STDNT_AWARDS_P
+/
+
+--
+-- UM_F_FA_STDNT_AWARDS_P  (Procedure) 
+--
+CREATE OR REPLACE PROCEDURE CSMRT_OWNER."UM_F_FA_STDNT_AWARDS_P" AUTHID CURRENT_USER IS
 
 ------------------------------------------------------------------------
 -- George Adams
@@ -41,20 +47,6 @@ COMMON_OWNER.SMT_PROCESS_LOG.PROCESS_INIT
                 o_ProcessSid            => intProcessSid
         );
 
-strMessage01    := 'Disabling Indexes for table CSMRT_OWNER.UM_F_FA_STDNT_AWARDS';
-COMMON_OWNER.SMT_LOG.PUT_MESSAGE(i_Message => strMessage01);
-COMMON_OWNER.SMT_INDEX.ALL_UNUSABLE('CSMRT_OWNER','UM_F_FA_STDNT_AWARDS');
-
-strSqlDynamic   := 'alter table CSMRT_OWNER.UM_F_FA_STDNT_AWARDS disable constraint PK_UM_F_FA_STDNT_AWARDS';
-strSqlCommand   := 'SMT_UTILITY.EXECUTE_IMMEDIATE: ' || strSqlDynamic;
-COMMON_OWNER.SMT_UTILITY.EXECUTE_IMMEDIATE
-                (
-                i_SqlStatement          => strSqlDynamic,
-                i_MaxTries              => 10,
-                i_WaitSeconds           => 10,
-                o_Tries                 => intTries
-                );
-				
 strMessage01    := 'Truncating table CSMRT_OWNER.UM_F_FA_STDNT_AWARDS';
 COMMON_OWNER.SMT_LOG.PUT_MESSAGE(i_Message => strMessage01);
 
@@ -68,64 +60,78 @@ COMMON_OWNER.SMT_UTILITY.EXECUTE_IMMEDIATE
                 o_Tries                 => intTries
                 );
 
+strMessage01    := 'Disabling Indexes for table CSMRT_OWNER.UM_F_FA_STDNT_AWARDS';
+COMMON_OWNER.SMT_LOG.PUT_MESSAGE(i_Message => strMessage01);
+COMMON_OWNER.SMT_INDEX.ALL_UNUSABLE('CSMRT_OWNER','UM_F_FA_STDNT_AWARDS');
+
+--strSqlDynamic   := 'alter table CSMRT_OWNER.UM_F_FA_STDNT_AWARDS disable constraint PK_UM_F_FA_STDNT_AWARDS';
+--strSqlCommand   := 'SMT_UTILITY.EXECUTE_IMMEDIATE: ' || strSqlDynamic;
+--COMMON_OWNER.SMT_UTILITY.EXECUTE_IMMEDIATE
+--                (
+--                i_SqlStatement          => strSqlDynamic,
+--                i_MaxTries              => 10,
+--                i_WaitSeconds           => 10,
+--                o_Tries                 => intTries
+--                );
+
 strMessage01    := 'Inserting data into CSMRT_OWNER.UM_F_FA_STDNT_AWARDS';
 COMMON_OWNER.SMT_LOG.PUT_MESSAGE(i_Message => strMessage01);
 
-strSqlCommand   := 'insert into CSMRT_OWNER.UM_F_FA_STDNT_AWARDS';				
-insert /*+ append */ into UM_F_FA_STDNT_AWARDS 
-  with X as (  
-select FIELDNAME, FIELDVALUE, EFFDT, SRC_SYS_ID, 
-       XLATLONGNAME, XLATSHORTNAME, DATA_ORIGIN, 
+strSqlCommand   := 'insert into CSMRT_OWNER.UM_F_FA_STDNT_AWARDS';
+insert /*+ append enable_parallel_dml parallel(8) */ into UM_F_FA_STDNT_AWARDS
+  with X as (
+select FIELDNAME, FIELDVALUE, EFFDT, SRC_SYS_ID,
+       XLATLONGNAME, XLATSHORTNAME, DATA_ORIGIN,
        row_number() over (partition by FIELDNAME, FIELDVALUE, SRC_SYS_ID
                               order by DATA_ORIGIN desc, (case when EFFDT > trunc(SYSDATE) then to_date('01-JAN-1900') else EFFDT end) desc) X_ORDER
   from CSSTG_OWNER.PSXLATITEM
  where DATA_ORIGIN <> 'D'),
   CHRG AS (
-SELECT /*+ PARALLEL(8) INLINE */ 
-       SETID, CHARGE_PRIORITY, SRC_SYS_ID, 
-       DESCR, 
-       ROW_NUMBER() OVER (PARTITION BY SETID, CHARGE_PRIORITY, SRC_SYS_ID ORDER BY EFFDT DESC) ROW_NUM
-  FROM CSSTG_OWNER.PS_PMT_CHRG_TBL  
- WHERE DATA_ORIGIN <> 'D') 
 SELECT /*+ PARALLEL(8) INLINE */
-       STAID.INSTITUTION_CD, 
-       NVL(AWD.ACAD_CAREER, '-') ACAD_CAR_CD, 
-       STAID.AID_YEAR, 
-       STAID.PERSON_ID, 
-       NVL(AWD.ITEM_TYPE, '-') ITEM_TYPE, 
+       SETID, CHARGE_PRIORITY, SRC_SYS_ID,
+       DESCR,
+       ROW_NUMBER() OVER (PARTITION BY SETID, CHARGE_PRIORITY, SRC_SYS_ID ORDER BY EFFDT DESC) ROW_NUM
+  FROM CSSTG_OWNER.PS_PMT_CHRG_TBL
+ WHERE DATA_ORIGIN <> 'D')
+SELECT /*+ PARALLEL(8) INLINE */
+       STAID.INSTITUTION_CD,
+       NVL(AWD.ACAD_CAREER, '-') ACAD_CAR_CD,
+       STAID.AID_YEAR,
+       STAID.PERSON_ID,
+       NVL(AWD.ITEM_TYPE, '-') ITEM_TYPE,
        STAID.SRC_SYS_ID,
 	   nvl(I.INSTITUTION_SID,2147483646) INSTITUTION_SID,
 	   nvl(C.ACAD_CAR_SID,2147483646) ACAD_CAR_SID,
-       nvl(P.PERSON_SID,2147483646) PERSON_SID, 
-       nvl(T.ITEM_TYPE_SID, 2147483646) ITEM_TYPE_SID, 
+       nvl(P.PERSON_SID,2147483646) PERSON_SID,
+       nvl(T.ITEM_TYPE_SID, 2147483646) ITEM_TYPE_SID,
        AWD.OFFER_AMOUNT AY_OFFER_AMOUNT,
        AWD.ACCEPT_AMOUNT AY_ACCEPT_AMOUNT,
        AWD.AUTHORIZED_AMOUNT AY_AUTHORIZED_AMOUNT,
        AWD.DISBURSED_AMOUNT AY_DISBURSED_AMOUNT,
        AWD.AWARD_STATUS,
-       X1.XLATLONGNAME AWARD_STATUS_LD,     -- XLAT   
-       AWD.CHARGE_PRIORITY, 
+       X1.XLATLONGNAME AWARD_STATUS_LD,     -- XLAT
+       AWD.CHARGE_PRIORITY,
        CHRG.DESCR CHARGE_PRIORITY_LD,
        AWD.DISBURSEMENT_PLAN,
-       PL.DESCR DISBURSEMENT_PLAN_LD, 
-       AWD.FA_PROF_JUDGEMENT, 
-       AWD.LOCK_AWARD_FLAG, 
-       AWD.PKG_PLAN_ID, 
-       AWD.PKG_SEQ_NBR, 
-       AWD.SPLIT_CODE, 
+       PL.DESCR DISBURSEMENT_PLAN_LD,
+       AWD.FA_PROF_JUDGEMENT,
+       AWD.LOCK_AWARD_FLAG,
+       AWD.PKG_PLAN_ID,
+       AWD.PKG_SEQ_NBR,
+       AWD.SPLIT_CODE,
        SPL.DESCR SPLIT_CODE_LD,
-       AWD.OVERRIDE_NEED, 
+       AWD.OVERRIDE_NEED,
        AWD.OVERRIDE_FL,
-       'N', 
-       'S', 
-       sysdate, 
-       sysdate, 
-       1234  
-  FROM CSMRT_OWNER.UM_F_FA_STDNT_AID_ISIR STAID 
+       'N',
+       'S',
+       sysdate,
+       sysdate,
+       1234
+  FROM CSMRT_OWNER.UM_F_FA_STDNT_AID_ISIR STAID
   left outer join CSSTG_OWNER.PS_STDNT_AWARDS AWD
-    ON STAID.PERSON_ID = AWD.EMPLID 
-   AND STAID.INSTITUTION_CD = AWD.INSTITUTION 
-   AND STAID.AID_YEAR = AWD.AID_YEAR 
+    ON STAID.PERSON_ID = AWD.EMPLID
+   AND STAID.INSTITUTION_CD = AWD.INSTITUTION
+   AND STAID.AID_YEAR = AWD.AID_YEAR
    AND STAID.SRC_SYS_ID = AWD.SRC_SYS_ID
    and AWD.DATA_ORIGIN <> 'D'
   LEFT OUTER JOIN CSSTG_OWNER.PS_DISB_SPLIT_CD SPL
@@ -144,7 +150,7 @@ SELECT /*+ PARALLEL(8) INLINE */
   LEFT OUTER JOIN CHRG
     ON AWD.INSTITUTION = CHRG.SETID
    AND AWD.CHARGE_PRIORITY = CHRG.CHARGE_PRIORITY
-   AND CHRG.ROW_NUM = 1 
+   AND CHRG.ROW_NUM = 1
   LEFT OUTER JOIN PS_D_INSTITUTION I
     ON STAID.INSTITUTION_CD = I.INSTITUTION_CD
    AND STAID.SRC_SYS_ID = I.SRC_SYS_ID
@@ -153,17 +159,17 @@ SELECT /*+ PARALLEL(8) INLINE */
    and AWD.ACAD_CAREER = C.ACAD_CAR_CD
    and AWD.SRC_SYS_ID = C.SRC_SYS_ID
   LEFT OUTER JOIN CSMRT_OWNER.PS_D_PERSON P
-    on STAID.PERSON_ID = P.PERSON_ID  
+    on STAID.PERSON_ID = P.PERSON_ID
    and STAID.SRC_SYS_ID = P.SRC_SYS_ID
    and P.DATA_ORIGIN <> 'D'
   LEFT OUTER JOIN CSMRT_OWNER.UM_D_FA_ITEM_TYPE T
     on AWD.INSTITUTION = T.INSTITUTION_CD
    and AWD.ITEM_TYPE = T.ITEM_TYPE
    and AWD.AID_YEAR = T.AID_YEAR
-   and AWD.SRC_SYS_ID = T.SRC_SYS_ID  
+   and AWD.SRC_SYS_ID = T.SRC_SYS_ID
   left outer join X X1
 	  on X1.FIELDNAME = 'AWARD_STATUS'
-	 and X1.FIELDVALUE = AWD.AWARD_STATUS 
+	 and X1.FIELDVALUE = AWD.AWARD_STATUS
      and X1.X_ORDER = 1
  where STAID.DATA_ORIGIN <> 'D'
 ;
@@ -196,16 +202,16 @@ COMMON_OWNER.SMT_PROCESS_LOG.PROCESS_DETAIL
 strMessage01    := 'Enabling Indexes for table CSMRT_OWNER.UM_F_FA_STDNT_AWARDS';
 COMMON_OWNER.SMT_LOG.PUT_MESSAGE(i_Message => strMessage01);
 
-strSqlDynamic   := 'alter table CSMRT_OWNER.UM_F_FA_STDNT_AWARDS enable constraint PK_UM_F_FA_STDNT_AWARDS';
-strSqlCommand   := 'SMT_UTILITY.EXECUTE_IMMEDIATE: ' || strSqlDynamic;
-COMMON_OWNER.SMT_UTILITY.EXECUTE_IMMEDIATE
-                (
-                i_SqlStatement          => strSqlDynamic,
-                i_MaxTries              => 10,
-                i_WaitSeconds           => 10,
-                o_Tries                 => intTries
-                );
-				
+--strSqlDynamic   := 'alter table CSMRT_OWNER.UM_F_FA_STDNT_AWARDS enable constraint PK_UM_F_FA_STDNT_AWARDS';
+--strSqlCommand   := 'SMT_UTILITY.EXECUTE_IMMEDIATE: ' || strSqlDynamic;
+--COMMON_OWNER.SMT_UTILITY.EXECUTE_IMMEDIATE
+--                (
+--                i_SqlStatement          => strSqlDynamic,
+--                i_MaxTries              => 10,
+--                i_WaitSeconds           => 10,
+--                o_Tries                 => intTries
+--                );
+
 COMMON_OWNER.SMT_INDEX.ALL_REBUILD('CSMRT_OWNER','UM_F_FA_STDNT_AWARDS');
 
 strSqlCommand := 'SMT_PROCESS_LOG.PROCESS_SUCCESS';

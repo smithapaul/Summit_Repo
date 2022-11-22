@@ -1,4 +1,10 @@
-CREATE OR REPLACE PROCEDURE             "PS_UM_ADM_BHE_P" AUTHID CURRENT_USER IS
+DROP PROCEDURE CSMRT_OWNER.PS_UM_ADM_BHE_P
+/
+
+--
+-- PS_UM_ADM_BHE_P  (Procedure) 
+--
+CREATE OR REPLACE PROCEDURE CSMRT_OWNER."PS_UM_ADM_BHE_P" AUTHID CURRENT_USER IS
 
 
 ------------------------------------------------------------------------

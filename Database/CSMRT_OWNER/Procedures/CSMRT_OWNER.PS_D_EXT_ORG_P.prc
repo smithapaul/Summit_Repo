@@ -1,4 +1,10 @@
-CREATE OR REPLACE PROCEDURE             "PS_D_EXT_ORG_P" AUTHID CURRENT_USER IS
+DROP PROCEDURE CSMRT_OWNER.PS_D_EXT_ORG_P
+/
+
+--
+-- PS_D_EXT_ORG_P  (Procedure) 
+--
+CREATE OR REPLACE PROCEDURE CSMRT_OWNER."PS_D_EXT_ORG_P" AUTHID CURRENT_USER IS
 
 ------------------------------------------------------------------------
 -- George Adams
@@ -9,6 +15,10 @@ CREATE OR REPLACE PROCEDURE             "PS_D_EXT_ORG_P" AUTHID CURRENT_USER IS
 --                              Converted from DataStage
 --V01.1 Case-44794 07/21/2020   JD Fixed SID lookup logic
 --
+
+--V01.2 Case-159563 04/06/2022  Smitha Paul added max Eff Date
+
+--V01.3 Case-165244 06/02/2022  Smitha Paul added Inactive Flag
 ------------------------------------------------------------------------
 
         strMartId                       Varchar2(50)    := 'CSW';
@@ -65,7 +75,7 @@ select EXT_ORG_ID, SRC_SYS_ID, EFFDT, EFF_STATUS EFF_STAT_CD,
                               order by DATA_ORIGIN desc, (case when EFFDT > trunc(SYSDATE) then to_date('01-JAN-1800') else EFFDT end) desc) Q_ORDER
   from CSSTG_OWNER.PS_EXT_ORG_TBL),
        Q2 as (
-select EXT_ORG_ID, SRC_SYS_ID,
+select EXT_ORG_ID, SRC_SYS_ID,EFFDT,
        LS_SCHOOL_TYPE SCHOOL_TYPE_ID, ACCREDITED ACCREDITED_FLG, ATP_CD, EXT_CAREER, EXT_TERM_TYPE, 
        OFFERS_COURSES OFFERS_COURSES_FLG, SHARED_CATALOG SHARED_CATALOG_FLG, UNT_TYPE, 
        row_number() over (partition by EXT_ORG_ID, SRC_SYS_ID
@@ -80,7 +90,7 @@ select LS_SCHOOL_TYPE SCHOOL_TYPE_ID, SRC_SYS_ID,
   from CSSTG_OWNER.PS_LS_SCHL_TYP_TBL
  where DATA_ORIGIN <> 'D'),
        Q4 as (
-select EXT_ORG_ID, ORG_LOCATION, SRC_SYS_ID,  
+select EXT_ORG_ID, ORG_LOCATION, SRC_SYS_ID,  EFFDT,
        ADDRESS1 ADDR1_LD, ADDRESS2 ADDR2_LD, ADDRESS3 ADDR3_LD, ADDRESS4 ADDR4_LD, 
        CITY CITY_NM, COUNTY CNTY_NM, STATE STATE_ID, POSTAL POSTAL_CD, COUNTRY CNTRY_ID,  
        row_number() over (partition by EXT_ORG_ID, ORG_LOCATION, SRC_SYS_ID
@@ -97,8 +107,20 @@ select COUNTRY CNTRY_ID, SRC_SYS_ID,
        DESCRSHORT CNTRY_SD, DESCR CNTRY_LD
   from CSSTG_OWNER.PS_COUNTRY_TBL
  where DATA_ORIGIN <> 'D'),
+       Q7 as (
+select distinct 
+        EXT_ORG_ID,
+        ORG_GRP_TYPE, 
+        ORG_GRP_CD, 
+        SRC_SYS_ID,  'Y' AS INACTIVE_FLAG 
+        from CSSTG_OWNER.PS_ORG_GROUPING
+ where DATA_ORIGIN <> 'D'
+ and ORG_GRP_TYPE = 'MNT' AND ORG_GRP_CD = 'INA'   
+),
        S as (
-select Q1.EXT_ORG_ID, Q1.SRC_SYS_ID, Q1.EFFDT, Q1.EFF_STAT_CD, 
+select Q1.EXT_ORG_ID, Q1.SRC_SYS_ID, Q1.EFFDT, 
+         Q2.EFFDT AS EFFDT2,Q4.EFFDT AS EFFDT3,  --April 2022
+        Q1.EFF_STAT_CD, 
        Q1.EXT_ORG_SD, Q1.EXT_ORG_LD, Q1.EXT_ORG_FD, -- Mar 2019 
        Q1.EXT_ORG_TYPE_ID, 
        decode(Q1.EXT_ORG_TYPE_ID,'BUSN','Business','NONP','Non-Profit','OTHR','Other','SCHL','School','-') EXT_ORG_TYPE_SD,
@@ -116,7 +138,8 @@ select Q1.EXT_ORG_ID, Q1.SRC_SYS_ID, Q1.EFFDT, Q1.EFF_STAT_CD,
        Q1.ORG_LOCATION, Q1.PROPRIETORSHIP, nvl(X3.XLATSHORTNAME,'-') PROPRIETORSHIP_SD, nvl(X3.XLATLONGNAME,'-') PROPRIETORSHIP_LD,
        nvl(Q2.SHARED_CATALOG_FLG,'-') SHARED_CATALOG_FLG, 
        nvl(Q2.UNT_TYPE,'-') UNT_TYPE, nvl(X4.XLATSHORTNAME,'-') UNT_TYPE_SD, nvl(X4.XLATLONGNAME,'-') UNT_TYPE_LD, 
-       Q1.DATA_ORIGIN  
+       Q1.DATA_ORIGIN,
+       NVL(Q7.INACTIVE_FLAG,'N')  AS INACTIVE_FLAG   
   from Q1
   left outer join Q2
     on Q1.EXT_ORG_ID = Q2.EXT_ORG_ID
@@ -138,6 +161,9 @@ select Q1.EXT_ORG_ID, Q1.SRC_SYS_ID, Q1.EFFDT, Q1.EFF_STAT_CD,
   left outer join Q6
     on Q4.CNTRY_ID = Q6.CNTRY_ID
    and Q4.SRC_SYS_ID = Q6.SRC_SYS_ID
+  left outer join Q7
+    on Q1.EXT_ORG_ID = Q7.EXT_ORG_ID
+   and Q1.SRC_SYS_ID = Q7.SRC_SYS_ID
   left outer join X X1
     on Q2.EXT_CAREER = X1.FIELDVALUE
    and Q2.SRC_SYS_ID = X1.SRC_SYS_ID
@@ -167,7 +193,7 @@ select nvl(D.EXT_ORG_SID,
         row_number() over (partition by 1 order by D.EXT_ORG_SID nulls first)) EXT_ORG_SID, -- July 2020
        nvl(D.EXT_ORG_ID, S.EXT_ORG_ID) EXT_ORG_ID,                                                                                                                                                                                                              
        nvl(D.SRC_SYS_ID, S.SRC_SYS_ID) SRC_SYS_ID,                                                                                                                                                                                                              
-       decode(D.EFFDT, S.EFFDT, D.EFFDT, S.EFFDT) EFFDT,                                                                                                                                                                                                        
+       GREATEST(decode(D.EFFDT, S.EFFDT, D.EFFDT, S.EFFDT),NVL(S.EFFDT2, to_date('19000101','YYYYMMDD')),NVL(S.EFFDT3, to_date('19000101','YYYYMMDD')))  as EFFDT,  --Apr 2022                                                                                                                                                                                                     
        decode(D.EFF_STAT_CD, S.EFF_STAT_CD, D.EFF_STAT_CD, S.EFF_STAT_CD) EFF_STAT_CD,                                                                                                                                                                          
        decode(D.EXT_ORG_SD, S.EXT_ORG_SD, D.EXT_ORG_SD, S.EXT_ORG_SD) EXT_ORG_SD,                                                                                                                                                                               
        decode(D.EXT_ORG_LD, S.EXT_ORG_LD, D.EXT_ORG_LD, S.EXT_ORG_LD) EXT_ORG_LD,                                                                                                                                                                               
@@ -209,7 +235,8 @@ select nvl(D.EXT_ORG_SID,
        decode(D.UNT_TYPE_LD, S.UNT_TYPE_LD, D.UNT_TYPE_LD, S.UNT_TYPE_LD) UNT_TYPE_LD,                                                                                                                                                                                                   
        decode(D.DATA_ORIGIN, S.DATA_ORIGIN, D.DATA_ORIGIN, S.DATA_ORIGIN) DATA_ORIGIN,                                                                                                                                                                          
        nvl(D.CREATED_EW_DTTM, SYSDATE) CREATED_EW_DTTM,                                                                                                                                                                                                         
-       nvl(D.LASTUPD_EW_DTTM, SYSDATE) LASTUPD_EW_DTTM                                                                                                                                                                                                          
+       nvl(D.LASTUPD_EW_DTTM, SYSDATE) LASTUPD_EW_DTTM,
+       S.INACTIVE_FLAG AS INACTIVE_FLAG                                                                                                                                                                                                               
   from S                                                                                                                                                                                                                                                        
   left outer join CSMRT_OWNER.PS_D_EXT_ORG D                                                                                                                                                                                                                
     on D.EXT_ORG_SID <> 2147483646                                                                                                                                                                                                                              
@@ -259,7 +286,8 @@ select nvl(D.EXT_ORG_SID,
        T.UNT_TYPE = S.UNT_TYPE,                                                                                                                                                                                                                                 
        T.UNT_TYPE_SD = S.UNT_TYPE_SD,                                                                                                                                                                                                                                     
        T.UNT_TYPE_LD = S.UNT_TYPE_LD,                                                                                                                                                                                                                                     
-       T.DATA_ORIGIN = S.DATA_ORIGIN,                                                                                                                                                                                                                           
+       T.DATA_ORIGIN = S.DATA_ORIGIN,   
+       T.INACTIVE_FLAG = S.INACTIVE_FLAG,                                                                                                                                                                                                                          
        T.LASTUPD_EW_DTTM = SYSDATE                                                                                                                                                                                                                              
  where                                                                                                                                                                                                                                                          
        decode(T.EFFDT,S.EFFDT,0,1) = 1 or                                                                                                                                                                                                                       
@@ -302,7 +330,8 @@ select nvl(D.EXT_ORG_SID,
        decode(T.UNT_TYPE,S.UNT_TYPE,0,1) = 1 or                                                                                                                                                                                                                 
        decode(T.UNT_TYPE_SD,S.UNT_TYPE_SD,0,1) = 1 or                                                                                                                                                                                                                     
        decode(T.UNT_TYPE_LD,S.UNT_TYPE_LD,0,1) = 1 or                                                                                                                                                                                                                     
-       decode(T.DATA_ORIGIN,S.DATA_ORIGIN,0,1) = 1                                                                                                                                                                                                              
+       decode(T.DATA_ORIGIN,S.DATA_ORIGIN,0,1) = 1   or
+       decode(T.INACTIVE_FLAG,S.INACTIVE_FLAG,0,1) = 1                                                                                                                                                                                                            
   when not matched then                                                                                                                                                                                                                                         
 insert (                                                                                                                                                                                                                                                        
        T.EXT_ORG_SID,                                                                                                                                                                                                                                           
@@ -350,7 +379,8 @@ insert (
        T.UNT_TYPE_LD,                                                                                                                                                                                                                                                
        T.DATA_ORIGIN,                                                                                                                                                                                                                                           
        T.CREATED_EW_DTTM,                                                                                                                                                                                                                                       
-       T.LASTUPD_EW_DTTM)                                                                                                                                                                                                                                       
+       T.LASTUPD_EW_DTTM,
+       T.INACTIVE_FLAG)                                                                                                                                                                                                                                       
 values (                                                                                                                                                                                                                                                        
        S.EXT_ORG_SID,                                                                                                                                                                                                                                           
        S.EXT_ORG_ID,                                                                                                                                                                                                                                            
@@ -397,7 +427,8 @@ values (
        S.UNT_TYPE_LD,                                                                                                                                                                                                                                                
        S.DATA_ORIGIN,                                                                                                                                                                                                                                           
        SYSDATE,                                                                                                                                                                                                                                                 
-       SYSDATE)
+       SYSDATE,
+       S.INACTIVE_FLAG)
 ;                                                                                                                                                                                                                                                    
 
 strSqlCommand   := 'SET intRowCount';

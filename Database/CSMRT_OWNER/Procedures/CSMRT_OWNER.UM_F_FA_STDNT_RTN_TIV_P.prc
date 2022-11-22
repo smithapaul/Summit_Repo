@@ -1,4 +1,10 @@
-CREATE OR REPLACE PROCEDURE             "UM_F_FA_STDNT_RTN_TIV_P" AUTHID CURRENT_USER IS
+DROP PROCEDURE CSMRT_OWNER.UM_F_FA_STDNT_RTN_TIV_P
+/
+
+--
+-- UM_F_FA_STDNT_RTN_TIV_P  (Procedure) 
+--
+CREATE OR REPLACE PROCEDURE CSMRT_OWNER."UM_F_FA_STDNT_RTN_TIV_P" AUTHID CURRENT_USER IS
 
 ------------------------------------------------------------------------
 -- George Adams
@@ -41,21 +47,6 @@ COMMON_OWNER.SMT_PROCESS_LOG.PROCESS_INIT
                 o_ProcessSid            => intProcessSid
         );
 
-strMessage01    := 'Disabling Indexes for table CSMRT_OWNER.UM_F_FA_STDNT_RTN_TIV';
-COMMON_OWNER.SMT_LOG.PUT_MESSAGE(i_Message => strMessage01);
-COMMON_OWNER.SMT_INDEX.ALL_UNUSABLE('CSMRT_OWNER','UM_F_FA_STDNT_RTN_TIV');
-
-strSqlDynamic   := 'alter table CSMRT_OWNER.UM_F_FA_STDNT_RTN_TIV disable constraint PK_UM_F_FA_STDNT_RTN_TIV';
-strSqlCommand   := 'SMT_UTILITY.EXECUTE_IMMEDIATE: ' || strSqlDynamic;
-COMMON_OWNER.SMT_UTILITY.EXECUTE_IMMEDIATE
-                (
-                i_SqlStatement          => strSqlDynamic,
-                i_MaxTries              => 10,
-                i_WaitSeconds           => 10,
-                o_Tries                 => intTries
-                );
-				
-				
 strMessage01    := 'Truncating table CSMRT_OWNER.UM_F_FA_STDNT_RTN_TIV';
 COMMON_OWNER.SMT_LOG.PUT_MESSAGE(i_Message => strMessage01);
 
@@ -69,12 +60,26 @@ COMMON_OWNER.SMT_UTILITY.EXECUTE_IMMEDIATE
                 o_Tries                 => intTries
                 );
 
+strMessage01    := 'Disabling Indexes for table CSMRT_OWNER.UM_F_FA_STDNT_RTN_TIV';
+COMMON_OWNER.SMT_LOG.PUT_MESSAGE(i_Message => strMessage01);
+COMMON_OWNER.SMT_INDEX.ALL_UNUSABLE('CSMRT_OWNER','UM_F_FA_STDNT_RTN_TIV');
+
+--strSqlDynamic   := 'alter table CSMRT_OWNER.UM_F_FA_STDNT_RTN_TIV disable constraint PK_UM_F_FA_STDNT_RTN_TIV';
+--strSqlCommand   := 'SMT_UTILITY.EXECUTE_IMMEDIATE: ' || strSqlDynamic;
+--COMMON_OWNER.SMT_UTILITY.EXECUTE_IMMEDIATE
+--                (
+--                i_SqlStatement          => strSqlDynamic,
+--                i_MaxTries              => 10,
+--                i_WaitSeconds           => 10,
+--                o_Tries                 => intTries
+--                );
+
 strMessage01    := 'Inserting data into CSMRT_OWNER.UM_F_FA_STDNT_RTN_TIV';
 COMMON_OWNER.SMT_LOG.PUT_MESSAGE(i_Message => strMessage01);
 
-strSqlCommand   := 'insert into CSMRT_OWNER.UM_F_FA_STDNT_RTN_TIV';				
-insert /*+ append */ into UM_F_FA_STDNT_RTN_TIV
-select /*+ parallel(8) */ 
+strSqlCommand   := 'insert into CSMRT_OWNER.UM_F_FA_STDNT_RTN_TIV';
+insert /*+ append enable_parallel_dml parallel(8) */ into UM_F_FA_STDNT_RTN_TIV
+select /*+ parallel(8) */
 S.INSTITUTION INSTITUTION_CD,
 S.AID_YEAR,
 S.STRM TERM_CD,
@@ -85,13 +90,13 @@ nvl(I.INSTITUTION_SID,2147483646) INSTITUTION_SID,
 nvl(E.PERSON_SID,2147483646) PERSON_SID,
 RTRN_TIV_STATUS,
 NVL((SELECT MIN(X.XLATSHORTNAME)
-       FROM UM_D_XLATITEM_VW X 
+       FROM UM_D_XLATITEM_VW X
       WHERE X.FIELDNAME = 'RTRN_TIV_STATUS'
         AND X.FIELDVALUE = RTRN_TIV_STATUS),'-') RTRN_TIV_STATUS_SD,
 RTRN_TIV_WSTAT_DT,
 RTRN_TIV_PERIOD_TP,
 NVL((SELECT MIN(X.XLATSHORTNAME)
-       FROM UM_D_XLATITEM_VW X 
+       FROM UM_D_XLATITEM_VW X
       WHERE X.FIELDNAME = 'RTRN_TIV_PERIOD_TP'
         AND X.FIELDVALUE = RTRN_TIV_PERIOD_TP),'-') RTRN_TIV_PERIOD_TP_SD,
 RTRN_TIV_FORM_DT,
@@ -146,16 +151,16 @@ COMMON_OWNER.SMT_PROCESS_LOG.PROCESS_DETAIL
 strMessage01    := 'Enabling Indexes for table CSMRT_OWNER.UM_F_FA_STDNT_RTN_TIV';
 COMMON_OWNER.SMT_LOG.PUT_MESSAGE(i_Message => strMessage01);
 
-strSqlDynamic   := 'alter table CSMRT_OWNER.UM_F_FA_STDNT_RTN_TIV enable constraint PK_UM_F_FA_STDNT_RTN_TIV';
-strSqlCommand   := 'SMT_UTILITY.EXECUTE_IMMEDIATE: ' || strSqlDynamic;
-COMMON_OWNER.SMT_UTILITY.EXECUTE_IMMEDIATE
-                (
-                i_SqlStatement          => strSqlDynamic,
-                i_MaxTries              => 10,
-                i_WaitSeconds           => 10,
-                o_Tries                 => intTries
-                );
-				
+--strSqlDynamic   := 'alter table CSMRT_OWNER.UM_F_FA_STDNT_RTN_TIV enable constraint PK_UM_F_FA_STDNT_RTN_TIV';
+--strSqlCommand   := 'SMT_UTILITY.EXECUTE_IMMEDIATE: ' || strSqlDynamic;
+--COMMON_OWNER.SMT_UTILITY.EXECUTE_IMMEDIATE
+--                (
+--                i_SqlStatement          => strSqlDynamic,
+--                i_MaxTries              => 10,
+--                i_WaitSeconds           => 10,
+--                o_Tries                 => intTries
+--                );
+
 COMMON_OWNER.SMT_INDEX.ALL_REBUILD('CSMRT_OWNER','UM_F_FA_STDNT_RTN_TIV');
 
 strSqlCommand := 'SMT_PROCESS_LOG.PROCESS_SUCCESS';

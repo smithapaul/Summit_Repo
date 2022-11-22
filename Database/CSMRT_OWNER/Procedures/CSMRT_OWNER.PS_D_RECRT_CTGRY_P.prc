@@ -1,4 +1,10 @@
-CREATE OR REPLACE PROCEDURE             "PS_D_RECRT_CTGRY_P" AUTHID CURRENT_USER IS
+DROP PROCEDURE CSMRT_OWNER.PS_D_RECRT_CTGRY_P
+/
+
+--
+-- PS_D_RECRT_CTGRY_P  (Procedure) 
+--
+CREATE OR REPLACE PROCEDURE CSMRT_OWNER."PS_D_RECRT_CTGRY_P" AUTHID CURRENT_USER IS
 
 ------------------------------------------------------------------------
 -- George Adams

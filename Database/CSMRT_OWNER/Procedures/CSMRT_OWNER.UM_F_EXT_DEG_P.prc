@@ -1,4 +1,10 @@
-CREATE OR REPLACE PROCEDURE             "UM_F_EXT_DEG_P" AUTHID CURRENT_USER IS
+DROP PROCEDURE CSMRT_OWNER.UM_F_EXT_DEG_P
+/
+
+--
+-- UM_F_EXT_DEG_P  (Procedure) 
+--
+CREATE OR REPLACE PROCEDURE CSMRT_OWNER."UM_F_EXT_DEG_P" AUTHID CURRENT_USER IS
 
 ------------------------------------------------------------------------
 -- George Adams
@@ -41,20 +47,6 @@ COMMON_OWNER.SMT_PROCESS_LOG.PROCESS_INIT
                 o_ProcessSid            => intProcessSid
         );
 
-strMessage01    := 'Disabling Indexes for table CSMRT_OWNER.UM_F_EXT_DEG';
-COMMON_OWNER.SMT_LOG.PUT_MESSAGE(i_Message => strMessage01);
-COMMON_OWNER.SMT_INDEX.ALL_UNUSABLE('CSMRT_OWNER','UM_F_EXT_DEG');
-
-strSqlDynamic   := 'alter table CSMRT_OWNER.UM_F_EXT_DEG disable constraint PK_UM_F_EXT_DEG';
-strSqlCommand   := 'SMT_UTILITY.EXECUTE_IMMEDIATE: ' || strSqlDynamic;
-COMMON_OWNER.SMT_UTILITY.EXECUTE_IMMEDIATE
-                (
-                i_SqlStatement          => strSqlDynamic,
-                i_MaxTries              => 10,
-                i_WaitSeconds           => 10,
-                o_Tries                 => intTries
-                );
-				
 strMessage01    := 'Truncating table CSMRT_OWNER.UM_F_EXT_DEG';
 COMMON_OWNER.SMT_LOG.PUT_MESSAGE(i_Message => strMessage01);
 
@@ -68,11 +60,25 @@ COMMON_OWNER.SMT_UTILITY.EXECUTE_IMMEDIATE
                 o_Tries                 => intTries
                 );
 
+strMessage01    := 'Disabling Indexes for table CSMRT_OWNER.UM_F_EXT_DEG';
+COMMON_OWNER.SMT_LOG.PUT_MESSAGE(i_Message => strMessage01);
+COMMON_OWNER.SMT_INDEX.ALL_UNUSABLE('CSMRT_OWNER','UM_F_EXT_DEG');
+
+--strSqlDynamic   := 'alter table CSMRT_OWNER.UM_F_EXT_DEG disable constraint PK_UM_F_EXT_DEG';
+--strSqlCommand   := 'SMT_UTILITY.EXECUTE_IMMEDIATE: ' || strSqlDynamic;
+--COMMON_OWNER.SMT_UTILITY.EXECUTE_IMMEDIATE
+--                (
+--                i_SqlStatement          => strSqlDynamic,
+--                i_MaxTries              => 10,
+--                i_WaitSeconds           => 10,
+--                o_Tries                 => intTries
+--                );
+
 strMessage01    := 'Inserting data into CSMRT_OWNER.UM_F_EXT_DEG';
 COMMON_OWNER.SMT_LOG.PUT_MESSAGE(i_Message => strMessage01);
 
-strSqlCommand   := 'insert into CSMRT_OWNER.UM_F_EXT_DEG';				
-insert /*+ append */ into UM_F_EXT_DEG 
+strSqlCommand   := 'insert into CSMRT_OWNER.UM_F_EXT_DEG';
+insert /*+ append enable_parallel_dml parallel(8) */ into UM_F_EXT_DEG
 WITH XDEG AS
 (
 SELECT /*+ PARALLEL(8) INLINE */
@@ -85,8 +91,8 @@ SELECT /*+ PARALLEL(8) INLINE */
        DEGREE_STATUS    EXT_DEG_STAT_ID,
        FIELD_OF_STUDY_1,
        FIELD_OF_STUDY_2,
-       HONORS_CATEGORY,         
-       DEGREE, 
+       HONORS_CATEGORY,
+       DEGREE,
        EXT_SUBJ_AREA_1,
        EXT_SUBJ_AREA_2,
        LS_DATA_SOURCE,
@@ -104,59 +110,59 @@ SELECT XDEG.PERSON_ID,
        NVL (ORG.EXT_ORG_SID, 2147483646) EXT_ORG_SID,
        NVL (XDS.TST_DATA_SRC_SID, 2147483646) EXT_DATA_SRC_SID,
        NVL (DEG.DEG_SID, 2147483646) EXT_DEG_SID,
-       NVL (SUB1.EXT_SUBJECT_AREA_SID, 2147483646) EXT_SUBJECT_AREA_SID_1, 
-       NVL (SUB2.EXT_SUBJECT_AREA_SID, 2147483646) EXT_SUBJECT_AREA_SID_2,               
-       XDEG.EXT_CAREER, 
+       NVL (SUB1.EXT_SUBJECT_AREA_SID, 2147483646) EXT_SUBJECT_AREA_SID_1,
+       NVL (SUB2.EXT_SUBJECT_AREA_SID, 2147483646) EXT_SUBJECT_AREA_SID_2,
+       XDEG.EXT_CAREER,
        NVL(X1.XLATSHORTNAME, '-')  EXT_CAREER_SD,
-       NVL(X1.XLATLONGNAME, '-')  EXT_CAREER_LD,                     
+       NVL(X1.XLATLONGNAME, '-')  EXT_CAREER_LD,
        EXT_DATA_NBR,
        EXT_DEG_DT,
        EXT_DEG_STAT_ID,
        NVL(X2.XLATSHORTNAME, '-') EXT_DEG_STAT_SD,
-       NVL(X2.XLATLONGNAME, '-') EXT_DEG_STAT_LD, 
+       NVL(X2.XLATLONGNAME, '-') EXT_DEG_STAT_LD,
        FIELD_OF_STUDY_1,
        FIELD_OF_STUDY_2,
-       HONORS_CATEGORY, 
+       HONORS_CATEGORY,
        NVL(X3.XLATSHORTNAME, '-') HONORS_CATEGORY_SD,
-       NVL(X3.XLATLONGNAME, '-') HONORS_CATEGORY_LD,         
-	   'N' LOAD_ERROR, 
-       'S' DATA_ORIGIN, 
-       SYSDATE CREATED_EW_DTTM, 
-       SYSDATE LASTUPD_EW_DTTM, 
+       NVL(X3.XLATLONGNAME, '-') HONORS_CATEGORY_LD,
+	   'N' LOAD_ERROR,
+       'S' DATA_ORIGIN,
+       SYSDATE CREATED_EW_DTTM,
+       SYSDATE LASTUPD_EW_DTTM,
        1234 BATCH_SID
   FROM XDEG
   left outer join CSMRT_OWNER.PS_D_EXT_ORG ORG
     on XDEG.EXT_ORG_ID = ORG.EXT_ORG_ID
    and XDEG.SRC_SYS_ID = ORG.SRC_SYS_ID
-   and ORG.DATA_ORIGIN <> 'D'    
+   and ORG.DATA_ORIGIN <> 'D'
   left outer join CSMRT_OWNER.PS_D_PERSON P
     on XDEG.PERSON_ID = P.PERSON_ID
    and XDEG.SRC_SYS_ID = P.SRC_SYS_ID
-   and P.DATA_ORIGIN <> 'D'  
+   and P.DATA_ORIGIN <> 'D'
   left outer join CSMRT_OWNER.PS_D_TST_DATA_SRC XDS
     on XDEG.LS_DATA_SOURCE = XDS.TST_DATA_SRC_ID
    and XDEG.SRC_SYS_ID = XDS.SRC_SYS_ID
-   and XDS.DATA_ORIGIN <> 'D'  
+   and XDS.DATA_ORIGIN <> 'D'
   left outer join CSMRT_OWNER.PS_D_DEG DEG
     on XDEG.DEGREE = DEG.DEG_CD
    and XDEG.SRC_SYS_ID = DEG.SRC_SYS_ID
-   and DEG.DATA_ORIGIN <> 'D' 
+   and DEG.DATA_ORIGIN <> 'D'
   left outer join CSMRT_OWNER.UM_D_EXT_SUBJECT_AREA SUB1
     on XDEG.EXT_SUBJ_AREA_1 = SUB1.EXT_SUBJECT_AREA
    and XDEG.SRC_SYS_ID = SUB1.SRC_SYS_ID
-   and SUB1.DATA_ORIGIN <> 'D'  
+   and SUB1.DATA_ORIGIN <> 'D'
   left outer join CSMRT_OWNER.UM_D_EXT_SUBJECT_AREA SUB2
     on XDEG.EXT_SUBJ_AREA_2 = SUB2.EXT_SUBJECT_AREA
    and XDEG.SRC_SYS_ID = SUB2.SRC_SYS_ID
-   and SUB2.DATA_ORIGIN <> 'D'   
+   and SUB2.DATA_ORIGIN <> 'D'
   left outer join CSMRT_OWNER.UM_D_XLATITEM X1
     on 'EXT_CAREER' = X1.FIELDNAME
    and XDEG.EXT_CAREER = X1.FIELDVALUE
-   and XDEG.SRC_SYS_ID = X1.SRC_SYS_ID  
+   and XDEG.SRC_SYS_ID = X1.SRC_SYS_ID
   left outer join CSMRT_OWNER.UM_D_XLATITEM X2
     on 'DEGREE_STATUS' = X2.FIELDNAME
    and XDEG.EXT_DEG_STAT_ID = X2.FIELDVALUE
-   and XDEG.SRC_SYS_ID = X2.SRC_SYS_ID  
+   and XDEG.SRC_SYS_ID = X2.SRC_SYS_ID
   left outer join CSMRT_OWNER.UM_D_XLATITEM X3
     on 'HONORS_CATEGORY' = X3.FIELDNAME
    and XDEG.HONORS_CATEGORY = X3.FIELDVALUE
@@ -191,16 +197,16 @@ COMMON_OWNER.SMT_PROCESS_LOG.PROCESS_DETAIL
 strMessage01    := 'Enabling Indexes for table CSMRT_OWNER.UM_F_EXT_DEG';
 COMMON_OWNER.SMT_LOG.PUT_MESSAGE(i_Message => strMessage01);
 
-strSqlDynamic   := 'alter table CSMRT_OWNER.UM_F_EXT_DEG enable constraint PK_UM_F_EXT_DEG';
-strSqlCommand   := 'SMT_UTILITY.EXECUTE_IMMEDIATE: ' || strSqlDynamic;
-COMMON_OWNER.SMT_UTILITY.EXECUTE_IMMEDIATE
-                (
-                i_SqlStatement          => strSqlDynamic,
-                i_MaxTries              => 10,
-                i_WaitSeconds           => 10,
-                o_Tries                 => intTries
-                );
-				
+--strSqlDynamic   := 'alter table CSMRT_OWNER.UM_F_EXT_DEG enable constraint PK_UM_F_EXT_DEG';
+--strSqlCommand   := 'SMT_UTILITY.EXECUTE_IMMEDIATE: ' || strSqlDynamic;
+--COMMON_OWNER.SMT_UTILITY.EXECUTE_IMMEDIATE
+--                (
+--                i_SqlStatement          => strSqlDynamic,
+--                i_MaxTries              => 10,
+--                i_WaitSeconds           => 10,
+--                o_Tries                 => intTries
+--                );
+
 COMMON_OWNER.SMT_INDEX.ALL_REBUILD('CSMRT_OWNER','UM_F_EXT_DEG');
 
 strSqlCommand := 'SMT_PROCESS_LOG.PROCESS_SUCCESS';

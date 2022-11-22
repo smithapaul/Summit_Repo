@@ -1,4 +1,10 @@
-CREATE OR REPLACE PROCEDURE             "PS_RECRUITER_CAT_P" AUTHID CURRENT_USER IS
+DROP PROCEDURE CSMRT_OWNER.PS_RECRUITER_CAT_P
+/
+
+--
+-- PS_RECRUITER_CAT_P  (Procedure) 
+--
+CREATE OR REPLACE PROCEDURE CSMRT_OWNER."PS_RECRUITER_CAT_P" AUTHID CURRENT_USER IS
 
 ------------------------------------------------------------------------
 -- George Adams

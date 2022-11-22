@@ -1,4 +1,10 @@
-CREATE OR REPLACE PROCEDURE             "PS_ADDR_ORDER_TBL_P" AUTHID CURRENT_USER IS
+DROP PROCEDURE CSMRT_OWNER.PS_ADDR_ORDER_TBL_P
+/
+
+--
+-- PS_ADDR_ORDER_TBL_P  (Procedure) 
+--
+CREATE OR REPLACE PROCEDURE CSMRT_OWNER."PS_ADDR_ORDER_TBL_P" AUTHID CURRENT_USER IS
 
 ------------------------------------------------------------------------
 --Preethi Lodha

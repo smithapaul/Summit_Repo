@@ -1,4 +1,10 @@
-CREATE OR REPLACE PROCEDURE             "UM_F_FA_IR_CDS_DATA_P" AUTHID CURRENT_USER IS
+DROP PROCEDURE CSMRT_OWNER.UM_F_FA_IR_CDS_DATA_P
+/
+
+--
+-- UM_F_FA_IR_CDS_DATA_P  (Procedure) 
+--
+CREATE OR REPLACE PROCEDURE CSMRT_OWNER."UM_F_FA_IR_CDS_DATA_P" AUTHID CURRENT_USER IS
 
 
 ------------------------------------------------------------------------
@@ -41,22 +47,6 @@ COMMON_OWNER.SMT_PROCESS_LOG.PROCESS_INIT
                 o_ProcessSid            => intProcessSid
         );
 
-strMessage01    := 'Disabling Indexes for table CSMRT_OWNER.UM_F_FA_IR_CDS_DATA';
-COMMON_OWNER.SMT_LOG.PUT_MESSAGE(i_Message => strMessage01);
-COMMON_OWNER.SMT_INDEX.ALL_UNUSABLE('CSMRT_OWNER','UM_F_FA_IR_CDS_DATA');
-
---alter table UM_F_FA_IR_CDS_DATA disable constraint PK_UM_F_FA_IR_CDS_DATA;
-strSqlDynamic   := 'alter table CSMRT_OWNER.UM_F_FA_IR_CDS_DATA disable constraint PK_UM_F_FA_IR_CDS_DATA';
-strSqlCommand   := 'SMT_UTILITY.EXECUTE_IMMEDIATE: ' || strSqlDynamic;
-COMMON_OWNER.SMT_UTILITY.EXECUTE_IMMEDIATE
-                (
-                i_SqlStatement          => strSqlDynamic,
-                i_MaxTries              => 10,
-                i_WaitSeconds           => 10,
-                o_Tries                 => intTries
-                );
-				
-				
 strMessage01    := 'Truncating table CSMRT_OWNER.UM_F_FA_IR_CDS_DATA';
 COMMON_OWNER.SMT_LOG.PUT_MESSAGE(i_Message => strMessage01);
 
@@ -71,28 +61,43 @@ COMMON_OWNER.SMT_UTILITY.EXECUTE_IMMEDIATE
                 );
 
 
+strMessage01    := 'Disabling Indexes for table CSMRT_OWNER.UM_F_FA_IR_CDS_DATA';
+COMMON_OWNER.SMT_LOG.PUT_MESSAGE(i_Message => strMessage01);
+COMMON_OWNER.SMT_INDEX.ALL_UNUSABLE('CSMRT_OWNER','UM_F_FA_IR_CDS_DATA');
+
+----alter table UM_F_FA_IR_CDS_DATA disable constraint PK_UM_F_FA_IR_CDS_DATA;
+--strSqlDynamic   := 'alter table CSMRT_OWNER.UM_F_FA_IR_CDS_DATA disable constraint PK_UM_F_FA_IR_CDS_DATA';
+--strSqlCommand   := 'SMT_UTILITY.EXECUTE_IMMEDIATE: ' || strSqlDynamic;
+--COMMON_OWNER.SMT_UTILITY.EXECUTE_IMMEDIATE
+--                (
+--                i_SqlStatement          => strSqlDynamic,
+--                i_MaxTries              => 10,
+--                i_WaitSeconds           => 10,
+--                o_Tries                 => intTries
+--                );
+
 strMessage01    := 'Inserting data into CSMRT_OWNER.UM_F_FA_IR_CDS_DATA';
 COMMON_OWNER.SMT_LOG.PUT_MESSAGE(i_Message => strMessage01);
 
-strSqlCommand   := 'insert into CSMRT_OWNER.UM_F_FA_IR_CDS_DATA';				
-insert /*+ append */ into CSMRT_OWNER.UM_F_FA_IR_CDS_DATA
+strSqlCommand   := 'insert into CSMRT_OWNER.UM_F_FA_IR_CDS_DATA';
+insert /*+ append enable_parallel_dml parallel(8) */ into CSMRT_OWNER.UM_F_FA_IR_CDS_DATA
 SELECT /*+ parallel(8) inline */
   STG.INSTITUTION INSTITUTION_CD,
   STG.CAREER ACAD_CAR_CD,
   STG.TERM TERM_CD,
-  STG.EMPLID PERSON_ID, 
+  STG.EMPLID PERSON_ID,
   NVL(INST.INSTITUTION_SID, 2147483646) INSTITUTION_SID,
   NVL(CAR.ACAD_CAR_SID, 2147483646) ACAD_CAR_SID,
   NVL(TERM.TERM_SID, 2147483646) TERM_SID,
-  NVL(PER.PERSON_SID, 2147483646) PERSON_SID, 
-  NVL(RSDN.RSDNCY_SID, 2147483646) RSDNCY_SID,  
+  NVL(PER.PERSON_SID, 2147483646) PERSON_SID,
+  NVL(RSDN.RSDNCY_SID, 2147483646) RSDNCY_SID,
   STG.RESIDENCY_CD RESIDENCY_CD,
-  NVL(LOAD.ACAD_LOAD_SID, 2147483646) ACAD_LOAD_SID, 
+  NVL(LOAD.ACAD_LOAD_SID, 2147483646) ACAD_LOAD_SID,
   STG.ACAD_LOAD_CD ACAD_LOAD_CD,
   STG.FIRST_FULL_FRESHMAN_FLAG FIRST_FULL_FRESHMAN_FLAG,
   SYSDATE CREATED_EW_DTTM,
   SYSDATE LASTUPD_EW_DTTM
-FROM 
+FROM
   CSSTG_OWNER.UM_FA_IR_CDS_STG STG
     LEFT OUTER JOIN PS_D_ACAD_CAR CAR ON STG.CAREER = CAR.ACAD_CAR_CD
                    AND STG.INSTITUTION = CAR.INSTITUTION_CD
@@ -137,16 +142,16 @@ strMessage01    := 'Enabling Indexes for table CSMRT_OWNER.UM_F_FA_IR_CDS_DATA';
 COMMON_OWNER.SMT_LOG.PUT_MESSAGE(i_Message => strMessage01);
 --alter table UM_F_FA_IR_CDS_DATA enable constraint PK_UM_F_FA_IR_CDS_DATA;
 
-strSqlDynamic   := 'alter table CSMRT_OWNER.UM_F_FA_IR_CDS_DATA enable constraint PK_UM_F_FA_IR_CDS_DATA';
-strSqlCommand   := 'SMT_UTILITY.EXECUTE_IMMEDIATE: ' || strSqlDynamic;
-COMMON_OWNER.SMT_UTILITY.EXECUTE_IMMEDIATE
-                (
-                i_SqlStatement          => strSqlDynamic,
-                i_MaxTries              => 10,
-                i_WaitSeconds           => 10,
-                o_Tries                 => intTries
-                );
-				
+--strSqlDynamic   := 'alter table CSMRT_OWNER.UM_F_FA_IR_CDS_DATA enable constraint PK_UM_F_FA_IR_CDS_DATA';
+--strSqlCommand   := 'SMT_UTILITY.EXECUTE_IMMEDIATE: ' || strSqlDynamic;
+--COMMON_OWNER.SMT_UTILITY.EXECUTE_IMMEDIATE
+--                (
+--                i_SqlStatement          => strSqlDynamic,
+--                i_MaxTries              => 10,
+--                i_WaitSeconds           => 10,
+--                o_Tries                 => intTries
+--                );
+
 COMMON_OWNER.SMT_INDEX.ALL_REBUILD('CSMRT_OWNER','UM_F_FA_IR_CDS_DATA');
 
 strSqlCommand := 'SMT_PROCESS_LOG.PROCESS_SUCCESS';
