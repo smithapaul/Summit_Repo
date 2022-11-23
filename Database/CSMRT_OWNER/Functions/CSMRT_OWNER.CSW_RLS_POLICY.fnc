@@ -1,0 +1,23 @@
+DROP FUNCTION CSMRT_OWNER.CSW_RLS_POLICY
+/
+
+--
+-- CSW_RLS_POLICY  (Function) 
+--
+CREATE OR REPLACE FUNCTION CSMRT_OWNER.CSW_RLS_POLICY(
+  schema_in IN VARCHAR2,
+  object_in IN VARCHAR2
+ )
+RETURN VARCHAR2
+IS
+  l_return_value VARCHAR2(2000);
+BEGIN
+ IF SYS_CONTEXT('USERENV', 'SESSION_USER') = 'CSSTG_OWNER' THEN
+    l_return_value := 'INSTITUTION_CD = ''UMBOS''';
+--    l_return_value := 'ACAD_CAR_SID < 2147483646';
+ ELSE
+    l_return_value := '1=1';
+ END IF;
+ RETURN l_return_value;
+END CSW_RLS_POLICY;
+/
