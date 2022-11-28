@@ -1,0 +1,32 @@
+DROP TABLE CSSTG_OWNER.PS_T_ACAD_PLAN CASCADE CONSTRAINTS
+/
+
+--
+-- PS_T_ACAD_PLAN  (Table) 
+--
+CREATE TABLE CSSTG_OWNER.PS_T_ACAD_PLAN
+(
+  EMPLID             VARCHAR2(11 BYTE)          NOT NULL,
+  ACAD_CAREER        VARCHAR2(4 BYTE)           NOT NULL,
+  STDNT_CAR_NBR      INTEGER                    NOT NULL,
+  EFFDT              DATE                       NOT NULL,
+  EFFSEQ             INTEGER                    NOT NULL,
+  ACAD_PLAN          VARCHAR2(10 BYTE)          NOT NULL,
+  SRC_SYS_ID         VARCHAR2(5 BYTE)           NOT NULL,
+  DECLARE_DT         DATE                       NOT NULL,
+  PLAN_SEQUENCE      INTEGER                    NOT NULL,
+  REQ_TERM           VARCHAR2(4 BYTE)           NOT NULL,
+  COMPLETION_TERM    VARCHAR2(4 BYTE)           NOT NULL,
+  STDNT_DEGR         VARCHAR2(2 BYTE)           NOT NULL,
+  DEGR_CHKOUT_STAT   VARCHAR2(2 BYTE)           NOT NULL,
+  ADVIS_STATUS       VARCHAR2(4 BYTE)           NOT NULL,
+  SSR_APT_INSTANCE   INTEGER                    NOT NULL,
+  SSR_YR_OF_PROG     VARCHAR2(4 BYTE)           NOT NULL,
+  SCC_ROW_ADD_OPRID  VARCHAR2(30 BYTE)          NOT NULL,
+  SCC_ROW_ADD_DTTM   DATE,
+  SCC_ROW_UPD_OPRID  VARCHAR2(30 BYTE)          NOT NULL,
+  SCC_ROW_UPD_DTTM   DATE,
+  BATCH_SID          NUMBER(10)                 NOT NULL
+)
+NOCOMPRESS
+/

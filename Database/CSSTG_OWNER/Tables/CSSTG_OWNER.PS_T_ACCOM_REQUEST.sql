@@ -1,0 +1,22 @@
+DROP TABLE CSSTG_OWNER.PS_T_ACCOM_REQUEST CASCADE CONSTRAINTS
+/
+
+--
+-- PS_T_ACCOM_REQUEST  (Table) 
+--
+CREATE TABLE CSSTG_OWNER.PS_T_ACCOM_REQUEST
+(
+  EMPLID            VARCHAR2(11 BYTE)           NOT NULL,
+  EMPL_RCD          INTEGER                     NOT NULL,
+  ACCOMMODATION_ID  INTEGER                     NOT NULL,
+  SRC_SYS_ID        VARCHAR2(5 BYTE)            NOT NULL,
+  DT_REQUESTED      DATE                        NOT NULL,
+  RESPONSIBLE_ID    VARCHAR2(11 BYTE)           NOT NULL,
+  REQUEST_STATUS    VARCHAR2(1 BYTE)            NOT NULL,
+  STATUS_DT         DATE                        NOT NULL,
+  BATCH_SID         NUMBER(10)                  NOT NULL,
+  COMMENTS          VARCHAR2(4000 BYTE),
+  SRC_SCN           NUMBER
+)
+NOCOMPRESS
+/

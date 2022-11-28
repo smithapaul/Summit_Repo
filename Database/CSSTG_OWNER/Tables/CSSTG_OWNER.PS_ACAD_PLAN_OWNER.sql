@@ -1,0 +1,22 @@
+DROP TABLE CSSTG_OWNER.PS_ACAD_PLAN_OWNER CASCADE CONSTRAINTS
+/
+
+--
+-- PS_ACAD_PLAN_OWNER  (Table) 
+--
+CREATE TABLE CSSTG_OWNER.PS_ACAD_PLAN_OWNER
+(
+  INSTITUTION      VARCHAR2(5 BYTE)             NOT NULL,
+  ACAD_PLAN        VARCHAR2(10 BYTE)            NOT NULL,
+  EFFDT            DATE                         NOT NULL,
+  ACAD_ORG         VARCHAR2(10 BYTE)            NOT NULL,
+  SRC_SYS_ID       VARCHAR2(5 BYTE)             NOT NULL,
+  PERCENT_OWNED    NUMBER(6,3)                  NOT NULL,
+  LOAD_ERROR       VARCHAR2(1 BYTE)             NOT NULL,
+  DATA_ORIGIN      VARCHAR2(1 BYTE)             NOT NULL,
+  CREATED_EW_DTTM  DATE                         DEFAULT SYSDATE,
+  LASTUPD_EW_DTTM  DATE                         DEFAULT SYSDATE,
+  BATCH_SID        NUMBER(10)                   NOT NULL
+)
+COMPRESS BASIC
+/

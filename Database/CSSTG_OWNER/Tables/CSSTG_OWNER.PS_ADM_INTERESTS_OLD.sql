@@ -1,0 +1,25 @@
+DROP TABLE CSSTG_OWNER.PS_ADM_INTERESTS_OLD CASCADE CONSTRAINTS
+/
+
+--
+-- PS_ADM_INTERESTS_OLD  (Table) 
+--
+CREATE TABLE CSSTG_OWNER.PS_ADM_INTERESTS_OLD
+(
+  EMPLID            VARCHAR2(11 BYTE)           NOT NULL,
+  ACAD_CAREER       VARCHAR2(4 BYTE)            NOT NULL,
+  EFFDT             DATE                        NOT NULL,
+  SEQNUM            INTEGER                     NOT NULL,
+  SRC_SYS_ID        VARCHAR2(5 BYTE)            NOT NULL,
+  EXT_SUBJECT_AREA  VARCHAR2(4 BYTE)            NOT NULL,
+  DESCR             VARCHAR2(30 BYTE)           NOT NULL,
+  LS_DATA_SOURCE    VARCHAR2(3 BYTE)            NOT NULL,
+  PRIORITY          INTEGER                     NOT NULL,
+  LOAD_ERROR        VARCHAR2(1 BYTE)            NOT NULL,
+  DATA_ORIGIN       VARCHAR2(1 BYTE)            NOT NULL,
+  CREATED_EW_DTTM   DATE,
+  LASTUPD_EW_DTTM   DATE,
+  BATCH_SID         NUMBER(10)                  NOT NULL
+)
+COMPRESS BASIC
+/

@@ -1,0 +1,31 @@
+DROP TABLE CSSTG_OWNER.PS_SEL_CRITER_TBL CASCADE CONSTRAINTS
+/
+
+--
+-- PS_SEL_CRITER_TBL  (Table) 
+--
+CREATE TABLE CSSTG_OWNER.PS_SEL_CRITER_TBL
+(
+  BUSINESS_UNIT      VARCHAR2(5 BYTE)           NOT NULL,
+  CRITERIA           VARCHAR2(12 BYTE)          NOT NULL,
+  EFFDT              DATE                       NOT NULL,
+  SEQNO              INTEGER                    NOT NULL,
+  SRC_SYS_ID         VARCHAR2(5 BYTE)           NOT NULL,
+  RECNAME            VARCHAR2(15 BYTE)          NOT NULL,
+  FIELDNAME          VARCHAR2(18 BYTE)          NOT NULL,
+  DESCR              VARCHAR2(30 BYTE)          NOT NULL,
+  FIELDTYPE          INTEGER                    NOT NULL,
+  HOW_FIELD_SPECIFY  VARCHAR2(1 BYTE)           NOT NULL,
+  SF_SEL_OPERATOR    VARCHAR2(3 BYTE)           NOT NULL,
+  TREE_NAME_SETID    VARCHAR2(5 BYTE)           NOT NULL,
+  TREE_NAME          VARCHAR2(18 BYTE)          NOT NULL,
+  TREE_LEVEL         VARCHAR2(10 BYTE)          NOT NULL,
+  TREE_TYPE          VARCHAR2(1 BYTE)           NOT NULL,
+  LOAD_ERROR         VARCHAR2(1 BYTE)           NOT NULL,
+  DATA_ORIGIN        VARCHAR2(1 BYTE)           NOT NULL,
+  CREATED_EW_DTTM    DATE,
+  LASTUPD_EW_DTTM    DATE,
+  BATCH_SID          NUMBER(10)                 NOT NULL
+)
+COMPRESS BASIC
+/

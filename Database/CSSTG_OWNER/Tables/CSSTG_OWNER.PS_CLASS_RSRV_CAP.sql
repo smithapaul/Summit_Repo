@@ -1,0 +1,21 @@
+DROP TABLE CSSTG_OWNER.PS_CLASS_RSRV_CAP CASCADE CONSTRAINTS
+/
+
+--
+-- PS_CLASS_RSRV_CAP  (Table) 
+--
+CREATE TABLE CSSTG_OWNER.PS_CLASS_RSRV_CAP
+(
+  CRSE_ID         VARCHAR2(6 BYTE)              NOT NULL,
+  CRSE_OFFER_NBR  INTEGER                       NOT NULL,
+  STRM            VARCHAR2(4 BYTE)              NOT NULL,
+  SESSION_CODE    VARCHAR2(3 BYTE)              NOT NULL,
+  CLASS_SECTION   VARCHAR2(4 BYTE)              NOT NULL,
+  RSRV_CAP_NBR    INTEGER                       NOT NULL,
+  START_DT        DATE                          NOT NULL,
+  SRC_SYS_ID      VARCHAR2(4 BYTE)              NOT NULL,
+  ENRL_CAP        INTEGER                       NOT NULL,
+  RQRMNT_GROUP    VARCHAR2(6 BYTE)              NOT NULL
+)
+COMPRESS BASIC
+/

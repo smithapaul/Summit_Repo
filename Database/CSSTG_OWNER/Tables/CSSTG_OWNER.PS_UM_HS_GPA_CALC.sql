@@ -1,0 +1,32 @@
+DROP TABLE CSSTG_OWNER.PS_UM_HS_GPA_CALC CASCADE CONSTRAINTS
+/
+
+--
+-- PS_UM_HS_GPA_CALC  (Table) 
+--
+CREATE TABLE CSSTG_OWNER.PS_UM_HS_GPA_CALC
+(
+  EMPLID             VARCHAR2(11 BYTE)          NOT NULL,
+  EXT_ORG_ID         VARCHAR2(11 BYTE)          NOT NULL,
+  EXT_CAREER         VARCHAR2(4 BYTE)           NOT NULL,
+  EXT_DATA_NBR       INTEGER                    NOT NULL,
+  EXT_SUMM_TYPE      VARCHAR2(4 BYTE)           NOT NULL,
+  INSTITUTION        VARCHAR2(5 BYTE)           NOT NULL,
+  EXT_COURSE_NBR     INTEGER                    NOT NULL,
+  SRC_SYS_ID         VARCHAR2(5 BYTE)           NOT NULL,
+  SCHOOL_SUBJECT     VARCHAR2(8 BYTE)           NOT NULL,
+  SCHOOL_CRSE_NBR    VARCHAR2(10 BYTE)          NOT NULL,
+  GPA_TYPE           VARCHAR2(4 BYTE)           NOT NULL,
+  EXT_GPA            NUMBER(6,3)                NOT NULL,
+  EXT_UNITS          NUMBER(5,2)                NOT NULL,
+  UM_HS_GPA_WT_TYPE  VARCHAR2(1 BYTE)           NOT NULL,
+  UM_HS_GPA_WEIGHT   NUMBER(3,2)                NOT NULL,
+  CONVERT_GPA        NUMBER(6,3)                NOT NULL,
+  LOAD_ERROR         VARCHAR2(1 BYTE)           NOT NULL,
+  DATA_ORIGIN        VARCHAR2(1 BYTE)           NOT NULL,
+  CREATED_EW_DTTM    DATE,
+  LASTUPD_EW_DTTM    DATE,
+  BATCH_SID          NUMBER(10)                 NOT NULL
+)
+COMPRESS BASIC
+/

@@ -1,0 +1,27 @@
+DROP TABLE CSSTG_OWNER.PS_CRSE_TOPICS CASCADE CONSTRAINTS
+/
+
+--
+-- PS_CRSE_TOPICS  (Table) 
+--
+CREATE TABLE CSSTG_OWNER.PS_CRSE_TOPICS
+(
+  CRSE_ID             VARCHAR2(6 BYTE)          NOT NULL,
+  EFFDT               DATE                      NOT NULL,
+  CRS_TOPIC_ID        INTEGER                   NOT NULL,
+  SRC_SYS_ID          VARCHAR2(5 BYTE)          NOT NULL,
+  DESCR               VARCHAR2(30 BYTE)         NOT NULL,
+  DESCRSHORT          VARCHAR2(10 BYTE)         NOT NULL,
+  CRSE_REPEATABLE     VARCHAR2(1 BYTE)          NOT NULL,
+  UNITS_REPEAT_LIMIT  NUMBER(5,2)               NOT NULL,
+  CRSE_REPEAT_LIMIT   NUMBER(10)                NOT NULL,
+  DESCRFORMAL         VARCHAR2(50 BYTE)         NOT NULL,
+  CRS_TOPIC_LINK      INTEGER                   NOT NULL,
+  LOAD_ERROR          VARCHAR2(1 BYTE)          NOT NULL,
+  DATA_ORIGIN         VARCHAR2(1 BYTE)          NOT NULL,
+  CREATED_EW_DTTM     DATE,
+  LASTUPD_EW_DTTM     DATE,
+  BATCH_SID           NUMBER(10)                NOT NULL
+)
+COMPRESS BASIC
+/

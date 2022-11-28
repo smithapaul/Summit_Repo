@@ -1,0 +1,53 @@
+DROP TABLE CSSTG_OWNER.PS_AGGR_LIMIT_TBL CASCADE CONSTRAINTS
+/
+
+--
+-- PS_AGGR_LIMIT_TBL  (Table) 
+--
+CREATE TABLE CSSTG_OWNER.PS_AGGR_LIMIT_TBL
+(
+  AGGREGATE_AREA      VARCHAR2(10 BYTE)         NOT NULL,
+  AID_YEAR            VARCHAR2(4 BYTE)          NOT NULL,
+  EFFDT               DATE                      NOT NULL,
+  SRC_SYS_ID          VARCHAR2(5 BYTE)          NOT NULL,
+  EFF_STATUS          VARCHAR2(1 BYTE)          NOT NULL,
+  DESCR               VARCHAR2(30 BYTE)         NOT NULL,
+  UNDRGRAD_LIMIT      NUMBER(11,2)              NOT NULL,
+  GRADUATE_LIMIT      NUMBER(11,2)              NOT NULL,
+  MAX_TERMS           INTEGER                   NOT NULL,
+  FIN_AID_TYPE        VARCHAR2(4 BYTE)          NOT NULL,
+  PELL_GRANT          VARCHAR2(1 BYTE)          NOT NULL,
+  FA_SOURCE           VARCHAR2(1 BYTE)          NOT NULL,
+  LOAN_PROGRAM        VARCHAR2(1 BYTE)          NOT NULL,
+  LOAN_INTEREST_ATTR  VARCHAR2(1 BYTE)          NOT NULL,
+  CURRENCY_CD         VARCHAR2(3 BYTE)          NOT NULL,
+  AGGREGATE_PROGRAM   VARCHAR2(4 BYTE)          NOT NULL,
+  GRAD_LIMIT_RULE     VARCHAR2(1 BYTE)          NOT NULL,
+  FEDERAL_ID          VARCHAR2(4 BYTE)          NOT NULL,
+  SFA_AGGR_MP_FLAG    VARCHAR2(1 BYTE)          NOT NULL,
+  SFA_AGGR_DEP_LMT    NUMBER(11,2)              NOT NULL,
+  SFA_PRCNT_PELL_ONE  NUMBER(5,2)               NOT NULL,
+  SFA_PRCNT_PELL_TWO  NUMBER(5,2)               NOT NULL,
+  SFA_LIFETM_ELG_MAX  NUMBER(8,4)               NOT NULL,
+  LOAD_ERROR          VARCHAR2(1 BYTE)          NOT NULL,
+  DATA_ORIGIN         VARCHAR2(1 BYTE)          NOT NULL,
+  CREATED_EW_DTTM     DATE                      DEFAULT SYSDATE,
+  LASTUPD_EW_DTTM     DATE                      DEFAULT SYSDATE,
+  BATCH_SID           NUMBER(10)                NOT NULL,
+  DESCRLONG           CLOB
+)
+LOB (DESCRLONG) STORE AS BASICFILE (
+  TABLESPACE  CSSTG_DATA1
+  ENABLE      STORAGE IN ROW
+  CHUNK       16384
+  RETENTION
+  STORAGE    (
+              INITIAL          1M
+              NEXT             1M
+              MINEXTENTS       1
+              MAXEXTENTS       UNLIMITED
+              PCTINCREASE      0
+              BUFFER_POOL      DEFAULT
+             ))
+COMPRESS BASIC
+/

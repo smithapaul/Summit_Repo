@@ -1,0 +1,24 @@
+DROP TABLE CSSTG_OWNER.PS_S_RT_RATE_DEF_OLD CASCADE CONSTRAINTS
+/
+
+--
+-- PS_S_RT_RATE_DEF_OLD  (Table) 
+--
+CREATE TABLE CSSTG_OWNER.PS_S_RT_RATE_DEF_OLD
+(
+  RT_RATE_INDEX    VARCHAR2(10 BYTE)            NOT NULL,
+  TERM             INTEGER                      NOT NULL,
+  FROM_CUR         VARCHAR2(3 BYTE)             NOT NULL,
+  TO_CUR           VARCHAR2(3 BYTE)             NOT NULL,
+  SRC_SYS_ID       VARCHAR2(5 BYTE)             NOT NULL,
+  MAX_VARIANCE     NUMBER(5,2)                  NOT NULL,
+  ERROR_TYPE       VARCHAR2(3 BYTE)             NOT NULL,
+  INT_BASIS        VARCHAR2(2 BYTE)             NOT NULL,
+  LOAD_ERROR       VARCHAR2(1 BYTE)             NOT NULL,
+  DATA_ORIGIN      VARCHAR2(1 BYTE)             NOT NULL,
+  CREATED_EW_DTTM  DATE,
+  LASTUPD_EW_DTTM  DATE,
+  BATCH_SID        NUMBER(10)                   NOT NULL
+)
+COMPRESS BASIC
+/

@@ -1,0 +1,32 @@
+DROP TABLE CSSTG_OWNER.PS_EXT_ACAD_SUBJ CASCADE CONSTRAINTS
+/
+
+--
+-- PS_EXT_ACAD_SUBJ  (Table) 
+--
+CREATE TABLE CSSTG_OWNER.PS_EXT_ACAD_SUBJ
+(
+  EMPLID            VARCHAR2(11 BYTE)           NOT NULL,
+  EXT_ORG_ID        VARCHAR2(11 BYTE)           NOT NULL,
+  EXT_CAREER        VARCHAR2(4 BYTE)            NOT NULL,
+  EXT_DATA_NBR      INTEGER                     NOT NULL,
+  EXT_SUBJECT_AREA  VARCHAR2(4 BYTE)            NOT NULL,
+  COURSE_LEVEL      VARCHAR2(2 BYTE)            NOT NULL,
+  SRC_SYS_ID        VARCHAR2(5 BYTE)            NOT NULL,
+  UNT_ATMP_TOTAL    NUMBER(7,2)                 NOT NULL,
+  UNT_COMP_TOTAL    NUMBER(7,2)                 NOT NULL,
+  TOTAL_CRSE_COMP   INTEGER                     NOT NULL,
+  TOTAL_CRSE_ATMP   INTEGER                     NOT NULL,
+  GPA_TYPE          VARCHAR2(4 BYTE)            NOT NULL,
+  EXT_GPA           NUMBER(6,3)                 NOT NULL,
+  CONVERT_GPA       NUMBER(6,3)                 NOT NULL,
+  INSTITUTION       VARCHAR2(5 BYTE)            NOT NULL,
+  UNT_TYPE          VARCHAR2(3 BYTE)            NOT NULL,
+  LOAD_ERROR        VARCHAR2(1 BYTE)            NOT NULL,
+  DATA_ORIGIN       VARCHAR2(1 BYTE)            NOT NULL,
+  CREATED_EW_DTTM   DATE,
+  LASTUPD_EW_DTTM   DATE,
+  BATCH_SID         NUMBER(10)                  NOT NULL
+)
+COMPRESS BASIC
+/

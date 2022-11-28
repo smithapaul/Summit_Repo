@@ -1,0 +1,44 @@
+DROP TABLE CSSTG_OWNER.UM_SF_AMH_TUITION_WVR_TMP CASCADE CONSTRAINTS
+/
+
+--
+-- UM_SF_AMH_TUITION_WVR_TMP  (Table) 
+--
+CREATE TABLE CSSTG_OWNER.UM_SF_AMH_TUITION_WVR_TMP
+(
+  INSTITUTION_CD            VARCHAR2(5 BYTE),
+  ITEM_TERM                 VARCHAR2(4 BYTE),
+  ITEM_TERM_LD              VARCHAR2(30 BYTE),
+  PERSON_ID                 VARCHAR2(11 BYTE),
+  FIRST_NAME                VARCHAR2(30 BYTE),
+  LAST_NAME                 VARCHAR2(30 BYTE),
+  ITEM_TYPE                 VARCHAR2(12 BYTE),
+  ITEM_TYPE_LD              VARCHAR2(30 BYTE),
+  ACAD_CAREER               VARCHAR2(4 BYTE),
+  ACAD_YEAR                 VARCHAR2(4 BYTE),
+  SPONSOR_ID                VARCHAR2(20 BYTE),
+  EMPLOYEE_TYPE             VARCHAR2(30 BYTE),
+  ITEM_AMT                  NUMBER(16,2),
+  AMOUNT_TYPE               VARCHAR2(30 BYTE),
+  DAY_CE_FLAG               VARCHAR2(30 BYTE),
+  TAXABLE_FLAG              VARCHAR2(30 BYTE),
+  STUDENT_IS_EMPLOYEE_FLAG  VARCHAR2(30 BYTE),
+  PARTITION_KEY             VARCHAR2(10 BYTE),
+  CREATED_EW_DTTM           VARCHAR2(20 BYTE)
+)
+ORGANIZATION EXTERNAL
+  (  TYPE ORACLE_LOADER
+     DEFAULT DIRECTORY CSW_FILES
+     ACCESS PARAMETERS 
+       ( 
+         RECORDS DELIMITED BY NEWLINE
+                                        SKIP 1
+                                NOBADFILE
+                                NOLOGFILE
+                                FIELDS TERMINATED BY ','
+                                       OPTIONALLY ENCLOSED BY '"'
+       )
+     LOCATION (CSW_FILES:'UM_SF_AMH_TUITION_WVR_FLAT_FILE.csv')
+  )
+REJECT LIMIT UNLIMITED
+/

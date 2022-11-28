@@ -1,0 +1,19 @@
+DROP TABLE CSSTG_OWNER.PS_T_ISIR_COMMENTS CASCADE CONSTRAINTS
+/
+
+--
+-- PS_T_ISIR_COMMENTS  (Table) 
+--
+CREATE TABLE CSSTG_OWNER.PS_T_ISIR_COMMENTS
+(
+  EMPLID        VARCHAR2(11 BYTE)               NOT NULL,
+  INSTITUTION   VARCHAR2(5 BYTE)                NOT NULL,
+  AID_YEAR      VARCHAR2(4 BYTE)                NOT NULL,
+  EFFDT         DATE                            NOT NULL,
+  EFFSEQ        INTEGER                         NOT NULL,
+  COMMENT_CODE  VARCHAR2(3 BYTE)                NOT NULL,
+  SRC_SYS_ID    VARCHAR2(5 BYTE)                NOT NULL,
+  BATCH_SID     NUMBER(10)                      NOT NULL
+)
+NOCOMPRESS
+/

@@ -1,0 +1,22 @@
+DROP TABLE CSSTG_OWNER.PARTITION_SWAP_CONTROL CASCADE CONSTRAINTS
+/
+
+--
+-- PARTITION_SWAP_CONTROL  (Table) 
+--
+CREATE TABLE CSSTG_OWNER.PARTITION_SWAP_CONTROL
+(
+  TABLE_OWNER          VARCHAR2(30 BYTE)        NOT NULL,
+  TABLE_NAME           VARCHAR2(30 BYTE)        NOT NULL,
+  PARTITION_INDICATOR  INTEGER                  NOT NULL,
+  LOADTIME             DATE,
+  UPDATED_BY           VARCHAR2(100 BYTE)
+)
+NOCOMPRESS
+/
+
+COMMENT ON TABLE CSSTG_OWNER.PARTITION_SWAP_CONTROL IS 'Each table that employs partition swapping has one row in this table.  Column PARTITION_INDICATOR indicates the current partition.'
+/
+
+COMMENT ON COLUMN CSSTG_OWNER.PARTITION_SWAP_CONTROL.PARTITION_INDICATOR IS 'The value of this column the current partition of the indicated table.'
+/
