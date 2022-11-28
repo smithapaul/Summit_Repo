@@ -1,0 +1,26 @@
+DROP VIEW CSSTG_OWNER.UM_JOB_STATS_VW
+/
+
+--
+-- UM_JOB_STATS_VW  (View) 
+--
+CREATE OR REPLACE VIEW CSSTG_OWNER.UM_JOB_STATS_VW
+BEQUEATH DEFINER
+AS 
+SELECT   PROJECT,
+            JOB_NBR,
+            JOB_NAME,
+            JOB_STATUS,
+            trunc(TO_DATE (START_TIME, 'YYYY-MM-DD HH24:MI:SS') + .5) BATCH_DT, 
+            START_TIME,
+            TO_DATE (SUBSTR (START_TIME, 1, 10), 'YYYY-MM-DD') START_DT,
+            TO_DATE (START_TIME, 'YYYY-MM-DD HH24:MI:SS') START_DT_TIME,
+            END_TIME,
+            TO_DATE (SUBSTR (END_TIME, 1, 10), 'YYYY-MM-DD') END_DT,
+            TO_DATE (END_TIME, 'YYYY-MM-DD HH24:MI:SS') END_DT_TIME,
+            ELAPSED_TIME,
+            CATEGORY,
+            JOB_LOG
+     FROM   UM_JOB_STATS
+    WHERE   substr(START_TIME,1,10) >= '2010-11-05'
+/
