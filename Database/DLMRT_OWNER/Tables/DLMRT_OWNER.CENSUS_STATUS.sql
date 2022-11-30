@@ -1,0 +1,124 @@
+DROP TABLE DLMRT_OWNER.CENSUS_STATUS CASCADE CONSTRAINTS
+/
+
+--
+-- CENSUS_STATUS  (Table) 
+--
+CREATE TABLE DLMRT_OWNER.CENSUS_STATUS
+(
+  UPLOAD_TYPE           VARCHAR2(15 BYTE),
+  INSTITUTION           VARCHAR2(5 BYTE),
+  CENSUS_PERIOD         VARCHAR2(5 BYTE),
+  CENSUS_SEQ            INTEGER,
+  FILE_NAME             VARCHAR2(4000 BYTE),
+  FILE_NAME_PRELIM      VARCHAR2(4000 BYTE),
+  FILE_NAME_CONFIRM     VARCHAR2(4000 BYTE),
+  UPLOAD_ID             VARCHAR2(30 BYTE),
+  UPLOAD_STATUS         VARCHAR2(10 BYTE),
+  STAGE_STATUS          VARCHAR2(10 BYTE),
+  PRELIM_STATUS         VARCHAR2(10 BYTE),
+  CONFIRMED_STATUS      VARCHAR2(10 BYTE),
+  APPROVED_FOR_CONFIRM  VARCHAR2(1 BYTE),
+  UPLOAD_TIME           DATE,
+  UPLOAD_TIME_PRELIM    DATE,
+  UPLOAD_TIME_CONFIRM   DATE,
+  STAGE_LOAD_TIME       DATE,
+  PRELIM_LOAD_TIME      DATE,
+  CONFIRMED_LOAD_TIME   DATE,
+  UPLOAD_ROW_COUNT      INTEGER,
+  STAGE_ROW_COUNT       INTEGER,
+  PRELIM_ROW_COUNT      INTEGER,
+  CONFIRMED_ROW_COUNT   INTEGER,
+  LAST_UPDATE_BY        VARCHAR2(100 BYTE),
+  LAST_UPDATE_TIME      DATE                    DEFAULT SYSDATE,
+  READY_FOR_STAGE       VARCHAR2(1 BYTE) GENERATED ALWAYS AS (CASE  WHEN ("UPLOAD_STATUS"='LOADED' AND ("UPLOAD_TIME">"STAGE_LOAD_TIME" OR "STAGE_LOAD_TIME" IS NULL)) THEN 'Y' ELSE 'N' END),
+  READY_FOR_PRELIM      VARCHAR2(1 BYTE) GENERATED ALWAYS AS (CASE  WHEN ("STAGE_STATUS"='LOADED' AND ("STAGE_LOAD_TIME">"PRELIM_LOAD_TIME" OR "PRELIM_LOAD_TIME" IS NULL)) THEN 'Y' ELSE 'N' END),
+  READY_FOR_CONFIRM     VARCHAR2(1 BYTE) GENERATED ALWAYS AS (CASE  WHEN ("PRELIM_STATUS"='LOADED' AND "PRELIM_LOAD_TIME">="STAGE_LOAD_TIME" AND ("PRELIM_LOAD_TIME">"CONFIRMED_LOAD_TIME" OR "CONFIRMED_LOAD_TIME" IS NULL)) THEN 'Y' ELSE 'N' END),
+  PROCESSING_COMPLETE   VARCHAR2(1 BYTE) GENERATED ALWAYS AS (CASE  WHEN ("CONFIRMED_STATUS"='LOADED' AND "CONFIRMED_LOAD_TIME">"UPLOAD_TIME") THEN 'Y' ELSE 'N' END)
+)
+NOCOMPRESS
+/
+
+COMMENT ON TABLE DLMRT_OWNER.CENSUS_STATUS IS 'Contains the status of Data Lab census data.'
+/
+
+COMMENT ON COLUMN DLMRT_OWNER.CENSUS_STATUS.UPLOAD_TYPE IS 'Type of data - ENROLLMENT etc.'
+/
+
+COMMENT ON COLUMN DLMRT_OWNER.CENSUS_STATUS.FILE_NAME IS 'Name of the file whose data was most recently loaded into UPLOAD_S1.'
+/
+
+COMMENT ON COLUMN DLMRT_OWNER.CENSUS_STATUS.FILE_NAME_PRELIM IS 'Name of the file that is the source for the preliminary data.'
+/
+
+COMMENT ON COLUMN DLMRT_OWNER.CENSUS_STATUS.FILE_NAME_CONFIRM IS 'Name of the file that is the source for the confirmed data.'
+/
+
+COMMENT ON COLUMN DLMRT_OWNER.CENSUS_STATUS.UPLOAD_ID IS 'Upload Id that was the source of the data.'
+/
+
+COMMENT ON COLUMN DLMRT_OWNER.CENSUS_STATUS.UPLOAD_STATUS IS 'Status of the data in table UPLOAD_S1. Possible values: Null, LOADED'
+/
+
+COMMENT ON COLUMN DLMRT_OWNER.CENSUS_STATUS.STAGE_STATUS IS 'Status of the data in the S2 stage table. Possible values: Null - no data loaded, LOADED - data loaded without error, REJECTED - errors detected during load'
+/
+
+COMMENT ON COLUMN DLMRT_OWNER.CENSUS_STATUS.PRELIM_STATUS IS 'Status of the data in the preliminary tables. Possible values: Null - no data loaded, LOADED - data loaded, REMOVED - previously loaded data has been removed'
+/
+
+COMMENT ON COLUMN DLMRT_OWNER.CENSUS_STATUS.CONFIRMED_STATUS IS 'Status of the data in the confirmed tables. Possible values: Null, LOADED'
+/
+
+COMMENT ON COLUMN DLMRT_OWNER.CENSUS_STATUS.APPROVED_FOR_CONFIRM IS 'Y indicates that the period has been approved for confirmation (move from preliminary tables to the confirmed tables).  Both READY_FOR_CONFIRM and APPROVED_FOR_CONFIRM must be Y for the period to be confirmed.'
+/
+
+COMMENT ON COLUMN DLMRT_OWNER.CENSUS_STATUS.UPLOAD_TIME IS 'Time that the data in UPLOAD_S1 was loaded.'
+/
+
+COMMENT ON COLUMN DLMRT_OWNER.CENSUS_STATUS.UPLOAD_TIME_PRELIM IS 'Time that the preliminary data was loaded to UPLOAD_S1.'
+/
+
+COMMENT ON COLUMN DLMRT_OWNER.CENSUS_STATUS.UPLOAD_TIME_CONFIRM IS 'Time that the confirmed data was loaded to UPLOAD_S1.'
+/
+
+COMMENT ON COLUMN DLMRT_OWNER.CENSUS_STATUS.STAGE_LOAD_TIME IS 'Time that the S2 stage data was loaded.'
+/
+
+COMMENT ON COLUMN DLMRT_OWNER.CENSUS_STATUS.PRELIM_LOAD_TIME IS 'Time that the preliminary data was loaded.'
+/
+
+COMMENT ON COLUMN DLMRT_OWNER.CENSUS_STATUS.CONFIRMED_LOAD_TIME IS 'Time that the confirmed data was loaded.'
+/
+
+COMMENT ON COLUMN DLMRT_OWNER.CENSUS_STATUS.UPLOAD_ROW_COUNT IS 'Number of rows in table UPLOAD_S1.'
+/
+
+COMMENT ON COLUMN DLMRT_OWNER.CENSUS_STATUS.STAGE_ROW_COUNT IS 'Number of rows in the S2 stage table.'
+/
+
+COMMENT ON COLUMN DLMRT_OWNER.CENSUS_STATUS.PRELIM_ROW_COUNT IS 'Number of rows in the subject area''s main (IR_STUDENT_ENROL_PRELIM etc.) preliminary table.'
+/
+
+COMMENT ON COLUMN DLMRT_OWNER.CENSUS_STATUS.CONFIRMED_ROW_COUNT IS 'Number of rows in the subject area''s main (IR_STUDENT_ENROL_CONFIRMED etc.) confirmed table.'
+/
+
+COMMENT ON COLUMN DLMRT_OWNER.CENSUS_STATUS.READY_FOR_STAGE IS 'Y indicates that the data is ready to be copied from the upload table to the stage table.'
+/
+
+COMMENT ON COLUMN DLMRT_OWNER.CENSUS_STATUS.READY_FOR_PRELIM IS 'Y indicates that the data is ready to be copied from the stage table to the preliminary tables.'
+/
+
+COMMENT ON COLUMN DLMRT_OWNER.CENSUS_STATUS.READY_FOR_CONFIRM IS 'Y indicates that the data is eligible for confirmation (move from preliminary tables to the confirmed tables).'
+/
+
+COMMENT ON COLUMN DLMRT_OWNER.CENSUS_STATUS.PROCESSING_COMPLETE IS 'Y indicates that the data has been confirmed and processing is complete.'
+/
+
+
+ALTER TABLE DLMRT_OWNER.CENSUS_STATUS ADD (
+  CONSTRAINT PK_CENSUS_STATUS
+  PRIMARY KEY
+  (UPLOAD_TYPE, INSTITUTION, CENSUS_PERIOD, CENSUS_SEQ)
+  RELY
+  ENABLE VALIDATE)
+/
