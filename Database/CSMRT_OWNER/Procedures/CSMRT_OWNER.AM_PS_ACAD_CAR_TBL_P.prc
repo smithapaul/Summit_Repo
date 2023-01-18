@@ -13,7 +13,7 @@ CREATE OR REPLACE PROCEDURE CSMRT_OWNER."AM_PS_ACAD_CAR_TBL_P" IS
 --
 -- V01  SMT-xxxx 06/05/2017,    Jim Doucette
 --                              Converted from PS_ACAD_CAR_TBL.SQL
---
+-- Added a comment
 ------------------------------------------------------------------------
 
         strMartId                       Varchar2(50)    := 'CSW';
